@@ -1,7 +1,8 @@
 [BITS 16]
 [ORG 0x7c00]
 
-CODE_SEG equ gdt_code - gdt_start
+CODE32_SEG equ gdt32_code - gdt32_start
+CODE64_SEG equ gdt64_code - gdt64_start
 
 start:
     cli ; Clear Interrupts
@@ -38,39 +39,41 @@ memory_info_start:
     int 0x15
     jc not_support
 
-get_memory_info:
+.get_memory_info:
     add edi, 20
     inc dword[0x9000]
     test ebx, ebx
-    jz memory_done
+    jz .memory_done
 
     mov eax, 0xe820
     mov edx, 0x534d4150
     mov ecx, 20
     int 0x15
-    jnc get_memory_info
+    jnc .get_memory_info
 
-memory_done:
+.memory_done:
 ; https://wiki.osdev.org/Protected_Mode
 load_protected:
-    lgdt [gdt_descriptor]    ; load GDT register with start address of Global Descriptor Table
+    lgdt [gdt32_descriptor]    ; load GDT register with start address of Global Descriptor Table
     mov eax, cr0
     or  eax, 0x1       ; set PE (Protection Enable) bit in CR0 (Control Register 0)
     mov cr0, eax
     ; Perform far jump to selector 08h (offset into GDT, pointing at a 32bit PM code segment descriptor)
     ; to load CS with proper PM32 descriptor)
-    jmp CODE_SEG:protect_cseg  ;0x08:protect_cseg
+    jmp CODE32_SEG:protect_cseg  ;0x08:protect_cseg
 
 not_support_long_mode:
     mov si, long_mode_not_support
-    jmp end
+    jmp end16
 
 not_support:
     mov si, not_support_message
 
-end:
+end16:
     call print
-    jmp $
+.spin16:
+    hlt
+    jmp .spin16
 
 print:
     mov bx, 0
@@ -91,7 +94,6 @@ print_char:
 drive_id:       db 0
 long_mode_not_support:  db "Long Mode Not Support"
 not_support_message:        db "Panic: an error in boot process"
-
 disk_address_packet: times 16 db 0
 memory_block_size:  dw 0
 memory_size:        dw 0
@@ -99,15 +101,15 @@ memory_size:        dw 0
 ; GDT
 ; Shown below is a NASM assembly implementation of a GDT which opens up all 4 GB of available memory:
 ; base = 0x00000000, segment limit = 0xffffffff
-gdt_start:
+gdt32_start:
 
 ; offset 0x0 (0 bytes)
-.gdt_null:
+.gdt32_null:
     dd 0x0
     dd 0x0
 
 ; offset 0x8 (8 bytes)
-gdt_code:	; cs should point to this descriptor
+gdt32_code:	; cs should point to this descriptor
 	dw 0xffff		; segment limit first 0-15 bits
 	dw 0x0			; base first 0-15 bits
 	db 0x0			; base 16-23 bits
@@ -116,7 +118,7 @@ gdt_code:	; cs should point to this descriptor
 	db 0x0			; base 24-31 bits
 
 ; offset 0x10 (16 bytes)
-gdt_data:	; ds, es, fs, gs, and ss should point to this descriptor
+gdt32_data:	; ds, es, fs, gs, and ss should point to this descriptor
 	dw 0xffff		; segment limit first 0-15 bits
 	dw 0x0			; base first 0-15 bits
 	db 0x0			; base 16-23 bits
@@ -124,16 +126,78 @@ gdt_data:	; ds, es, fs, gs, and ss should point to this descriptor
 	db 0b11001111	; high 4 bits (flags) low 4 bits (limit 4 last bits)(limit is 20 bit wide)
 	db 0x0			; base 24-31 bits
 
-gdt_end:
+gdt32_end:
 
-gdt_descriptor:
-    dw gdt_end - gdt_start - 1
-    dd gdt_start
+gdt32_descriptor:
+    dw gdt32_end - gdt32_start - 1
+    dd gdt32_start
 
 [BITS 32]
 protect_cseg:
-    mov ax, 100
+    mov bx, 0x10
+    mov ds, bx ; set data segment
+    mov es, bx ; set extra segment
+    mov ss, bx ; set stack segment
+    mov esp, 0x7c00
+
+    cld
+    mov edi, 0x70000
+    xor eax, eax
+    mov ecx, 0x10000/4
+    rep stosd
+
+    mov dword[0x70000], 0x71007
+    mov dword[0x71000], 10000111b
+
+    lgdt [gdt64_descriptor]
+
+    mov eax, cr4
+    or eax, (1<<5)
+    mov cr4, eax
+
+    mov eax, 0x70000
+    mov cr3, eax
+
+    mov ecx, 0xc0000080
+    rdmsr
+    or eax, (1<<8)
+    wrmsr
+
+    ; enable paging in the cr0 register
+    mov eax, cr0
+    or eax, (1<<31)
+    mov cr0, eax
+
+    mov ecx, 0xc0000080
+    rdmsr
+    or eax, (1<<8)
+    wrmsr
+
+    jmp CODE64_SEG:long_cseg
+
+gdt64_start:
+
+.gdt64_null:
+    dq 0x0000000000000000          ; Null Descriptor - should be present.
+
+gdt64_code:
+    dq 0x00209A0000000000          ; 64-bit code descriptor (exec/read).
+
+gdt64_data:
+    dq 0x0000920000000000          ; 64-bit data descriptor (read/write).
+
+gdt64_end:
+
+gdt64_descriptor:
+    dw gdt64_end - gdt64_start - 1    ; 16-bit Size (Limit) of GDT.
+    dd gdt64_start                     ; 32-bit Base Address of GDT. (CPU will zero extend to 64-bit)
+
+[BITS 64]
+long_cseg:
+    mov rax, 110
     jmp $
+
+done:         db  "Done"
 
 times 510-($ - $$) db 0
 dw 0xAA55

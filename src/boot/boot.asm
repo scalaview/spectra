@@ -4,6 +4,8 @@
 CODE32_SEG equ gdt32_code - gdt32_start
 CODE64_SEG equ gdt64_code - gdt64_start
 
+extern bootmain
+
 start:
     cli ; Clear Interrupts
     xor ax, ax
@@ -195,6 +197,7 @@ gdt64_descriptor:
 [BITS 64]
 long_cseg:
     mov rax, 110
+    call bootmain
     jmp $
 
 done:         db  "Done"

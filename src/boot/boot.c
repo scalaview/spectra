@@ -1,5 +1,3 @@
-extern void bootmain;
-
 void bootmain()
 {
     int a = 0;

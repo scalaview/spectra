@@ -8,18 +8,20 @@ FLAGS = -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign
 
 all: ./bin/boot.bin
 	dd if=./bin/boot.bin >> ./bin/os.bin
-	dd if=/dev/zero bs=1024 count=1 >> ./bin/os.bin
+	dd if=/dev/zero bs=512 count=1 >> ./bin/os.bin
 
 ./bin/boot.bin: ./build/boot/boot.asm.o ./build/boot/boot.o
-	$(LD) -g -relocatable $(BOOTFILES) -o ./build/boot.o
-	$(GCC) -T ./src/boot/linker.ld -o ./bin/boot.bin -ffreestanding -O0 -nostdlib ./build/boot.o
+	$(LD) --build-id=none -T ./src/boot/linker.ld ./build/boot/boot.asm.o ./build/boot/boot.o -O0 -nostdlib -o ./build/boot/boot.elf
+	objcopy -O binary ./build/boot/boot.elf ./bin/boot.bin
 
 ./build/boot/boot.asm.o: ./src/boot/boot.asm
-	nasm -f elf -g ./src/boot/boot.asm -o ./build/boot/boot.asm.o
+	nasm -f elf64 -g ./src/boot/boot.asm -o ./build/boot/boot.asm.o
 
 ./build/boot/boot.o: ./src/boot/boot.c
 	$(GCC) -I./src/boot $(FLAGS) -std=gnu99 -c ./src/boot/boot.c -o ./build/boot/boot.o
 
 clean:
+	rm -rf ./build/boot/boot.asm.o
+	rm -rf ./build/boot/boot.o
 	rm -rf ./bin/os.bin
 	rm -rf ./bin/boot.bin

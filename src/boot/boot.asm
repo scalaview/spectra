@@ -1,10 +1,10 @@
 [BITS 16]
-[ORG 0x7c00]
+; [ORG 0x7c00]
+extern bootmain
+global start
 
 CODE32_SEG equ gdt32_code - gdt32_start
 CODE64_SEG equ gdt64_code - gdt64_start
-
-extern bootmain
 
 start:
     cli ; Clear Interrupts
@@ -12,7 +12,7 @@ start:
     mov ds, ax
     mov es, ax
     mov ss, ax
-    ; mov sp, 0x7c00
+    mov sp, 0x7c00
 
 ; https://www.felixcloutier.com/x86/cpuid
 ; https://wiki.osdev.org/Setting_Up_Long_Mode
@@ -197,10 +197,77 @@ gdt64_descriptor:
 [BITS 64]
 long_cseg:
     mov rax, 110
+    call load_sectors
     call bootmain
     jmp $
 
+load_sectors:
+    mov eax, 1
+    mov ecx, 100
+    mov edi, 0x0100000
+    call ata_lba_read ;https://wiki.osdev.org/ATA_read/write_sectors
+    ; jmp CODE_SEG:0x0100000
+
+ata_lba_read:
+    mov ebx, eax, ; Backup the LBA
+    ; Send the highest 8 bits of the lba to hard disk controller
+    shr eax, 24
+    or eax, 0xE0 ; Select the  master drive
+    mov dx, 0x1F6
+    out dx, al
+    ; Finished sending the highest 8 bits of the lba
+
+    ; Send the total sectors to read
+    mov eax, ecx
+    mov dx, 0x1F2
+    out dx, al
+    ; Finished sending the total sectors to read
+
+    ; Send more bits of the LBA
+    mov eax, ebx ; Restore the backup LBA
+    mov dx, 0x1F3
+    out dx, al
+    ; Finished sending more bits of the LBA
+
+    ; Send more bits of the LBA
+    mov dx, 0x1F4
+    mov eax, ebx ; Restore the backup LBA
+    shr eax, 8
+    out dx, al
+    ; Finished sending more bits of the LBA
+
+    ; Send upper 16 bits of the LBA
+    mov dx, 0x1F5
+    mov eax, ebx ; Restore the backup LBA
+    shr eax, 16
+    out dx, al
+    ; Finished sending upper 16 bits of the LBA
+
+    mov dx, 0x1f7
+    mov al, 0x20
+    out dx, al
+
+    ; Read all sectors into memory
+.next_sector:
+    push rcx
+
+; Checking if we need to read
+.try_again:
+    mov dx, 0x1f7
+    in al, dx
+    test al, 8
+    jz .try_again
+
+; We need to read 256 words at a time
+    mov ecx, 256
+    mov dx, 0x1F0
+    rep insw
+    pop rcx
+    loop .next_sector
+    ; End of reading sectors into memory
+    ret
+
 done:         db  "Done"
 
-times 510-($ - $$) db 0
-dw 0xAA55
+; times 510-($ - $$) db 0
+; dw 0xAA55

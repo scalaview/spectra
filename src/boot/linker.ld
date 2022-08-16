@@ -1,8 +1,8 @@
 ENTRY(start)
-OUTPUT_FORMAT(binary)
+OUTPUT_FORMAT(elf64-x86-64)
 SECTIONS
 {
-    . = 512;
+    . = 0x7c00;
     .text :
     {
         *(.text)

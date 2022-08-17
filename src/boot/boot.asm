@@ -1,10 +1,10 @@
 [BITS 16]
-; [ORG 0x7c00]
-extern bootmain
-global start
+[ORG 0x7c00]
 
 CODE32_SEG equ gdt32_code - gdt32_start
-CODE64_SEG equ gdt64_code - gdt64_start
+OFFSET      equ 0x7c00
+NEXT_SECTOR equ 0x7e00
+STACK_BP    equ 0x1000
 
 start:
     cli ; Clear Interrupts
@@ -12,7 +12,7 @@ start:
     mov ds, ax
     mov es, ax
     mov ss, ax
-    mov sp, 0x7c00
+    mov sp, OFFSET
 
 ; https://www.felixcloutier.com/x86/cpuid
 ; https://wiki.osdev.org/Setting_Up_Long_Mode
@@ -140,73 +140,24 @@ protect_cseg:
     mov ds, bx ; set data segment
     mov es, bx ; set extra segment
     mov ss, bx ; set stack segment
-    mov esp, 0x7c00
+    mov ebp, STACK_BP
+    mov esp, OFFSET
 
-    cld
-    mov edi, 0x70000
-    xor eax, eax
-    mov ecx, 0x10000/4
-    rep stosd
+enable_a20_line: ; Enable A20 Line
+    in al, 0x92
+    or al, 2
+    out 0x92, al
 
-    mov dword[0x70000], 0x71007
-    mov dword[0x71000], 10000111b
-
-    lgdt [gdt64_descriptor]
-
-    mov eax, cr4
-    or eax, (1<<5)
-    mov cr4, eax
-
-    mov eax, 0x70000
-    mov cr3, eax
-
-    mov ecx, 0xc0000080
-    rdmsr
-    or eax, (1<<8)
-    wrmsr
-
-    ; enable paging in the cr0 register
-    mov eax, cr0
-    or eax, (1<<31)
-    mov cr0, eax
-
-    mov ecx, 0xc0000080
-    rdmsr
-    or eax, (1<<8)
-    wrmsr
-
-    jmp CODE64_SEG:long_cseg
-
-gdt64_start:
-
-.gdt64_null:
-    dq 0x0000000000000000          ; Null Descriptor - should be present.
-
-gdt64_code:
-    dq 0x00209A0000000000          ; 64-bit code descriptor (exec/read).
-
-gdt64_data:
-    dq 0x0000920000000000          ; 64-bit data descriptor (read/write).
-
-gdt64_end:
-
-gdt64_descriptor:
-    dw gdt64_end - gdt64_start - 1    ; 16-bit Size (Limit) of GDT.
-    dd gdt64_start                     ; 32-bit Base Address of GDT. (CPU will zero extend to 64-bit)
-
-[BITS 64]
-long_cseg:
-    mov rax, 110
     call load_sectors
-    call bootmain
-    jmp $
+
+    jmp CODE32_SEG:NEXT_SECTOR
 
 load_sectors:
     mov eax, 1
-    mov ecx, 100
-    mov edi, 0x0100000
+    mov ecx, 1
+    mov edi, NEXT_SECTOR
     call ata_lba_read ;https://wiki.osdev.org/ATA_read/write_sectors
-    ; jmp CODE_SEG:0x0100000
+    ret
 
 ata_lba_read:
     mov ebx, eax, ; Backup the LBA
@@ -249,7 +200,7 @@ ata_lba_read:
 
     ; Read all sectors into memory
 .next_sector:
-    push rcx
+    push ecx
 
 ; Checking if we need to read
 .try_again:
@@ -262,12 +213,10 @@ ata_lba_read:
     mov ecx, 256
     mov dx, 0x1F0
     rep insw
-    pop rcx
+    pop ecx
     loop .next_sector
     ; End of reading sectors into memory
     ret
 
-done:         db  "Done"
-
-; times 510-($ - $$) db 0
-; dw 0xAA55
+times 510-($ - $$) db 0
+dw 0xAA55

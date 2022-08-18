@@ -2,6 +2,8 @@
     "makefile.extensionOutputFolder": "./.vscode",
     "C_Cpp.errorSquiggles": "Enabled",
     "files.associations": {
-        "disk.h": "c"
+        "disk.h": "c",
+        "elf.h": "c",
+        "stdint.h": "c"
     }
 }

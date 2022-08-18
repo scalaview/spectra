@@ -4,6 +4,8 @@
     "files.associations": {
         "disk.h": "c",
         "elf.h": "c",
-        "stdint.h": "c"
+        "stdint.h": "c",
+        "string.h": "c",
+        "stddef.h": "c"
     }
 }

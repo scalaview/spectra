@@ -1,6 +1,7 @@
 #ifndef ELF_H
 #define ELF_H
 
+// reference: /usr/include/elf.h
 #include <stdint.h>
 
 typedef uint16_t Elf64_Half;
@@ -15,7 +16,17 @@ typedef uint64_t Elf64_Addr;
 
 typedef uint64_t Elf64_Off;
 
+
 #define EI_NIDENT (16)
+#define EI_NIDENT_IDX_1     1
+#define EI_NIDENT_E         'E'
+#define EI_NIDENT_IDX_2     2
+#define EI_NIDENT_L         'L'
+#define EI_NIDENT_IDX_3     3
+#define EI_NIDENT_F         'F'
+#define EI_NIDENT_CLASS     4
+#define EI_NIDENT_32BIT     1
+#define EI_NIDENT_64BIT     2
 
 struct Elf64_Ehdr
 {
@@ -33,6 +44,18 @@ struct Elf64_Ehdr
     Elf64_Half	e_shentsize;		/* Section header table entry size */
     Elf64_Half	e_shnum;		/* Section header table entry count */
     Elf64_Half	e_shstrndx;		/* Section header string table index */
+} __attribute__((packed));
+
+struct Elf64_Phdr
+{
+    Elf64_Word	p_type;			/* Segment type */
+    Elf64_Word	p_flags;		/* Segment flags */
+    Elf64_Off	p_offset;		/* Segment file offset */
+    Elf64_Addr	p_vaddr;		/* Segment virtual address */
+    Elf64_Addr	p_paddr;		/* Segment physical address */
+    Elf64_Xword	p_filesz;		/* Segment size in file */
+    Elf64_Xword	p_memsz;		/* Segment size in memory */
+    Elf64_Xword	p_align;		/* Segment alignment */
 } __attribute__((packed));
 
 #endif

@@ -1,8 +1,8 @@
+#include "disk.h"
+
 void bootmain()
 {
-    int a = 0;
-    a += 1;
-    while (1)
-    {
-    }
+    void* buf = (void*)0x01000000;
+    disk_read_sector(5, 1, buf);
+    while (1) {}
 }

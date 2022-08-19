@@ -14,6 +14,7 @@ LOADER_FILES = ./build/boot/loader.asm.o \
 			   ./build/boot/loader.o \
 			   ./build/io/io.asm.o \
 			   ./build/disk/disk.o \
+			   ./build/string/string.o \
 			   ./build/loader/elf_loader.o
 
 KFILES = ./build/kernel.asm.o \

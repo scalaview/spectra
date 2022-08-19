@@ -21,7 +21,7 @@ void bootmain()
 {
     struct Elf64_Ehdr* elf_hdr = (struct Elf64_Ehdr*)0x01000000;
     disk_read_sector(5, 1, (void*)elf_hdr);
-    if (!elf64_valid_class(elf_hdr))
+    if (!elf_valid_magic(elf_hdr->e_ident) || !elf64_valid_class(elf_hdr))
     {
         goto out;
     }

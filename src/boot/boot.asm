@@ -3,7 +3,7 @@
 
 CODE32_SEG equ gdt32_code - gdt32_start
 OFFSET      equ 0x7c00
-NEXT_SECTOR equ 0x7e00
+LOADER_ADDR equ 0x7e00
 STACK_BP    equ 0x1000
 
 start:
@@ -150,12 +150,12 @@ enable_a20_line: ; Enable A20 Line
 
     call load_sectors
 
-    jmp CODE32_SEG:NEXT_SECTOR
+    jmp CODE32_SEG:LOADER_ADDR
 
 load_sectors:
     mov eax, 1  ; read from NO.1 sector
     mov ecx, 4  ; read 4 sectors
-    mov edi, NEXT_SECTOR
+    mov edi, LOADER_ADDR
     call ata_lba_read ;https://wiki.osdev.org/ATA_read/write_sectors
     ret
 

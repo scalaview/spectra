@@ -4,6 +4,8 @@
 // reference: /usr/include/elf.h
 #include <stdint.h>
 
+extern const char ELFMAGIC[];
+
 typedef uint16_t Elf64_Half;
 
 typedef uint32_t Elf64_Word;
@@ -19,11 +21,8 @@ typedef uint64_t Elf64_Off;
 
 #define EI_NIDENT (16)
 #define EI_NIDENT_IDX_1     1
-#define EI_NIDENT_E         'E'
 #define EI_NIDENT_IDX_2     2
-#define EI_NIDENT_L         'L'
 #define EI_NIDENT_IDX_3     3
-#define EI_NIDENT_F         'F'
 #define EI_NIDENT_CLASS     4
 #define EI_NIDENT_32BIT     1
 #define EI_NIDENT_64BIT     2

@@ -5,5 +5,6 @@
 #include "elf.h"
 
 bool elf64_valid_class(struct Elf64_Ehdr* header);
+bool elf_valid_magic(unsigned char* e_ident);
 
 #endif

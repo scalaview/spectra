@@ -10,10 +10,11 @@ INCLUDES = $(addprefix -I, $(INC_DIR))
 SOU_SUB_DIR = $(sort $(dir $(wildcard $(SOU_DIR)/*/)))
 OBJ_SUBDIR= $(subst $(SOU_DIR), $(OBJ_DIR),$(SOU_SUB_DIR))
 
-LOADER_FILES = ./build/boot/loader.asm.o \
+LOADER_FILES = ./build/boot/stage.asm.o \
 			   ./build/boot/loader.o \
 			   ./build/io/io.asm.o \
 			   ./build/disk/disk.o \
+			   ./build/string/string.o \
 			   ./build/loader/elf_loader.o
 
 KFILES = ./build/kernel.asm.o \
@@ -41,8 +42,8 @@ all: dir ./bin/boot.bin ./bin/loader.bin ./bin/kernel.elf
 	$(LD) --build-id=none -T ./src/linker.ld ${KFILES} -o ./bin/kernel.elf -O0 -nostdlib
 	objcopy -O binary ./bin/kernel.elf ./bin/kernel.bin
 
-./build/boot/loader.asm.o: ./src/boot/loader.asm
-	nasm -f $(ELF) -g ./src/boot/loader.asm -o ./build/boot/loader.asm.o
+./build/boot/stage.asm.o: ./src/boot/stage.asm
+	nasm -f $(ELF) -g ./src/boot/stage.asm -o ./build/boot/stage.asm.o
 
 ./build/boot/loader.o: ./src/boot/loader.c
 	$(GCC) -I./src/boot $(FLAGS) -std=gnu99 -c ./src/boot/loader.c -o ./build/boot/loader.o

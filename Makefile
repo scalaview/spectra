@@ -25,9 +25,9 @@ dir:
 	mkdir -p $(BIN_DIR) $(OBJ_SUBDIR)
 
 all: dir ./bin/boot.bin ./bin/loader.bin ./bin/kernel.elf
-	dd if=./bin/boot.bin >> ./bin/os.bin
-	dd if=./bin/loader.bin >> ./bin/os.bin
 	dd if=/dev/zero bs=512 count=5000 >> ./bin/os.bin
+	dd if=./bin/boot.bin of=./bin/os.bin bs=512 count=1 conv=notrunc
+	dd if=./bin/loader.bin of=./bin/os.bin bs=512 count=4 seek=1 conv=notrunc
 	dd if=./bin/kernel.elf of=./bin/os.bin bs=512 count=1 seek=5 conv=notrunc
 
 ./bin/boot.bin: ./src/boot/boot.asm

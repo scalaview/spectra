@@ -6,6 +6,8 @@
         "elf.h": "c",
         "stdint.h": "c",
         "string.h": "c",
-        "stddef.h": "c"
+        "stddef.h": "c",
+        "elf_loader.h": "c",
+        "config.h": "c"
     }
 }

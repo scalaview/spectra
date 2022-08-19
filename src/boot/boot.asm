@@ -2,7 +2,9 @@
 [ORG 0x7c00]
 
 CODE32_SEG equ gdt32_code - gdt32_start
-CODE64_SEG equ gdt64_code - gdt64_start
+OFFSET      equ 0x7c00
+NEXT_SECTOR equ 0x7e00
+STACK_BP    equ 0x1000
 
 start:
     cli ; Clear Interrupts
@@ -10,7 +12,7 @@ start:
     mov ds, ax
     mov es, ax
     mov ss, ax
-    ; mov sp, 0x7c00
+    mov sp, OFFSET
 
 ; https://www.felixcloutier.com/x86/cpuid
 ; https://wiki.osdev.org/Setting_Up_Long_Mode
@@ -138,66 +140,83 @@ protect_cseg:
     mov ds, bx ; set data segment
     mov es, bx ; set extra segment
     mov ss, bx ; set stack segment
-    mov esp, 0x7c00
+    mov ebp, STACK_BP
+    mov esp, OFFSET
 
-    cld
-    mov edi, 0x70000
-    xor eax, eax
-    mov ecx, 0x10000/4
-    rep stosd
+enable_a20_line: ; Enable A20 Line
+    in al, 0x92
+    or al, 2
+    out 0x92, al
 
-    mov dword[0x70000], 0x71007
-    mov dword[0x71000], 10000111b
+    call load_sectors
 
-    lgdt [gdt64_descriptor]
+    jmp CODE32_SEG:NEXT_SECTOR
 
-    mov eax, cr4
-    or eax, (1<<5)
-    mov cr4, eax
+load_sectors:
+    mov eax, 1  ; read from NO.1 sector
+    mov ecx, 4  ; read 4 sectors
+    mov edi, NEXT_SECTOR
+    call ata_lba_read ;https://wiki.osdev.org/ATA_read/write_sectors
+    ret
 
-    mov eax, 0x70000
-    mov cr3, eax
+ata_lba_read:
+    mov ebx, eax, ; Backup the LBA
+    ; Send the highest 8 bits of the lba to hard disk controller
+    shr eax, 24
+    or eax, 0xE0 ; Select the  master drive
+    mov dx, 0x1F6
+    out dx, al
+    ; Finished sending the highest 8 bits of the lba
 
-    mov ecx, 0xc0000080
-    rdmsr
-    or eax, (1<<8)
-    wrmsr
+    ; Send the total sectors to read
+    mov eax, ecx
+    mov dx, 0x1F2
+    out dx, al
+    ; Finished sending the total sectors to read
 
-    ; enable paging in the cr0 register
-    mov eax, cr0
-    or eax, (1<<31)
-    mov cr0, eax
+    ; Send more bits of the LBA
+    mov eax, ebx ; Restore the backup LBA
+    mov dx, 0x1F3
+    out dx, al
+    ; Finished sending more bits of the LBA
 
-    mov ecx, 0xc0000080
-    rdmsr
-    or eax, (1<<8)
-    wrmsr
+    ; Send more bits of the LBA
+    mov dx, 0x1F4
+    mov eax, ebx ; Restore the backup LBA
+    shr eax, 8
+    out dx, al
+    ; Finished sending more bits of the LBA
 
-    jmp CODE64_SEG:long_cseg
+    ; Send upper 16 bits of the LBA
+    mov dx, 0x1F5
+    mov eax, ebx ; Restore the backup LBA
+    shr eax, 16
+    out dx, al
+    ; Finished sending upper 16 bits of the LBA
 
-gdt64_start:
+    mov dx, 0x1f7
+    mov al, 0x20
+    out dx, al
 
-.gdt64_null:
-    dq 0x0000000000000000          ; Null Descriptor - should be present.
+    ; Read all sectors into memory
+.next_sector:
+    push ecx
 
-gdt64_code:
-    dq 0x00209A0000000000          ; 64-bit code descriptor (exec/read).
+; Checking if we need to read
+.try_again:
+    mov dx, 0x1f7
+    in al, dx
+    test al, 8
+    jz .try_again
 
-gdt64_data:
-    dq 0x0000920000000000          ; 64-bit data descriptor (read/write).
-
-gdt64_end:
-
-gdt64_descriptor:
-    dw gdt64_end - gdt64_start - 1    ; 16-bit Size (Limit) of GDT.
-    dd gdt64_start                     ; 32-bit Base Address of GDT. (CPU will zero extend to 64-bit)
-
-[BITS 64]
-long_cseg:
-    mov rax, 110
-    jmp $
-
-done:         db  "Done"
+; We need to read 256 words at a time
+    mov ecx, 256
+    mov dx, 0x1F0
+    rep insw
+    pop ecx
+    loop .next_sector
+    ; End of reading sectors into memory
+    ret
 
 times 510-($ - $$) db 0
 dw 0xAA55

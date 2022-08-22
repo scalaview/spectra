@@ -30,6 +30,10 @@ all: dir ./bin/boot.bin ./bin/loader.bin ./bin/kernel.elf
 	dd if=./bin/boot.bin of=./bin/os.bin bs=512 count=1 conv=notrunc
 	dd if=./bin/loader.bin of=./bin/os.bin bs=512 count=4 seek=1 conv=notrunc
 	dd if=./bin/kernel.elf of=./bin/os.bin bs=512 count=1 seek=5 conv=notrunc
+	cp boot.img ./bin/os_bochs.bin
+	dd if=./bin/boot.bin of=./bin/os_bochs.bin bs=512 count=1 conv=notrunc
+	dd if=./bin/loader.bin of=./bin/os_bochs.bin bs=512 count=4 seek=1 conv=notrunc
+	dd if=./bin/kernel.elf of=./bin/os_bochs.bin bs=512 count=1 seek=5 conv=notrunc
 
 ./bin/boot.bin: ./src/boot/boot.asm
 	nasm -f bin ./src/boot/boot.asm -o ./bin/boot.bin

@@ -17,8 +17,11 @@ LOADER_FILES = ./build/boot/stage.asm.o \
 			   ./build/string/string.o \
 			   ./build/loader/elf_loader.o
 
+BOCHS_BASIC_IMG = bochs.img
 KFILES = ./build/kernel.asm.o \
-		 ./build/kernel.o
+		 ./build/kernel.o \
+		 ./build/string/string.o \
+		 ./build/printk/printk.o
 
 FLAGS = -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label $(INCLUDES) -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc
 
@@ -30,7 +33,7 @@ all: dir ./bin/boot.bin ./bin/loader.bin ./bin/kernel.elf
 	dd if=./bin/boot.bin of=./bin/os.bin bs=512 count=1 conv=notrunc
 	dd if=./bin/loader.bin of=./bin/os.bin bs=512 count=4 seek=1 conv=notrunc
 	dd if=./bin/kernel.elf of=./bin/os.bin bs=512 count=1 seek=5 conv=notrunc
-	cp boot.img ./bin/os_bochs.bin
+	cp $(BOCHS_BASIC_IMG) ./bin/os_bochs.bin
 	dd if=./bin/boot.bin of=./bin/os_bochs.bin bs=512 count=1 conv=notrunc
 	dd if=./bin/loader.bin of=./bin/os_bochs.bin bs=512 count=4 seek=1 conv=notrunc
 	dd if=./bin/kernel.elf of=./bin/os_bochs.bin bs=512 count=1 seek=5 conv=notrunc
@@ -60,6 +63,9 @@ all: dir ./bin/boot.bin ./bin/loader.bin ./bin/kernel.elf
 
 ./build/string/string.o: ./src/string/string.c
 	$(GCC) $(INCLUDES) $(FLAGS) -std=gnu99 -c ./src/string/string.c -o ./build/string/string.o
+
+./build/printk/printk.o: ./src/printk/printk.c
+	$(GCC) $(INCLUDES) $(FLAGS) -std=gnu99 -c ./src/printk/printk.c -o ./build/printk/printk.o
 
 ./build/loader/elf_loader.o: ./src/loader/elf_loader.c
 	$(GCC) $(INCLUDES) $(FLAGS) -std=gnu99 -c ./src/loader/elf_loader.c -o ./build/loader/elf_loader.o

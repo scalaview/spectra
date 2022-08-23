@@ -28,7 +28,7 @@ void screen_write_char(struct terminal_screen* terminal_screen, char c, char col
     if (terminal_screen->row > VGA_HEIGHT)
     {
         memcpy(terminal_screen->buffer, terminal_screen->buffer + VGA_WIDTH, 2 * VGA_WIDTH * VGA_HEIGHT);
-        memset(terminal_screen->buffer + VGA_WIDTH * VGA_HEIGHT, 0, VGA_WIDTH);
+        memset(terminal_screen->buffer + VGA_WIDTH * VGA_HEIGHT, 0, 2 * VGA_WIDTH);
         terminal_screen->row--;
     }
     if (c == BACKSPCE_ASCI) // The backspace
@@ -80,7 +80,7 @@ int read_string(char* buffer, int position, const char* str)
 void terminal_screen_initialize()
 {
     terminal_screen.buffer = (uint16_t*)VGA_ADDRESS;
-    memset(terminal_screen.buffer, 0, VGA_WIDTH * VGA_HEIGHT);
+    memset(terminal_screen.buffer, 0, 2 * VGA_WIDTH * VGA_HEIGHT);
     terminal_screen.column = 0;
     terminal_screen.row = 0;
 }

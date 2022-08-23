@@ -80,13 +80,7 @@ int read_string(char* buffer, int position, const char* str)
 void terminal_screen_initialize()
 {
     terminal_screen.buffer = (uint16_t*)VGA_ADDRESS;
-    for (terminal_screen.row = 0; terminal_screen.row < VGA_HEIGHT; terminal_screen.row++)
-    {
-        for (terminal_screen.column = 0; terminal_screen.column < VGA_WIDTH; terminal_screen.column++)
-        {
-            screen_put_char(&terminal_screen, ' ', 0);
-        }
-    }
+    memset(terminal_screen.buffer, 0, VGA_WIDTH * VGA_HEIGHT);
     terminal_screen.column = 0;
     terminal_screen.row = 0;
 }

@@ -10,6 +10,7 @@
         "elf_loader.h": "c",
         "config.h": "c",
         "stdarg.h": "c",
-        "printk.h": "c"
+        "printk.h": "c",
+        "debug.h": "c"
     }
 }

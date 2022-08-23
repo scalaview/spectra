@@ -8,6 +8,8 @@
         "string.h": "c",
         "stddef.h": "c",
         "elf_loader.h": "c",
-        "config.h": "c"
+        "config.h": "c",
+        "stdarg.h": "c",
+        "printk.h": "c"
     }
 }

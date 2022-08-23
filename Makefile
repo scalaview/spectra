@@ -19,7 +19,10 @@ LOADER_FILES = ./build/boot/stage.asm.o \
 
 BOCHS_BASIC_IMG = bochs.img
 KFILES = ./build/kernel.asm.o \
-		 ./build/kernel.o
+		 ./build/kernel.o \
+		 ./build/string/string.o \
+		 ./build/memory/memory.o \
+		 ./build/printk/printk.o
 
 FLAGS = -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label $(INCLUDES) -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc
 
@@ -61,6 +64,12 @@ all: dir ./bin/boot.bin ./bin/loader.bin ./bin/kernel.elf
 
 ./build/string/string.o: ./src/string/string.c
 	$(GCC) $(INCLUDES) $(FLAGS) -std=gnu99 -c ./src/string/string.c -o ./build/string/string.o
+
+./build/memory/memory.o: ./src/memory/memory.c
+	$(GCC) $(INCLUDES) $(FLAGS) -std=gnu99 -c ./src/memory/memory.c -o ./build/memory/memory.o
+
+./build/printk/printk.o: ./src/printk/printk.c
+	$(GCC) $(INCLUDES) $(FLAGS) -std=gnu99 -c ./src/printk/printk.c -o ./build/printk/printk.o
 
 ./build/loader/elf_loader.o: ./src/loader/elf_loader.c
 	$(GCC) $(INCLUDES) $(FLAGS) -std=gnu99 -c ./src/loader/elf_loader.c -o ./build/loader/elf_loader.o

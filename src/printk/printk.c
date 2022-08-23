@@ -1,8 +1,11 @@
 #include <stdarg.h>
+#include <stddef.h>
+
 #include "string.h"
 #include "printk.h"
+#include "memory.h"
 
-static struct terminal_screen terminal_screen = { (uint16_t*)VGA_ADDRESS, 0, 0 };
+static struct terminal_screen terminal_screen;
 
 uint16_t make_char(char c, char color)
 {
@@ -12,7 +15,6 @@ uint16_t make_char(char c, char color)
 void screen_put_char(struct terminal_screen* terminal_screen, char c, char color)
 {
     terminal_screen->buffer[terminal_screen->row * VGA_WIDTH + terminal_screen->column] = make_char(c, color);
-
 }
 
 void screen_write_char(struct terminal_screen* terminal_screen, char c, char color)
@@ -21,10 +23,17 @@ void screen_write_char(struct terminal_screen* terminal_screen, char c, char col
     {
         terminal_screen->column = 0;
         terminal_screen->row++;
-        return;;;;
+        return;
+    }
+    if (terminal_screen->row > VGA_HEIGHT)
+    {
+        memcpy(terminal_screen->buffer, terminal_screen->buffer + VGA_WIDTH, 2 * VGA_WIDTH * VGA_HEIGHT);
+        memset(terminal_screen->buffer + VGA_WIDTH * VGA_HEIGHT, 0, VGA_WIDTH);
+        terminal_screen->row--;
     }
     if (c == BACKSPCE_ASCI) // The backspace
     {
+        // TODO
         return;
     }
     screen_put_char(terminal_screen, c, color);
@@ -36,7 +45,7 @@ void screen_write_char(struct terminal_screen* terminal_screen, char c, char col
     }
 }
 
-void write_screen(const char* buffer, int size, struct terminal_screen* terminal_screen, char color)
+void print_to_screen(const char* buffer, int size, struct terminal_screen* terminal_screen, char color)
 {
     for (int i = 0; i < size; i++)
     {
@@ -47,15 +56,39 @@ void write_screen(const char* buffer, int size, struct terminal_screen* terminal
 int decimal_to_string(char* buffer, int position, int64_t digits)
 {
     char text[20];
-    itoa(digits, text);
+    char* c = itoa(digits, text);
     int size = 0;
 
-    for (char* c = text; *c; c++)
+    for (; *c; c++)
     {
-        buffer[position++] = *text;
+        buffer[position++] = *c;
         size++;
     }
     return size;
+}
+
+int read_string(char* buffer, int position, const char* str)
+{
+    size_t len = strlen(str);
+    for (int i = 0; i < len;i++)
+    {
+        buffer[position++] = str[i];
+    }
+    return len;
+}
+
+void terminal_screen_initialize()
+{
+    terminal_screen.buffer = (uint16_t*)VGA_ADDRESS;
+    for (terminal_screen.row = 0; terminal_screen.row < VGA_HEIGHT; terminal_screen.row++)
+    {
+        for (terminal_screen.column = 0; terminal_screen.column < VGA_WIDTH; terminal_screen.column++)
+        {
+            screen_put_char(&terminal_screen, ' ', 0);
+        }
+    }
+    terminal_screen.column = 0;
+    terminal_screen.row = 0;
 }
 
 int printk(const char* format, ...)
@@ -64,9 +97,10 @@ int printk(const char* format, ...)
     char buffer[1024];
     int buffer_size = 0;
     int64_t interger = 0;
-    // char* string = 0;
+    char* string = 0;
     const char* p = 0;
     va_start(args, format);
+    memset(buffer, 0, sizeof(buffer));
 
     for (p = format; *p; p++)
     {
@@ -81,11 +115,17 @@ int printk(const char* format, ...)
             interger = va_arg(args, int64_t);
             buffer_size += decimal_to_string(buffer, buffer_size, interger);
             break;
+        case 's':
+            string = va_arg(args, char*);
+            buffer_size += read_string(buffer, buffer_size, string);
+            break;
         default:
+            buffer[buffer_size++] = '%';
+            p--;
             break;
         }
     }
-    write_screen(buffer, buffer_size, &terminal_screen, 0xf);
+    print_to_screen(buffer, buffer_size, &terminal_screen, 0xf);
     va_end(args);
     return buffer_size;
 }

@@ -1,7 +1,7 @@
 #ifndef PRINTK_H
 #define PRINTK_H
 
-#define VGA_WIDTH 160
+#define VGA_WIDTH 80
 #define VGA_HEIGHT 24
 #define VGA_ADDRESS  0xb8000
 #define BACKSPCE_ASCI  0x0008
@@ -16,5 +16,6 @@ struct terminal_screen {
 
 // https://en.wikipedia.org/wiki/Printk
 int printk(const char* format, ...);
+void terminal_screen_initialize();
 
 #endif

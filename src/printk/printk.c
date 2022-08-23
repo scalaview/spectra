@@ -4,6 +4,7 @@
 #include "string.h"
 #include "printk.h"
 #include "memory.h"
+#include "assert.h"
 
 static struct terminal_screen terminal_screen;
 
@@ -101,6 +102,7 @@ int printk(const char* format, ...)
         if (*p != '%')
         {
             buffer[buffer_size++] = *p;
+            assert(buffer_size < 1024);
             continue;
         }
         switch (*++p)
@@ -118,6 +120,7 @@ int printk(const char* format, ...)
             p--;
             break;
         }
+        assert(buffer_size < 1024);
     }
     print_to_screen(buffer, buffer_size, &terminal_screen, 0xf);
     va_end(args);

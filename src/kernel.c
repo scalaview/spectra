@@ -1,4 +1,5 @@
 #include "printk.h"
+#include "assert.h"
 
 void kernel_main(void)
 {
@@ -9,5 +10,5 @@ void kernel_main(void)
         printk("%d, %s", i, str);
 
     printk("This value is % \nequal to %d", value);
-    while (str) {};
+    assert(0);
 }

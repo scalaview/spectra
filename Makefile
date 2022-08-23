@@ -22,7 +22,8 @@ KFILES = ./build/kernel.asm.o \
 		 ./build/kernel.o \
 		 ./build/string/string.o \
 		 ./build/memory/memory.o \
-		 ./build/printk/printk.o
+		 ./build/printk/printk.o \
+		 ./build/debug/assert.o
 
 FLAGS = -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label $(INCLUDES) -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc
 
@@ -70,6 +71,9 @@ all: dir ./bin/boot.bin ./bin/loader.bin ./bin/kernel.elf
 
 ./build/printk/printk.o: ./src/printk/printk.c
 	$(GCC) $(INCLUDES) $(FLAGS) -std=gnu99 -c ./src/printk/printk.c -o ./build/printk/printk.o
+
+./build/debug/assert.o: ./src/debug/assert.c
+	$(GCC) $(INCLUDES) $(FLAGS) -std=gnu99 -c ./src/debug/assert.c -o ./build/debug/assert.o
 
 ./build/loader/elf_loader.o: ./src/loader/elf_loader.c
 	$(GCC) $(INCLUDES) $(FLAGS) -std=gnu99 -c ./src/loader/elf_loader.c -o ./build/loader/elf_loader.o

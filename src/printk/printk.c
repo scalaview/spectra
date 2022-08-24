@@ -18,19 +18,24 @@ void screen_put_char(struct terminal_screen* terminal_screen, char c, char color
     terminal_screen->buffer[terminal_screen->row * VGA_WIDTH + terminal_screen->column] = make_char(c, color);
 }
 
+static void increase_row(struct terminal_screen* terminal_screen)
+{
+    terminal_screen->row++;
+    if (terminal_screen->row >= VGA_HEIGHT)
+    {
+        memcpy(terminal_screen->buffer, terminal_screen->buffer + VGA_WIDTH, 2 * VGA_WIDTH * (VGA_HEIGHT - 1));
+        memset(terminal_screen->buffer + VGA_WIDTH * (VGA_HEIGHT - 1), 0, 2 * VGA_WIDTH);
+        terminal_screen->row--;
+    }
+}
+
 void screen_write_char(struct terminal_screen* terminal_screen, char c, char color)
 {
     if (c == '\n')
     {
         terminal_screen->column = 0;
-        terminal_screen->row++;
+        increase_row(terminal_screen);
         return;
-    }
-    if (terminal_screen->row > VGA_HEIGHT)
-    {
-        memcpy(terminal_screen->buffer, terminal_screen->buffer + VGA_WIDTH, 2 * VGA_WIDTH * VGA_HEIGHT);
-        memset(terminal_screen->buffer + VGA_WIDTH * VGA_HEIGHT, 0, 2 * VGA_WIDTH);
-        terminal_screen->row--;
     }
     if (c == BACKSPCE_ASCI) // The backspace
     {
@@ -42,7 +47,7 @@ void screen_write_char(struct terminal_screen* terminal_screen, char c, char col
     if (terminal_screen->column >= VGA_WIDTH)
     {
         terminal_screen->column = 0;
-        terminal_screen->row++;
+        increase_row(terminal_screen);
     }
 }
 

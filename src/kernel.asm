@@ -3,6 +3,8 @@ section .text
 extern kernel_main
 global start
 
+global divide_zero
+
 DATA_SEG        equ 0x10
 PIC1_COMMAND    equ 0x20
 PIC1_DATA       equ 0x21
@@ -47,5 +49,13 @@ init_pic:
     call kernel_main
 
     jmp $
+
+divide_zero:
+    int 0
+    jmp end
+
+end:
+    hlt
+    jmp end
 
 times 512-($ - $$) db 0

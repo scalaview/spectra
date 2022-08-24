@@ -7,6 +7,8 @@ OBJ_DIR = ./build
 BIN_DIR = ./bin
 INC_DIR = ./src/include
 INCLUDES = $(addprefix -I, $(INC_DIR))
+ASM_INC_DIR = ./src/asminc
+ASM_INCLUDES = $(addprefix -i, $(ASM_INC_DIR))
 SOU_SUB_DIR = $(sort $(dir $(wildcard $(SOU_DIR)/*/)))
 OBJ_SUBDIR= $(subst $(SOU_DIR), $(OBJ_DIR),$(SOU_SUB_DIR))
 
@@ -58,7 +60,7 @@ all: dir ./bin/boot.bin ./bin/loader.bin ./bin/kernel.elf
 	$(GCC) -I./src/boot $(FLAGS) -std=gnu99 -c ./src/boot/loader.c -o ./build/boot/loader.o
 
 ./build/io/io.asm.o: ./src/io/io.asm
-	nasm -f $(ELF) -g ./src/io/io.asm -o ./build/io/io.asm.o
+	nasm -f $(ELF) $(ASM_INCLUDES) -g ./src/io/io.asm -o ./build/io/io.asm.o
 
 ./build/disk/disk.o: ./src/disk/disk.c
 	$(GCC) $(INCLUDES) $(FLAGS) -std=gnu99 -c ./src/disk/disk.c -o ./build/disk/disk.o

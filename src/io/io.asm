@@ -12,44 +12,45 @@ global outw
 ; void outw(unsigned short port, unsigned short val);
 
 insb:
-    push rbp
+    %include "pushsp.asm"
+
     mov rbp, rsp
 
     xor rax, rax
     mov rdx, rdi
     in al, dx
 
-    pop rbp
+    %include "popsp.asm"
     ret
 
 insw:
-    push rbp
+    %include "pushsp.asm"
     mov rbp, rsp
 
     xor rax, rax
     mov rdx, rdi
     in ax, dx
 
-    pop rbp
+    %include "popsp.asm"
     ret
 
 outb:
-    push rbp
+    %include "pushsp.asm"
     mov rbp, rsp
     mov rdx, rdi ; unsigned short port
     mov rax, rsi ; unsigned char val
     out dx, al
 
-    pop rbp
+    %include "popsp.asm"
     ret
 
 outw:
-    push rbp
+    %include "pushsp.asm"
     mov rbp, rsp
 
     mov rdx, rdi ; unsigned short port
     mov rax, rsi ; unsigned short val
     out dx, ax
 
-    pop rbp
+    %include "popsp.asm"
     ret

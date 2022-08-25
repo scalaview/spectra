@@ -51,5 +51,7 @@ Module.symvers
 Mkfile.old
 dkms.conf
 **/*.bin
+build/**/*.i
+build/**/*.s
 .vscode/*.log
 bochs.img

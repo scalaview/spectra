@@ -13,6 +13,7 @@ global outw
 
 insb:
     push rbp
+
     mov rbp, rsp
 
     xor rax, rax

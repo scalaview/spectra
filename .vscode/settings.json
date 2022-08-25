@@ -11,6 +11,7 @@
         "config.h": "c",
         "stdarg.h": "c",
         "printk.h": "c",
-        "debug.h": "c"
+        "debug.h": "c",
+        "idt.h": "c"
     }
 }

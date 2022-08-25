@@ -1,10 +1,15 @@
 #include "printk.h"
 #include "assert.h"
+#include "idt.h"
+
+extern void divide_zero();
 
 void kernel_main(void)
 {
     terminal_screen_initialize();
-    char* str = "hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh\n";
+    idt_initialize();
+    enable_interrupts();
+    char* str = "hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh\n";
     int64_t value = 0x123456789ABCD;
     for (int i = 0;i < 25; i++)
         printk("%d, %s", i, str);

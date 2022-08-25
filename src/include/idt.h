@@ -45,4 +45,6 @@ struct interrupt_frame {
 void idt_initialize();
 void interrupt_handler();
 
+extern void enable_interrupts();
+extern void disable_interrupts();
 #endif

@@ -1,7 +1,18 @@
-section .ass
+section .asm
+global enable_interrupts
+global disable_interrupts
 global load_idt
 global interrupt_pointers
+
 extern interrupt_handler
+
+enable_interrupts:
+    sti
+    ret
+
+disable_interrupts:
+    cli
+    ret
 
 %macro INT_NOERRCODE 1
   global int%1
@@ -58,7 +69,7 @@ load_idt:
 section .data
 
 %macro interrupt_entry 1
-    dd int%1
+    dq int%1
 %endmacro
 
 interrupt_pointers:

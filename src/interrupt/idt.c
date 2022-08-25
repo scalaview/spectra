@@ -3,6 +3,8 @@
 #include "memory.h"
 #include "assert.h"
 #include "printk.h"
+#include "io.h"
+
 struct idt_desc64 idt_descriptors64[TOTAL_INTERRUPTS];
 struct idtr_desc64 idtr_descriptor64;
 
@@ -34,9 +36,9 @@ void idt_set(int interrupt_no, void* address, uint8_t attribute)
 
 void no_interrupt()
 {
-    // outb(0x20, 0x20);
+    /* Acknowledge master PIC. */
+    outb(0x20, 0x20);
 }
-
 
 void idt_initialize()
 {
@@ -44,6 +46,7 @@ void idt_initialize()
     idtr_descriptor64.limit = sizeof(idt_descriptors64) - 1;
     idtr_descriptor64.base_address = (uint64_t)idt_descriptors64;
     // 0x8E => 0b10001110 Interrupt Gate, ring0 , idt valid
+    // 0xEE => 0b11101110 Interrupt Gate, ring3 , idt valid
     for (int i = 0;i < TOTAL_INTERRUPTS; i++)
     {
         idt_set(i, interrupt_pointers[i], 0xEE);
@@ -54,5 +57,7 @@ void idt_initialize()
 
 void interrupt_handler(int interrupt_no, struct interrupt_frame* frame)
 {
-    printk("frame error_code: %d", frame->error_code);
+    printk("interrupt_no: %d, frame error_code: %d", interrupt_no, frame->error_code);
+    /* Acknowledge master PIC. */
+    outb(0x20, 0x20);
 }

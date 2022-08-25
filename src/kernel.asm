@@ -46,17 +46,7 @@ init_pic:
     mov al, 11111111b
     out PIC2_COMMAND, al ; disable PIC2
 
-    sti
-
     call kernel_main
-
-    jmp $
-
-divide_zero:
-    ; mov rax, 0
-    ; div rax
-    int 8
-    jmp end
 
 end:
     hlt

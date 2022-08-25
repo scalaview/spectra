@@ -5,6 +5,8 @@ CODE32_SEG equ gdt32_code - gdt32_start
 OFFSET      equ 0x7c00
 LOADER_ADDR equ 0x7e00
 STACK_BP    equ 0x1000
+MEMORY_BLOCK_SIZE   equ 0x9000
+MEMORY_INFO         equ 0x9008
 
 start:
     cli ; Clear Interrupts
@@ -35,15 +37,15 @@ memory_info_start:
     mov eax, 0xe820
     mov edx, 0x534d4150  ; ('SMAP')
     mov ecx, 20          ; 20 bytes
-    mov dword[0x9000], 0 ; The location to store memory block size
-    mov edi, 0x9008      ; The location to store memory info
+    mov dword[MEMORY_BLOCK_SIZE], 0 ; The location to store memory block size
+    mov edi, MEMORY_INFO      ; The location to store memory info
     xor ebx, ebx
     int 0x15
     jc not_support
 
 .get_memory_info:
     add edi, 20
-    inc dword[0x9000]
+    inc dword[MEMORY_BLOCK_SIZE]
     test ebx, ebx
     jz .memory_done
 

@@ -29,7 +29,7 @@ KFILES = ./build/kernel.asm.o \
 		 ./build/interrupt/idt.asm.o \
 		 ./build/interrupt/idt.o
 
-FLAGS = -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label $(INCLUDES) -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc
+FLAGS = -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label $(INCLUDES) -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc -save-temps=obj
 
 dir:
 	mkdir -p $(BIN_DIR) $(OBJ_SUBDIR)
@@ -83,7 +83,7 @@ all: dir ./bin/boot.bin ./bin/loader.bin ./bin/kernel.elf
 	$(GCC) $(INCLUDES) $(FLAGS) -std=gnu99 -c ./src/loader/elf_loader.c -o ./build/loader/elf_loader.o
 
 ./build/kernel.asm.o: ./src/kernel.asm
-	nasm -f $(ELF) -g ./src/kernel.asm -o ./build/kernel.asm.o
+	nasm -f $(ELF) $(ASM_INCLUDES) -g ./src/kernel.asm -o ./build/kernel.asm.o
 
 ./build/kernel.o: ./src/kernel.c
 	$(GCC) $(INCLUDES) $(FLAGS) -shared -fPIC -std=gnu99 -c ./src/kernel.c -o ./build/kernel.o

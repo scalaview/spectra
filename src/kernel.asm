@@ -5,7 +5,7 @@ global start
 
 global divide_zero
 
-DATA_SEG        equ 0x10
+%include "config.asm"
 PIC1_COMMAND    equ 0x20
 PIC1_DATA       equ 0x21
 PIC2_COMMAND    equ 0xA0
@@ -46,12 +46,16 @@ init_pic:
     mov al, 11111111b
     out PIC2_COMMAND, al ; disable PIC2
 
+    sti
+
     call kernel_main
 
     jmp $
 
 divide_zero:
-    int 0
+    ; mov rax, 0
+    ; div rax
+    int 8
     jmp end
 
 end:

@@ -7,8 +7,9 @@ struct idt_desc64 idt_descriptors64[TOTAL_INTERRUPTS];
 struct idtr_desc64 idtr_descriptor64;
 
 extern void load_idt(struct idtr_desc64* ptr);
+extern void* interrupt_pointers[TOTAL_INTERRUPTS];
 
-void idt_set(int interrupt_no, void* address)
+void idt_set(int interrupt_no, void* address, uint8_t attribute)
 {
     assert(interrupt_no >= 0);
     assert(interrupt_no < TOTAL_INTERRUPTS);
@@ -26,14 +27,14 @@ void idt_set(int interrupt_no, void* address)
     idt_desc64->offset_1 = (uint64_t)address & 0x0000ffff;
     idt_desc64->selector = KERNEL_CODE_SELECTOR;
     idt_desc64->ist0 = 0x00;
-    idt_desc64->type_attributes = 0b11101110; // 0xEE;
+    idt_desc64->type_attributes = attribute;
     idt_desc64->offset_2 = (uint16_t)(((uint64_t)address) >> 16);
     idt_desc64->offset_3 = (uint32_t)(((uint64_t)address) >> 32);
 }
 
-void divide_by_zero()
+void no_interrupt()
 {
-    printk("\ndevide by zero error\n");
+    // outb(0x20, 0x20);
 }
 
 
@@ -42,21 +43,16 @@ void idt_initialize()
     memset(&idt_descriptors64, 0, sizeof(idt_descriptors64));
     idtr_descriptor64.limit = sizeof(idt_descriptors64) - 1;
     idtr_descriptor64.base_address = (uint64_t)idt_descriptors64;
-
-    // for (int i = 0; i < TOTAL_INTERRUPTS; i++)
-    // {
-        // idt_set(i, interrupt_pointer_table[i]);
-    // }
-
-    idt_set(0, divide_by_zero);
-    // idt_set(0x80, isr80h_wrapper);
-
-    // for (int i = 0; i < 0x20; i++)
-    // {
-    //     idt_register_interrupt_callback(i, idt_handle_exception);
-    // }
-
-    // idt_register_interrupt_callback(0x20, idt_clock);
+    // 0x8E => 0b10001110 Interrupt Gate, ring0 , idt valid
+    for (int i = 0;i < TOTAL_INTERRUPTS; i++)
+    {
+        idt_set(i, interrupt_pointers[i], 0xEE);
+    }
 
     load_idt(&idtr_descriptor64);
+}
+
+void interrupt_handler(int interrupt_no, struct interrupt_frame* frame)
+{
+    printk("frame error_code: %d", frame->error_code);
 }

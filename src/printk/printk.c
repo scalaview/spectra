@@ -73,6 +73,34 @@ int decimal_to_string(char* buffer, int position, int64_t digits)
     return size;
 }
 
+int hex_to_string(char* buffer, int position, int64_t i)
+{
+    char hex[] = "0123456789ABCDEF";
+    char text[21];
+    memset(text, 0, sizeof(text));
+    char negative = 1;
+    int size = 0;
+
+    if (i >= 0)
+    {
+        negative = 0;
+    }
+    text[size++] = 'H';
+
+    do {
+        text[size++] = hex[i % 16];
+        i /= 16;
+    } while (i != 0);
+
+    if (negative)
+        text[size++] = '-';
+
+    for (int i = size - 1; i >= 0; i--) {
+        buffer[position++] = text[i];
+    }
+    return size;
+}
+
 int read_string(char* buffer, int position, const char* str)
 {
     size_t len = strlen(str);
@@ -115,6 +143,10 @@ int printk(const char* format, ...)
         case 'd':
             interger = va_arg(args, int64_t);
             buffer_size += decimal_to_string(buffer, buffer_size, interger);
+            break;
+        case 'x':
+            interger = va_arg(args, int64_t);
+            buffer_size += hex_to_string(buffer, buffer_size, interger);
             break;
         case 's':
             string = va_arg(args, char*);

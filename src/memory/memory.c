@@ -29,6 +29,8 @@ void* memcpy(void* dest, void* src, int len)
 
 void get_memory_info()
 {
+    extern void* kernel_end;
+
     uint32_t block_size = *(uint32_t*)MEMORY_BLOCK_SIZE_ADDR;
     struct e820map* memory_map = (struct e820map*)MEMORY_INFO_ADDR;
     uint64_t total_mem = 0;
@@ -43,5 +45,6 @@ void get_memory_info()
         printk("%x, %dKB [%x, %x], type: %d\n", memory_map[i].base_address, memory_map[i].length / 1024, begin, end - 1, (uint64_t)memory_map[i].type);
     }
     printk("Block size: %d, Total memory is %dByte, %dMB\n", block_size, total_mem, total_mem / 1024 / 1024);
+    printk("Kernel end: %x", kernel_end);
 
 }

@@ -2,9 +2,12 @@
 [ORG 0x7c00]
 
 CODE32_SEG equ gdt32_code - gdt32_start
+SMAP        equ 0x534d4150
 OFFSET      equ 0x7c00
 LOADER_ADDR equ 0x7e00
 STACK_BP    equ 0x1000
+MEMORY_BLOCK_SIZE   equ 0x9000
+MEMORY_INFO         equ 0x9008
 
 start:
     cli ; Clear Interrupts
@@ -32,26 +35,20 @@ detect_long_mode_support:
 
 ; http://www.ctyme.com/intr/rb-1741.htm
 memory_info_start:
-    mov eax, 0xe820
-    mov edx, 0x534d4150  ; ('SMAP')
-    mov ecx, 20          ; 20 bytes
-    mov dword[0x9000], 0 ; The location to store memory block size
-    mov edi, 0x9008      ; The location to store memory info
+    mov dword[MEMORY_BLOCK_SIZE], 0 ; The location to store memory block size
+    mov edi, MEMORY_INFO      ; The location to store memory info
     xor ebx, ebx
+.get_memory_info:
+    mov eax, 0xe820
+    mov edx, SMAP       ; ('SMAP')
+    mov ecx, 20         ; 20 bytes
     int 0x15
     jc not_support
-
-.get_memory_info:
+.calculate:
     add edi, 20
-    inc dword[0x9000]
+    inc dword[MEMORY_BLOCK_SIZE]
     test ebx, ebx
-    jz .memory_done
-
-    mov eax, 0xe820
-    mov edx, 0x534d4150
-    mov ecx, 20
-    int 0x15
-    jnc .get_memory_info
+    jnz .get_memory_info
 
 .memory_done:
 ; https://wiki.osdev.org/Protected_Mode

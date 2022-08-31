@@ -12,6 +12,7 @@
         "stdarg.h": "c",
         "printk.h": "c",
         "debug.h": "c",
-        "idt.h": "c"
+        "idt.h": "c",
+        "memory.h": "c"
     }
 }

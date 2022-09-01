@@ -1,8 +1,12 @@
-ENTRY(start)
+ENTRY(kernel_main)
 OUTPUT_FORMAT(elf64-x86-64)
+
+KERNEL_VM_BASE = 0xFFFF00000C200000;
+
 SECTIONS
 {
-    . = 0x200000;
+    . = KERNEL_VM_BASE;
+
     .text : ALIGN(4096)
     {
         *(.text)

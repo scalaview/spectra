@@ -3,7 +3,7 @@
 #include "idt.h"
 #include "memory.h"
 
-extern void divide_zero();
+// extern void divide_zero();
 
 void kernel_main(void)
 {

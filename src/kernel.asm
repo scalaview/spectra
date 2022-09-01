@@ -1,25 +1,26 @@
 [BITS 64]
-section .text
-extern kernel_main
-global start
-
-global divide_zero
-
 %include "config.asm"
 PIC1_COMMAND    equ 0x20
 PIC1_DATA       equ 0x21
 PIC2_COMMAND    equ 0xA0
 PIC2_DATA       equ 0xA1
 
+section .text
+
+extern kernel_main
+global start
+
+global divide_zero
+
 start:
-    mov ax, DATA_SEG
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    mov ss, ax
-    mov rbp, 0x00200000
-    mov rsp, rbp
+    ; mov rax, QWORD DATA_SEG
+    ; mov ds, QWORD rax
+    ; mov es, QWORD rax
+    ; mov fs, QWORD rax
+    ; mov gs, QWORD rax
+    ; mov ss, QWORD rax
+    mov rbp, QWORD KERNEL_VM_BASE
+    mov QWORD rsp, rbp
 
 ; https://wiki.osdev.org/PIC
 init_pic:

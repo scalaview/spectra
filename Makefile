@@ -22,8 +22,7 @@ LOADER_FILES = ./build/boot/stage.asm.o \
 
 BOCHS_BASIC_IMG = bochs.img
 
-KFILES =./build/kernel.asm.o\
-		./build/kernel.o \
+KFILES =./build/kernel.o \
 		./build/string/string.o \
 		./build/memory/memory.o \
 		./build/printk/printk.o \

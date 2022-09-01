@@ -8,6 +8,7 @@
 #include "config.h"
 
 static struct terminal_screen terminal_screen;
+
 #define P2V(p) ((uint64_t)(p) + KERNEL_VM_BASE)
 uint16_t make_char(char c, char color)
 {
@@ -76,7 +77,7 @@ int decimal_to_string(char* buffer, int position, int64_t digits)
 
 int hex_to_string(char* buffer, int position, int64_t i)
 {
-    char hex[] = "0123456789ABCDEF";
+    static char hex[16] = "0123456789ABCDEF";
     char text[21];
     memset(text, 0, sizeof(text));
     char negative = 1;

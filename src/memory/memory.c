@@ -4,6 +4,8 @@
 #include "config.h"
 #include "printk.h"
 
+extern void* kernel_end;
+
 void* memset(void* ptr, int c, size_t size)
 {
     char* ch_ptr = (char*)ptr;
@@ -29,8 +31,6 @@ void* memcpy(void* dest, void* src, int len)
 
 void get_memory_info()
 {
-    extern void* kernel_end;
-
     uint32_t block_size = *(uint32_t*)MEMORY_BLOCK_SIZE_ADDR;
     struct e820map* memory_map = (struct e820map*)MEMORY_INFO_ADDR;
     uint64_t total_mem = 0;

@@ -37,39 +37,31 @@ set_up_page_tables:
     mov ecx, 0x10000/4
     rep stosd
 
-    mov dword[0x70000],0x71003
-    mov dword[0x71000],10000011b
+    mov eax, p3_table
+    or eax, WRITABLE_PRESENT
+    mov [p4_table], eax ; make p4 entry point to p3
 
-    mov eax,(0xffff800000000000>>39)
-    and eax,0x1ff
-    mov dword[0x70000+eax*8],0x72003
-    mov dword[0x72000],10000011b
+    mov ebx, (KERNEL_VM_BASE >> 39)
+    and ebx, 0x1ff  ; get p4 index
+    mov [p4_table + (ebx * 8)], eax
 
-;     mov eax, (p3_table)
-;     or eax, WRITABLE_PRESENT
-;     mov [p4_table], eax ; make p4 entry point to p3
+    mov eax, p2_table
+    or eax, WRITABLE_PRESENT
+    mov ebx, dword(KERNEL_VM_BASE >> 30)
+    and ebx, 0x1ff  ; get p3 index
+    mov [p3_table + (ebx * 8)], eax
 
-;     mov ebx, (KERNEL_VM_BASE >> 39)
-;     and ebx, 0x1ff  ; get p4 index
-;     mov [p4_table + (ebx * 8)], eax
+    ; map 512 entries in p2 table
+    mov ecx, 0
+.map_p2_table:
+    mov eax, PAGE_SIZE
+    mul ecx
+    or eax, 0b10000011 ; huge(07) + writable(02) + present(01)
+    mov [p2_table + (ecx * 8)], eax
 
-;     mov eax, p2_table
-;     or eax, WRITABLE_PRESENT
-;     mov ebx, (KERNEL_VM_BASE >> 30)
-;     and ebx, 0x1ff  ; get p3 index
-;     mov [p3_table + (ebx * 8)], eax
-
-;     ; map 512 entries in p2 table
-;     mov ecx, 0
-; .map_p2_table:
-;     mov eax, PAGE_SIZE
-;     mul ecx
-;     or eax, 0b10000011 ; huge(07) + writable(02) + present(01)
-;     mov [p2_table + (ecx * 8)], eax
-
-;     inc ecx
-;     cmp ecx, 512 ; the p2 was done when maped 512 entries
-;     jne .map_p2_table
+    inc ecx
+    cmp ecx, 512 ; the p2 was done when maped 512 entries
+    jne .map_p2_table
 
     ret
 
@@ -93,37 +85,27 @@ enable_paging:
 
     ret
 
-; 2Mb
-; p4_table:
-;     times 512 dq 0
-; p3_table:
-;     times 512 dq 0
-; p2_table:
-;     times 512 dq 0
-; p1_table:
-;     times 512 dq 0
+; ist_stack_1:
+;     resb 0x1000
+; ist_stack_2:
 
-ist_stack_1:
-    resb 0x1000
-ist_stack_2:
-
-tss64:
-    dd 0
-tss64.rsp0:
-    times 3 dq 0 ; RSPn
-    dq 0 ; Reserved
-interrupt_stack_table:
-    dq ist_stack_1 ; IST1, NMI
-    dq ist_stack_2 ; IST2, Double fault
-    dq 0 ; IST3
-    dq 0 ; IST4
-    dq 0 ; IST5
-    dq 0 ; IST6
-    dq 0 ; IST7
-    dq 0 ; Reserved
-    dw 0 ; Reserved
-    dw 0 ; I/O Map Base Address
-tss_size equ $ - tss64 - 1
+; tss64:
+;     dd 0
+; tss64.rsp0:
+;     times 3 dq 0 ; RSPn
+;     dq 0 ; Reserved
+; interrupt_stack_table:
+;     dq ist_stack_1 ; IST1, NMI
+;     dq ist_stack_2 ; IST2, Double fault
+;     dq 0 ; IST3
+;     dq 0 ; IST4
+;     dq 0 ; IST5
+;     dq 0 ; IST6
+;     dq 0 ; IST7
+;     dq 0 ; Reserved
+;     dw 0 ; Reserved
+;     dw 0 ; I/O Map Base Address
+; tss_size equ $ - tss64 - 1
 
 gdt64_start:
 
@@ -162,16 +144,6 @@ gdt64_start:
     db 00000000b                 ; Granularity.
     db 0                         ; Base (high).
 
-.tss                             ; The TSS descriptor
-    dw tss_size & 0xFFFF         ; Limit
-    dw 0                         ; Base (bytes 0-2)
-    db 0                         ; Base (byte 3)
-    db 10001001b                 ; Type, present
-    db 00000000b                 ; Misc
-    db 0                         ; Base (byte 4)
-    dd 0                         ; Base (bytes 5-8)
-    dd 0                         ; Zero / reserved
-
 gdt64_end:
 
 gdt64_descriptor:
@@ -187,12 +159,14 @@ long_main:
     mov rax, gdt64_descriptor
     lgdt [rax]
 
-    mov bx, 0x10
-    mov ds, bx ; set data segment
-    mov es, bx ; set extra segment
-    mov ss, bx ; set stack segment
-    mov ebp, STACK_BP
-    mov esp, OFFSET
+    mov rax, DATA_SEG
+    mov ds, rax
+    mov es, rax
+    mov fs, rax
+    mov gs, rax
+    mov ss, rax
+    mov rbp, KERNEL_VMA
+    mov rsp, rbp
 
     call bootmain
     jmp $

@@ -1,29 +1,17 @@
-[BITS 64]
+section .asm
+
 %include "config.asm"
 PIC1_COMMAND    equ 0x20
 PIC1_DATA       equ 0x21
 PIC2_COMMAND    equ 0xA0
 PIC2_DATA       equ 0xA1
 
-section .text
-
-extern kernel_main
-global start
-
-global divide_zero
-
-start:
-    ; mov rax, QWORD DATA_SEG
-    ; mov ds, QWORD rax
-    ; mov es, QWORD rax
-    ; mov fs, QWORD rax
-    ; mov gs, QWORD rax
-    ; mov ss, QWORD rax
-    mov rbp, QWORD KERNEL_VM_BASE
-    mov QWORD rsp, rbp
+global init_pic
 
 ; https://wiki.osdev.org/PIC
 init_pic:
+    push rbp
+    mov rbp, rsp
     ; Remap the master PIC
     mov al, 00010001b
     out PIC1_COMMAND, al ; Tell master PIC
@@ -47,10 +35,5 @@ init_pic:
     mov al, 11111111b
     out PIC2_COMMAND, al ; disable PIC2
 
-    call kernel_main
-
-end:
-    hlt
-    jmp end
-
-times 512-($ - $$) db 0
+    pop rbp
+    ret

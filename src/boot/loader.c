@@ -32,7 +32,7 @@ void bootmain()
     {
         readseg(elf_phdr->p_vaddr & 0xFFFFFF, elf_phdr->p_offset, elf_phdr->p_filesz);
     }
-    ((void (*)(void))(elf_hdr->e_entry & 0xFFFFFF))();
+    ((void (*)(void))elf_hdr->e_entry)();
 out:
     while (1) {}
 }

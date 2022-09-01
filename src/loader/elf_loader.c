@@ -15,5 +15,5 @@ bool elf32_valid_class(struct Elf64_Ehdr* header)
 
 bool elf_valid_magic(unsigned char* e_ident)
 {
-    return strncmp((char*)e_ident, ELFMAGIC, strlen(ELFMAGIC)) == 0;
+    return strncmp((char*)e_ident, ELFMAGIC, 4) == 0;
 }

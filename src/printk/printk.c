@@ -9,7 +9,6 @@
 
 static struct terminal_screen terminal_screen;
 
-#define P2V(p) ((uint64_t)(p) + KERNEL_VM_BASE)
 uint16_t make_char(char c, char color)
 {
     return (color << 8) | c;
@@ -115,7 +114,7 @@ int read_string(char* buffer, int position, const char* str)
 
 void terminal_screen_initialize()
 {
-    terminal_screen.buffer = (uint16_t*)P2V(VGA_ADDRESS);
+    terminal_screen.buffer = (uint16_t*)phy2vir(VGA_ADDRESS);
     memset(terminal_screen.buffer, 0, 2 * VGA_WIDTH * VGA_HEIGHT);
     terminal_screen.column = 0;
     terminal_screen.row = 0;

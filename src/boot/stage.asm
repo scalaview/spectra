@@ -165,6 +165,7 @@ long_main:
     mov fs, rax
     mov gs, rax
     mov ss, rax
+    ; setup new stack
     mov rbp, KERNEL_VMA
     mov rsp, rbp
 

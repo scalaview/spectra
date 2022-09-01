@@ -54,7 +54,7 @@ all: dir ./bin/boot.bin ./bin/loader.bin ./bin/kernel.elf
 	objcopy -O binary ./build/boot/loader.elf ./bin/loader.bin
 
 ./bin/kernel.elf: $(KFILES)
-	$(LD) -nostdlib -static -T ./src/linker.ld ${KFILES} -o ./bin/kernel.elf
+	$(LD) --build-id=none -O0 -nostdlib -T ./src/linker.ld ${KFILES} -o ./bin/kernel.elf
 	objcopy -O binary ./bin/kernel.elf ./bin/kernel.bin
 
 ./build/boot/stage.asm.o: ./src/boot/stage.asm

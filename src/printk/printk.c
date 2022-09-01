@@ -5,6 +5,7 @@
 #include "printk.h"
 #include "memory.h"
 #include "assert.h"
+#include "config.h"
 
 static struct terminal_screen terminal_screen;
 
@@ -75,7 +76,7 @@ int decimal_to_string(char* buffer, int position, int64_t digits)
 
 int hex_to_string(char* buffer, int position, int64_t i)
 {
-    char hex[] = "0123456789ABCDEF";
+    static char hex[16] = "0123456789ABCDEF";
     char text[21];
     memset(text, 0, sizeof(text));
     char negative = 1;
@@ -113,7 +114,7 @@ int read_string(char* buffer, int position, const char* str)
 
 void terminal_screen_initialize()
 {
-    terminal_screen.buffer = (uint16_t*)VGA_ADDRESS;
+    terminal_screen.buffer = (uint16_t*)phy2vir(VGA_ADDRESS);
     memset(terminal_screen.buffer, 0, 2 * VGA_WIDTH * VGA_HEIGHT);
     terminal_screen.column = 0;
     terminal_screen.row = 0;

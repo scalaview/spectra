@@ -20,6 +20,7 @@ static void readseg(uint64_t v_addr, uint64_t f_offset, uint64_t p_filesz) {
 void bootmain()
 {
     struct Elf64_Ehdr* elf_hdr = (struct Elf64_Ehdr*)0x00100000;
+
     disk_read_sector(5, 1, (void*)elf_hdr);
     if (!elf_valid_magic(elf_hdr->e_ident) || !elf64_valid_class(elf_hdr))
     {
@@ -31,7 +32,7 @@ void bootmain()
     {
         readseg(elf_phdr->p_vaddr & 0xFFFFFF, elf_phdr->p_offset, elf_phdr->p_filesz);
     }
-    ((void (*)(void))(elf_hdr->e_entry & 0xFFFFFF))();
+    ((void (*)(void))elf_hdr->e_entry)();
 out:
     while (1) {}
 }

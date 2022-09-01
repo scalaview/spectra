@@ -1,13 +1,16 @@
-ENTRY(start)
+ENTRY(kernel_main)
 OUTPUT_FORMAT(elf64-x86-64)
+
+KERNEL_VMA = 0xFFFF800000200000;
+
 SECTIONS
 {
-    . = 0x200000;
+    . = KERNEL_VMA;
+
     .text : ALIGN(4096)
     {
         *(.text)
     }
-
 
     .asm : ALIGN(4096)
     {

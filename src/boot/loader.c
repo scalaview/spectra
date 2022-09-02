@@ -5,6 +5,7 @@
 #include "elf_loader.h"
 #include "config.h"
 
+#define KERNEL_ELF_ADDR 0x10000
 
 static void readseg(uint64_t v_addr, uint64_t f_offset, uint64_t p_filesz) {
 
@@ -19,7 +20,7 @@ static void readseg(uint64_t v_addr, uint64_t f_offset, uint64_t p_filesz) {
 
 void bootmain()
 {
-    struct Elf64_Ehdr* elf_hdr = (struct Elf64_Ehdr*)0x00100000;
+    struct Elf64_Ehdr* elf_hdr = (struct Elf64_Ehdr*)KERNEL_ELF_ADDR;
 
     disk_read_sector(5, 1, (void*)elf_hdr);
     if (!elf_valid_magic(elf_hdr->e_ident) || !elf64_valid_class(elf_hdr))

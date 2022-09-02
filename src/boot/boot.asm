@@ -3,9 +3,8 @@
 
 CODE32_SEG equ gdt32_code - gdt32_start
 SMAP        equ 0x534d4150
-OFFSET      equ 0x7c00
+STACK_P      equ 0x7c00
 LOADER_ADDR equ 0x7e00
-STACK_BP    equ 0x1000
 MEMORY_BLOCK_SIZE   equ 0x9000
 MEMORY_INFO         equ 0x9008
 
@@ -15,7 +14,8 @@ start:
     mov ds, ax
     mov es, ax
     mov ss, ax
-    mov sp, OFFSET
+    mov sp, STACK_P
+    mov bp, sp
 
 ; https://www.felixcloutier.com/x86/cpuid
 ; https://wiki.osdev.org/Setting_Up_Long_Mode
@@ -137,8 +137,8 @@ protect_cseg:
     mov ds, bx ; set data segment
     mov es, bx ; set extra segment
     mov ss, bx ; set stack segment
-    mov ebp, STACK_BP
-    mov esp, OFFSET
+    mov esp, STACK_P
+    mov ebp, esp
 
 enable_a20_line: ; Enable A20 Line
     in al, 0x92

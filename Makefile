@@ -22,7 +22,8 @@ LOADER_FILES = ./build/boot/stage.asm.o \
 
 BOCHS_BASIC_IMG = bochs.img
 
-KFILES =./build/kernel.o \
+KFILES =./build/kernel.asm.o \
+		./build/kernel.o \
 		./build/string/string.o \
 		./build/memory/memory.o \
 		./build/printk/printk.o \
@@ -58,13 +59,13 @@ all: dir ./bin/boot.bin ./bin/loader.bin ./bin/kernel.elf
 	objcopy -O binary ./bin/kernel.elf ./bin/kernel.bin
 
 ./build/boot/stage.asm.o: ./src/boot/stage.asm
-	$(NASM) $(NASM_FLAGS) $(ASM_INCLUDES) -g ./src/boot/stage.asm -o ./build/boot/stage.asm.o
+	$(NASM) $(NASM_FLAGS) $(ASM_INCLUDES) ./src/boot/stage.asm -o ./build/boot/stage.asm.o
 
 ./build/boot/loader.o: ./src/boot/loader.c
 	$(GCC) -I./src/boot $(FLAGS) -c ./src/boot/loader.c -o ./build/boot/loader.o
 
 ./build/io/io.asm.o: ./src/io/io.asm
-	$(NASM) $(NASM_FLAGS) $(ASM_INCLUDES) -g ./src/io/io.asm -o ./build/io/io.asm.o
+	$(NASM) $(NASM_FLAGS) $(ASM_INCLUDES) ./src/io/io.asm -o ./build/io/io.asm.o
 
 ./build/disk/disk.o: ./src/disk/disk.c
 	$(GCC) $(INCLUDES) $(FLAGS) -c ./src/disk/disk.c -o ./build/disk/disk.o
@@ -85,13 +86,13 @@ all: dir ./bin/boot.bin ./bin/loader.bin ./bin/kernel.elf
 	$(GCC) $(INCLUDES) $(FLAGS) -c ./src/loader/elf_loader.c -o ./build/loader/elf_loader.o
 
 ./build/kernel.asm.o: ./src/kernel.asm
-	$(NASM) $(NASM_FLAGS) $(ASM_INCLUDES) -g ./src/kernel.asm -o ./build/kernel.asm.o
+	$(NASM) $(NASM_FLAGS) $(ASM_INCLUDES) ./src/kernel.asm -o ./build/kernel.asm.o
 
 ./build/kernel.o: ./src/kernel.c
 	$(GCC) $(INCLUDES) $(FLAGS) -c ./src/kernel.c -o ./build/kernel.o
 
 ./build/interrupt/idt.asm.o: ./src/interrupt/idt.asm
-	$(NASM) $(NASM_FLAGS) $(ASM_INCLUDES) -g ./src/interrupt/idt.asm -o ./build/interrupt/idt.asm.o
+	$(NASM) $(NASM_FLAGS) $(ASM_INCLUDES) ./src/interrupt/idt.asm -o ./build/interrupt/idt.asm.o
 
 ./build/interrupt/idt.o: ./src/interrupt/idt.c
 	$(GCC) $(INCLUDES) $(FLAGS) -c ./src/interrupt/idt.c -o ./build/interrupt/idt.o

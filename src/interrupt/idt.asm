@@ -8,7 +8,6 @@ global enable_interrupts
 global disable_interrupts
 global load_idt
 global interrupt_pointers
-global init_pic
 
 extern interrupt_handler
 
@@ -68,37 +67,6 @@ load_idt:
     mov rbp, rsp
 
     lidt [rdi]
-
-    pop rbp
-    ret
-
-; https://wiki.osdev.org/PIC
-init_pic:
-    push rbp
-    mov rbp, rsp
-
-    ; Remap the master PIC
-    mov al, 00010001b
-    out PIC1_COMMAND, al ; Tell master PIC
-    out PIC2_COMMAND, al ; Tell slave PIC
-
-    mov al, 0x20 ; Interrupt 0x20 is where master ISR should start
-    out PIC1_DATA, al
-    mov al, 0x28 ; start from 40 in Slave
-    out PIC2_DATA, al
-
-    mov al, 0x4 ; 00000100b The slave attached to the master with IRQ2
-    out PIC1_DATA, al  ; Set IRQ2 using
-    mov al, 0x2
-    out PIC2_DATA, al ; Set slave id to 2
-
-    mov al, 0x1 ; 00000001b 8086/88 (MCS-80/85) mode
-    out PIC1_DATA, al
-    out PIC2_DATA, al
-    ; End remap of the master PIC
-
-    mov al, 11111111b
-    out PIC2_COMMAND, al ; disable PIC2
 
     pop rbp
     ret

@@ -47,6 +47,5 @@ void interrupt_handler();
 
 extern void enable_interrupts();
 extern void disable_interrupts();
-extern void init_pic();
 
 #endif

@@ -5,8 +5,9 @@
 
 void kernel_main(void)
 {
-    idt_initialize();
     terminal_screen_initialize();
+    idt_initialize();
+
     get_memory_info();
     // enable_interrupts();
     assert(0);

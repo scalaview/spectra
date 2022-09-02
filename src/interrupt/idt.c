@@ -42,8 +42,6 @@ void no_interrupt()
 
 void idt_initialize()
 {
-    init_pic();
-
     memset(&idt_descriptors64, 0, sizeof(idt_descriptors64));
     idtr_descriptor64.limit = sizeof(idt_descriptors64) - 1;
     idtr_descriptor64.base_address = (uint64_t)idt_descriptors64;

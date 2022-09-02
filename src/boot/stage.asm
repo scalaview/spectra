@@ -6,7 +6,7 @@ extern bootmain
 
 CODE64_SEG equ gdt64_start.kernel_code - gdt64_start
 OFFSET      equ 0x7c00
-STACK_BP    equ 0x1000
+STACK_P    equ 0x7c00
 WRITABLE_PRESENT     equ 0b0011
 p4_table    equ 0x70000
 p3_table    equ 0x71000
@@ -17,8 +17,8 @@ start:
     mov ds, bx ; set data segment
     mov es, bx ; set extra segment
     mov ss, bx ; set stack segment
-    mov ebp, STACK_BP
-    mov esp, OFFSET
+    mov ebp, STACK_P
+    mov esp, ebp
     ; The stack region is from 0--start(0x7c00)
 
     cld
@@ -152,22 +152,12 @@ gdt64_descriptor:
 
 [BITS 64]
 long_cseg:
-    mov rax, long_main
-    jmp rax
-
-long_main:
-    mov rax, gdt64_descriptor
-    lgdt [rax]
-
-    mov rax, DATA_SEG
-    mov ds, rax
-    mov es, rax
-    mov fs, rax
-    mov gs, rax
-    mov ss, rax
-    ; setup new stack
-    mov rbp, KERNEL_VMA
-    mov rsp, rbp
+    mov bx, DATA_SEG
+    mov ds, bx ; set data segment
+    mov es, bx ; set extra segment
+    mov ss, bx ; set stack segment
+    mov ebp, STACK_P
+    mov esp, ebp
 
     call bootmain
     jmp $

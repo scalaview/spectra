@@ -8,7 +8,7 @@ INC_DIR = ./src/include
 INCLUDES = $(addprefix -I, $(INC_DIR))
 ASM_INC_DIR = ./src/asminc
 ASM_INCLUDES = $(addprefix -i, $(ASM_INC_DIR))
-ASM_FLAGS = -f elf64
+ASM_FLAGS = -f elf64 -g -F dwarf
 OS_BIN = ./bin/os.bin
 OS_BOCHS_BIN =./bin/os_bochs.bin
 

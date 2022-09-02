@@ -32,6 +32,7 @@ SECTIONS
         *(COMMON)
         *(.bss)
     }
+
     PROVIDE(kernel_end = .);
 
 }

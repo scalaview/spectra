@@ -18,6 +18,7 @@ struct e820map {
 } __attribute__((packed));
 
 #define phy2vir(p) ((uint64_t)(p) + KERNEL_VM_BASE)
+#define vir2phy(p) ((uint64_t)(p) - KERNEL_VM_BASE)
 
 void* memset(void* ptr, int c, size_t size);
 void* memcpy(void* dest, void* src, int len);

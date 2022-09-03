@@ -58,7 +58,7 @@ int get_start_block(struct heap_bitmap_table* table, size_t total)
     int block_count = 0;
     for (size_t i = 0; i < table->total; i++)
     {
-        if (entry_free(table->entries[i]))
+        if (entry_taken(table->entries[i]))
         {
             if (block_count > 0)
             {
@@ -73,7 +73,7 @@ int get_start_block(struct heap_bitmap_table* table, size_t total)
         if (block_count == total)
             break;
     }
-    if (start_block == -1)
+    if (start_block == -1 || block_count != total)
     {
         return -ENOMEM;
     }

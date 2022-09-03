@@ -25,7 +25,7 @@ struct mem_map
 };
 
 #define phy2vir(p) ((uint64_t)(p) + KERNEL_VM_BASE)
-#define vir2phy(p) ((uint64_t)(p) - KERNEL_VM_BASE)
+#define vir2phy(p) (((uint64_t)(p) != 0) ? ((uint64_t)(p) - KERNEL_VM_BASE) : (uint64_t)(p))
 
 void* memset(void* ptr, int c, size_t size);
 void* memcpy(void* dest, void* src, int len);

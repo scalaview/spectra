@@ -28,6 +28,8 @@ void kernel_main(void)
     p2 = kmalloc(5);
     printk("%x\n", vir2phy((uint64_t)p2));
 
+    p2 = kmalloc(1024 * 1024 * 1024);
+    printk("%x\n", vir2phy((uint64_t)p2));
     // enable_interrupts();
     assert(0);
 }

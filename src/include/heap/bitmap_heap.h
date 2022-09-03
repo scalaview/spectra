@@ -16,7 +16,7 @@
  * avaliable in lower bit
  */
 #define bitmap_table_entry_type(e) (e & 0x0f)
-#define entry_free(e) (bitmap_table_entry_type(e) == BITMAP_HEAP_TABLE_ENTRY_TAKEN)
+#define entry_free(e) (bitmap_table_entry_type(e) == BITMAP_HEAP_TABLE_ENTRY_FREE)
 #define entry_taken(e) (e & BITMAP_HEAP_TABLE_ENTRY_TAKEN)
 #define entry_has_next(e) (e & BITMAP_HEAP_HAS_NEXT)
 

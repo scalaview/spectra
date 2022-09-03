@@ -13,6 +13,11 @@
         "printk.h": "c",
         "debug.h": "c",
         "idt.h": "c",
-        "memory.h": "c"
+        "memory.h": "c",
+        "pmm.h": "c",
+        "kmemory.h": "c",
+        "bitmap_heap.h": "c",
+        "status.h": "c",
+        "kheap.h": "c"
     }
 }

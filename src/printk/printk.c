@@ -3,7 +3,7 @@
 
 #include "string.h"
 #include "printk.h"
-#include "memory.h"
+#include "kmemory.h"
 #include "assert.h"
 #include "config.h"
 

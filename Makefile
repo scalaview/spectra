@@ -28,12 +28,16 @@ OS_BIN_FILES =  ./bin/boot.bin \
 KFILES =./build/kernel.asm.o \
 		./build/kernel.o \
 		./build/string/string.o \
-		./build/memory/memory.o \
+		./build/memory/kmemory.o \
+		./build/memory/pmm.o \
+		./build/memory/bitmap_pmm.o \
+		./build/memory/heap/bitmap_heap.o \
+		./build/memory/heap/kheap.o \
 		./build/printk/printk.o \
 		./build/debug/assert.o \
 		./build/interrupt/idt.asm.o \
 		./build/interrupt/idt.o \
-		./build/io/io.asm.o
+		./build/io/io.asm.o \
 
 FLAGS = -mcmodel=large -std=gnu99 -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label $(INCLUDES) -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc -save-temps=obj
 

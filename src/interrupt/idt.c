@@ -1,6 +1,6 @@
 #include "idt.h"
 #include "config.h"
-#include "memory.h"
+#include "kmemory.h"
 #include "assert.h"
 #include "printk.h"
 #include "io.h"

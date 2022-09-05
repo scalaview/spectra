@@ -18,6 +18,7 @@
         "kmemory.h": "c",
         "bitmap_heap.h": "c",
         "status.h": "c",
-        "kheap.h": "c"
+        "kheap.h": "c",
+        "paging.h": "c"
     }
 }

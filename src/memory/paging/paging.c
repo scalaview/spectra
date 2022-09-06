@@ -6,6 +6,7 @@
 
 struct pml4_table* kernel_chunk;
 
+// 2MB paging struct initialize
 struct pml4_table* paging_initialize(uint64_t vir_base_addr, uint64_t vir_max_addr, uint64_t phy_addr, uint8_t flags)
 {
     assert(phy_addr % PAGE_SIZE == 0);
@@ -15,7 +16,6 @@ struct pml4_table* paging_initialize(uint64_t vir_base_addr, uint64_t vir_max_ad
     uint64_t offset = (phy_addr << 16) >> 16;
 
     pml4_entry* pml4_entries = kmalloc(sizeof(pml4_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE);
-
     memset(pml4_entries, 0, sizeof(pml4_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE);
 
     uint32_t lev_4_start_index = (uint32_t)(base_address >> 39);
@@ -50,4 +50,30 @@ struct pml4_table* paging_initialize(uint64_t vir_base_addr, uint64_t vir_max_ad
 struct pml4_table* kernel_paging_initialize()
 {
     return paging_initialize(KERNEL_VM_BASE, KERNEL_VM_MAX, KERNEL_PHY_BASE, PAGING_IS_WRITEABLE | PAGING_PRESENT);
+}
+
+void free_paging_directory(pdp_entry* dir)
+{
+    for (int i = 0; i < PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE; i++)
+    {
+        pdp_entry entry = dir[i];
+        if (entry.fields.address)
+        {
+            pdp_entry* e = (pdp_entry*)phy2vir(entry.fields.address << 12);
+            if (e->fields.hug)
+            {
+                kfree(e);
+                continue;
+            }
+            free_paging_directory(e);
+        }
+    }
+    kfree(dir);
+
+}
+
+void free_paging(struct pml4_table* pml4_table)
+{
+    free_paging_directory((pdp_entry*)pml4_table->entries);
+    kfree(pml4_table);
 }

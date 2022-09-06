@@ -6,6 +6,8 @@
 #define ALIGN_SIZE  4096
 #define PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE 512
 #define PAGE_SIZE   0x200000    //2MB
+#define PAGING_IS_WRITEABLE     0b00000010
+#define PAGING_PRESENT          0b00000001
 
 // https://wiki.osdev.org/Paging
 typedef union pml4_struct {
@@ -57,7 +59,9 @@ struct pd_table
     pdp_entry* entries;
 } __attribute__((packed, aligned(ALIGN_SIZE)));
 
-extern void* load_cr3();
-struct pml4_table* paging_initialize(uint8_t flags);
+extern void* load_paging_directory();
+extern void* setup_paging_directory(pml4_entry* pml4_table);
+struct pml4_table* paging_initialize(uint64_t vir_base_addr, uint64_t vir_max_addr, uint64_t phy_addr, uint8_t flags);
+struct pml4_table* kernel_paging_initialize();
 
 #endif

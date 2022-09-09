@@ -1,35 +1,41 @@
-[BITS 32]
-; [ORG 0x7e00]
 %include "config.asm"
-global start
-extern bootmain
+extern long_cseg
 
-CODE64_SEG equ gdt64_start.kernel_code - gdt64_start
-OFFSET      equ 0x7c00
-STACK_P    equ 0x7c00
+STACK_P     equ 0x7c00
 WRITABLE_PRESENT     equ 0b0011
 p4_table    equ 0x70000
 p3_table    equ 0x71000
 p2_table    equ 0x72000
+MEMORY_BLOCK_SIZE   equ 0x9000
+MEMORY_INFO         equ 0x9008
 
+section .text
+bits 32
+global start
 start:
-    mov bx, 0x10
-    mov ds, bx ; set data segment
-    mov es, bx ; set extra segment
-    mov ss, bx ; set stack segment
+    mov [MEMORY_INFO], ebx
+    mov [MEMORY_BLOCK_SIZE], eax
     mov ebp, STACK_P
     mov esp, ebp
-    ; The stack region is from 0--start(0x7c00)
 
     cld
+    call enable_a20_line
+
     call set_up_page_tables
 
     call enable_paging
+    lgdt [(gdt64_descriptor - KERNEL_VMA)]
+    mov eax, (long_cseg - KERNEL_VMA)
+    mov ebx, gdt64_start.kernel_code
+    jmp gdt64_start.kernel_code:(long_cseg - KERNEL_VMA)
 
-    lgdt [gdt64_descriptor]
+    hlt
 
-    jmp CODE64_SEG:long_cseg
-
+enable_a20_line: ; Enable A20 Line
+    in al, 0x92
+    or al, 2
+    out 0x92, al
+    ret
 ; map 4-level paging, 2Mb page size
 set_up_page_tables:
     mov edi, p4_table
@@ -54,7 +60,7 @@ set_up_page_tables:
     ; map 512 entries in p2 table
     mov ecx, 0
 .map_p2_table:
-    mov eax, PAGE_SIZE
+    mov eax, 0x1000
     mul ecx
     or eax, 0b10000011 ; huge(07) + writable(02) + present(01)
     mov [p2_table + (ecx * 8)], eax
@@ -85,6 +91,30 @@ enable_paging:
 
     ret
 
+section .data
+align 4096
+
+; global tss64
+; global tss64.rsp0
+; tss64:
+;     dd 0
+; tss64.rsp0:
+;     times 3 dq 0 ; RSPn
+;     dq 0 ; Reserved
+; interrupt_stack_table:
+;     dq ist_stack_1 ; IST1, NMI
+;     dq ist_stack_2 ; IST2, Double fault
+;     dq 0 ; IST3
+;     dq 0 ; IST4
+;     dq 0 ; IST5
+;     dq 0 ; IST6
+;     dq 0 ; IST7
+;     dq 0 ; Reserved
+;     dw 0 ; Reserved
+;     dw 0 ; I/O Map Base Address
+; tss_size equ $ - tss64 - 1
+
+; section .data
 ; ist_stack_1:
 ;     resb 0x1000
 ; ist_stack_2:
@@ -106,13 +136,15 @@ enable_paging:
 ;     dw 0 ; Reserved
 ;     dw 0 ; I/O Map Base Address
 ; tss_size equ $ - tss64 - 1
-
+global gdt64_start
+; global gdt64_start.tss
+global gdt64_descriptor
 gdt64_start:
 
-.gdt64_null:
+.null:
     dq 0x0000000000000000          ; Null Descriptor - should be present.
 
-.kernel_code:
+.kernel_code: equ $ - gdt64_start
     dw 0                         ; Limit (low).
     dw 0                         ; Base (low).
     db 0                         ; Base (middle)
@@ -143,21 +175,18 @@ gdt64_start:
     db 11110010b                 ; Present=1 + DPL=00 + S=1 + Type=0010(Read/Write)
     db 00000000b                 ; Granularity.
     db 0                         ; Base (high).
-
+; .tss  equ $ - gdt64_start               ; The TSS descriptor
+;     dw tss_size & 0xFFFF         ; Limit
+;     dw 0                         ; Base (bytes 0-2)
+;     db 0                         ; Base (byte 3)
+;     db 10001001b                 ; Type, present
+;     db 00000000b                 ; Misc
+;     db 0                         ; Base (byte 4)
+;     dd 0                         ; Base (bytes 5-8)
+;     dd 0                         ; Zero / reserved
 gdt64_end:
 
 gdt64_descriptor:
     dw gdt64_end - gdt64_start - 1    ; 16-bit Size (Limit) of GDT.
     dq gdt64_start                     ; Base Address of GDT. (CPU will zero extend to 64-bit)
 
-[BITS 64]
-long_cseg:
-    mov bx, DATA_SEG
-    mov ds, bx ; set data segment
-    mov es, bx ; set extra segment
-    mov ss, bx ; set stack segment
-    mov ebp, STACK_P
-    mov esp, ebp
-
-    call bootmain
-    jmp $

@@ -12,7 +12,7 @@ struct bitmap_heap kernel_bitmap_heap;
 
 static void init_bitmap_pmm()
 {
-    init_memory_map();
+    // init_memory_map();
 }
 
 static void init_bitmap_kheap()

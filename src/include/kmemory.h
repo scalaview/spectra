@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #include "config.h"
+#include "multiboot.h"
 
 /**
 * 00h    QWORD   base address
@@ -30,7 +31,7 @@ struct mem_map
 void* memset(void* ptr, int c, size_t size);
 void* memcpy(void* dest, void* src, int len);
 void get_memory_info();
-void init_memory_map();
+void init_memory_map(uint32_t magic, struct multiboot_info* mbi_phys);
 struct mem_map* get_memory_map();
 
 #endif

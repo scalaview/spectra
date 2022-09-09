@@ -1,7 +1,7 @@
 [BITS 64]
 section .text
 extern kernel_main
-global start
+global kernel_start
 
 %include "config.asm"
 PIC1_COMMAND    equ 0x20
@@ -9,7 +9,7 @@ PIC1_DATA       equ 0x21
 PIC2_COMMAND    equ 0xA0
 PIC2_DATA       equ 0xA1
 
-start:
+kernel_start:
     mov ax, DATA_SEG
     mov ds, ax
     mov es, ax
@@ -18,6 +18,11 @@ start:
     mov ss, ax
     mov rbp, KERNEL_VMA
     mov rsp, rbp
+    call init_pic
+    mov rdi, [0x9000]
+    mov esi, [0x9008]
+    call kernel_main
+
 
 ; https://wiki.osdev.org/PIC
 init_pic:
@@ -43,11 +48,8 @@ init_pic:
 
     mov al, 11111111b
     out PIC2_COMMAND, al ; disable PIC2
-
-    call kernel_main
+    ret
 
 end:
     hlt
     jmp end
-
-times 512-($ - $$) db 0

@@ -13,12 +13,12 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
     terminal_screen_initialize();
     idt_initialize();
     unpack_multiboot(magic, (struct multiboot_info*)phy2vir(mbi_phya));
-    get_memory_info();
+    // get_memory_info();
 
     kernel_heap_initialize();
     kernel_chunk = kernel_paging_initialize();
     // disable to access low address
-    // setup_paging_directory((pml4_entry*)vir2phy(kernel_chunk->entries));
+    setup_paging_directory((pml4_entry*)vir2phy(kernel_chunk->entries));
 
     void* p = kmalloc(5);
     printk("%x\n", vir2phy((uint64_t)p));

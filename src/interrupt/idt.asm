@@ -1,27 +1,23 @@
 section .asm
-PIC1_COMMAND    equ 0x20
-PIC1_DATA       equ 0x21
-PIC2_COMMAND    equ 0xA0
-PIC2_DATA       equ 0xA1
-
-global enable_interrupts
-global disable_interrupts
-global load_idt
-global interrupt_pointers
-global init_pic
+%define PIC1_COMMAND        0x20
+%define PIC1_DATA           0x21
+%define PIC2_COMMAND        0xA0
+%define PIC2_DATA           0xA1
 
 extern interrupt_handler
 
+global enable_interrupts
 enable_interrupts:
     sti
     ret
 
+global disable_interrupts
 disable_interrupts:
     cli
     ret
 
-; https://wiki.osdev.org/PIC
-init_pic:
+global init_pic
+init_pic:   ; https://wiki.osdev.org/PIC
     ; Remap the master PIC
     mov al, 00010001b
     out PIC1_COMMAND, al ; Tell master PIC
@@ -89,6 +85,7 @@ init_pic:
 %assign i i+1
 %endrep
 
+global load_idt
 load_idt:
     push rbp
     mov rbp, rsp
@@ -104,6 +101,7 @@ section .data
     dq int%1
 %endmacro
 
+global interrupt_pointers
 interrupt_pointers:
 %assign i 0
 %rep 512

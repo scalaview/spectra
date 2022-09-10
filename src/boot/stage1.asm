@@ -1,10 +1,12 @@
 [BITS 32]
 %include "config.asm"
-%include "stdlib.asm"
-
-extern long_cseg
 
 section .text
+extern long_cseg
+extern enable_a20_line
+extern clear_screen
+extern detect_long_mode_support
+
 global start
 start:
     mov [MBI_PHYA], ebx

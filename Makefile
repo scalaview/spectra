@@ -26,6 +26,7 @@ OS_BIN_FILES =	./bin/kernel.elf
 KFILES =./build/boot/multiboot_header.asm.o \
 		./build/boot/stage1.asm.o \
 		./build/boot/stage2.asm.o \
+		./build/boot/stdlib.asm.o \
 		./build/kernel.o \
 		./build/string/string.o \
 		./build/memory/kmemory.o \

@@ -2,12 +2,14 @@
 %define VIDMEM		0xB8000
 section .text
 
+global enable_a20_line
 enable_a20_line: ; Enable A20 Line
     in al, 0x92
     or al, 2
     out 0x92, al
     ret
 
+global clear_screen
 clear_screen:
 	pusha
 	mov ecx, 0
@@ -20,6 +22,7 @@ clear_screen:
 	popa
     ret
 
+global detect_long_mode_support
 detect_long_mode_support:
     mov eax, 0x80000000
     cpuid

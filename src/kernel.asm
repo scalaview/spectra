@@ -16,7 +16,7 @@ kernel_start:
     mov fs, ax
     mov gs, ax
     mov ss, ax
-    mov rbp, (0x70000+KERNEL_VM_BASE)
+    mov rbp, (0x70000+KERNEL_VMA)
     mov rsp, rbp
     call init_pic
     mov rdi, [0x9000]

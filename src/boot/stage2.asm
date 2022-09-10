@@ -3,7 +3,7 @@
 %include "config.asm"
 %define GDT_TSS         0x28
 
-STACK_P    equ (0x7c00 + KERNEL_VM_BASE)
+STACK_P    equ (0x7c00 + KERNEL_VMA)
 global long_cseg
 extern kernel_start
 extern kernel_main
@@ -29,7 +29,7 @@ _start:
     mov es, bx
     mov fs, bx
     mov gs, bx
-    mov rbp, (0x70000+KERNEL_VM_BASE)
+    mov rbp, (0x70000+KERNEL_VMA)
     call kernel_start
     jmp $
 

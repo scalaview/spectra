@@ -24,8 +24,8 @@ start:
     call set_up_page_tables
 
     call enable_paging
-    lgdt [(gdt64_descriptor - KERNEL_VM_BASE)]
-    jmp gdt64_start.kernel_code:(long_cseg - KERNEL_VM_BASE)
+    lgdt [(gdt64_descriptor - KERNEL_VMA)]
+    jmp gdt64_start.kernel_code:(long_cseg - KERNEL_VMA)
 
     hlt
 
@@ -45,13 +45,13 @@ set_up_page_tables:
     or eax, WRITABLE_PRESENT
     mov [p4_table], eax ; make p4 entry point to p3
 
-    mov ebx, (KERNEL_VM_BASE >> 39)
+    mov ebx, (KERNEL_VMA >> 39)
     and ebx, 0x1ff  ; get p4 index
     mov [p4_table + (ebx * 8)], eax
 
     mov eax, p2_table
     or eax, WRITABLE_PRESENT
-    mov ebx, dword(KERNEL_VM_BASE >> 30)
+    mov ebx, dword(KERNEL_VMA >> 30)
     and ebx, 0x1ff  ; get p3 index
     mov [p3_table + (ebx * 8)], eax
 

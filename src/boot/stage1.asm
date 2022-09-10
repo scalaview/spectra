@@ -1,24 +1,20 @@
+[BITS 32]
 %include "config.asm"
+%include "stdlib.asm"
+
 extern long_cseg
 
-STACK_P     equ 0x70000
-WRITABLE_PRESENT     equ 0b0011
-p4_table    equ 0x70000
-p3_table    equ 0x71000
-p2_table    equ 0x72000
-MEMORY_BLOCK_SIZE   equ 0x9000
-MEMORY_INFO         equ 0x9008
-
 section .text
-bits 32
 global start
 start:
-    mov [MEMORY_INFO], ebx
-    mov [MEMORY_BLOCK_SIZE], eax
+    mov [MBI_PHYA], ebx
+    mov [MB_MAGICA], eax
     mov ebp, STACK_P
     mov esp, ebp
 
     cld
+    call clear_screen
+    call detect_long_mode_support
     call enable_a20_line
 
     call set_up_page_tables
@@ -29,11 +25,6 @@ start:
 
     hlt
 
-enable_a20_line: ; Enable A20 Line
-    in al, 0x92
-    or al, 2
-    out 0x92, al
-    ret
 ; map 4-level paging, 2Mb page size
 set_up_page_tables:
     mov edi, p4_table
@@ -92,50 +83,7 @@ enable_paging:
 section .data
 align 4096
 
-; global tss64
-; global tss64.rsp0
-; tss64:
-;     dd 0
-; tss64.rsp0:
-;     times 3 dq 0 ; RSPn
-;     dq 0 ; Reserved
-; interrupt_stack_table:
-;     dq ist_stack_1 ; IST1, NMI
-;     dq ist_stack_2 ; IST2, Double fault
-;     dq 0 ; IST3
-;     dq 0 ; IST4
-;     dq 0 ; IST5
-;     dq 0 ; IST6
-;     dq 0 ; IST7
-;     dq 0 ; Reserved
-;     dw 0 ; Reserved
-;     dw 0 ; I/O Map Base Address
-; tss_size equ $ - tss64 - 1
-
-; section .data
-; ist_stack_1:
-;     resb 0x1000
-; ist_stack_2:
-
-; tss64:
-;     dd 0
-; tss64.rsp0:
-;     times 3 dq 0 ; RSPn
-;     dq 0 ; Reserved
-; interrupt_stack_table:
-;     dq ist_stack_1 ; IST1, NMI
-;     dq ist_stack_2 ; IST2, Double fault
-;     dq 0 ; IST3
-;     dq 0 ; IST4
-;     dq 0 ; IST5
-;     dq 0 ; IST6
-;     dq 0 ; IST7
-;     dq 0 ; Reserved
-;     dw 0 ; Reserved
-;     dw 0 ; I/O Map Base Address
-; tss_size equ $ - tss64 - 1
 global gdt64_start
-; global gdt64_start.tss
 global gdt64_descriptor
 gdt64_start:
 
@@ -173,15 +121,6 @@ gdt64_start:
     db 11110010b                 ; Present=1 + DPL=00 + S=1 + Type=0010(Read/Write)
     db 00000000b                 ; Granularity.
     db 0                         ; Base (high).
-; .tss  equ $ - gdt64_start               ; The TSS descriptor
-;     dw tss_size & 0xFFFF         ; Limit
-;     dw 0                         ; Base (bytes 0-2)
-;     db 0                         ; Base (byte 3)
-;     db 10001001b                 ; Type, present
-;     db 00000000b                 ; Misc
-;     db 0                         ; Base (byte 4)
-;     dd 0                         ; Base (bytes 5-8)
-;     dd 0                         ; Zero / reserved
 gdt64_end:
 
 gdt64_descriptor:

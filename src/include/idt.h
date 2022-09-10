@@ -48,4 +48,7 @@ void interrupt_handler();
 extern void enable_interrupts();
 extern void disable_interrupts();
 
+// https://wiki.osdev.org/PIC
+extern void init_pic();
+
 #endif

@@ -7,6 +7,7 @@
 #define SECTOR_SIZE         512
 #define TOTAL_INTERRUPTS    512
 #define KERNEL_CODE_SELECTOR 0x08
-#define MEMORY_INFO_ADDR        (KERNEL_VMA + 0x9000)
+#define MBI_PHYA            0x9008
+#define MEMORY_INFO_ADDR        (KERNEL_VMA + 0x9008)
 
 #endif

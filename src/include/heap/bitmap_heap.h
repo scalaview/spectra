@@ -27,13 +27,13 @@ struct heap_bitmap_table
 {
     BITMAP_HEAP_TABLE_ENTRY* entries;
     size_t total;
-};
+}__attribute__((packed));
 
 struct bitmap_heap
 {
     struct heap_bitmap_table* table;
     void* start_addr;
-};
+}__attribute__((packed));
 
 #define align_down(p) ((uint64_t)(p) - ((uint64_t)(p) % OS_BITMAP_BLOCK_SIZE))
 #define align_up(p) (((uint64_t)(p) % OS_BITMAP_BLOCK_SIZE != 0) ? (align_down(p) + OS_BITMAP_BLOCK_SIZE) : (uint64_t)(p))

@@ -15,7 +15,7 @@ struct pmm_manager {
     INIT_MEMMAP_FUNCTION init_kheap;
     ALLOC_FUNCTION alloc;
     FREE_FUNCTION free;
-};
+}__attribute__((packed));
 
 extern const struct pmm_manager* pmm_manager;
 

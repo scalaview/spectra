@@ -11,13 +11,7 @@ ASM_INCLUDES = $(addprefix -i, $(ASM_INC_DIR))
 ASM_FLAGS = -f elf64 -g -F dwarf
 OS_BIN = ./bin/os.bin
 OS_BOCHS_BIN =./bin/os_bochs.bin
-
-LOADER_FILES = ./build/boot/stage.asm.o \
-			   ./build/boot/loader.o \
-			   ./build/io/io.asm.o \
-			   ./build/disk/disk.o \
-			   ./build/string/string.o \
-			   ./build/loader/elf_loader.o
+OS_BIN_DISK = ./bin/disk
 
 BOCHS_BASIC_IMG = bochs.img
 
@@ -48,10 +42,15 @@ dir:
 	mkdir -p $(BIN_DIR)
 
 all: dir $(OS_BIN_FILES)
-	@mkdir -p ./bin/disk/boot/grub
-	@cp ./bin/kernel.elf ./bin/disk/boot/kernel.elf
-	@cp ./src/grub.cfg ./bin/disk/boot/grub
-	@grub-mkrescue -o ./bin/os.bin ./bin/disk
+	@mkdir -p $(OS_BIN_DISK)/boot/grub
+	@cp ./bin/kernel.elf $(OS_BIN_DISK)/boot/kernel.elf
+	@cp ./src/grub.cfg $(OS_BIN_DISK)/boot/grub
+	@grub-mkrescue -o $(OS_BIN) $(OS_BIN_DISK)
+	@make boch_img
+
+boch_img:
+	cp $(BOCHS_BASIC_IMG) $(OS_BOCHS_BIN)
+	dd if=$(OS_BIN) of=$(OS_BOCHS_BIN) bs=512 count=20000 conv=notrunc
 
 ./bin/kernel.elf: $(KFILES)
 	$(LD) -nostdlib -n -T ./src/linker.ld ${KFILES} -o ./bin/kernel.elf

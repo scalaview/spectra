@@ -1,7 +1,7 @@
 %include "config.asm"
 extern long_cseg
 
-STACK_P     equ 0x7c00
+STACK_P     equ 0x70000
 WRITABLE_PRESENT     equ 0b0011
 p4_table    equ 0x70000
 p3_table    equ 0x71000
@@ -24,10 +24,8 @@ start:
     call set_up_page_tables
 
     call enable_paging
-    lgdt [(gdt64_descriptor - KERNEL_VMA)]
-    mov eax, (long_cseg - KERNEL_VMA)
-    mov ebx, gdt64_start.kernel_code
-    jmp gdt64_start.kernel_code:(long_cseg - KERNEL_VMA)
+    lgdt [(gdt64_descriptor - KERNEL_VM_BASE)]
+    jmp gdt64_start.kernel_code:(long_cseg - KERNEL_VM_BASE)
 
     hlt
 
@@ -60,7 +58,7 @@ set_up_page_tables:
     ; map 512 entries in p2 table
     mov ecx, 0
 .map_p2_table:
-    mov eax, 0x1000
+    mov eax, PAGE_SIZE
     mul ecx
     or eax, 0b10000011 ; huge(07) + writable(02) + present(01)
     mov [p2_table + (ecx * 8)], eax
@@ -189,4 +187,3 @@ gdt64_end:
 gdt64_descriptor:
     dw gdt64_end - gdt64_start - 1    ; 16-bit Size (Limit) of GDT.
     dq gdt64_start                     ; Base Address of GDT. (CPU will zero extend to 64-bit)
-

@@ -12,7 +12,7 @@ extern gdt64_start
 extern gdt64_descriptor
 extern tss64
 extern tss64.rsp0
-
+extern kernel_stack_top
 section .text
 
 long_cseg:
@@ -29,8 +29,7 @@ _start:
     mov es, bx
     mov fs, bx
     mov gs, bx
-    mov rbp, KERNEL_VMA
-
+    mov rbp, (0x70000+KERNEL_VM_BASE)
     call kernel_start
     jmp $
 

@@ -31,20 +31,20 @@ void* memcpy(void* dest, void* src, int len)
     return dest;
 }
 
-void init_memory_map(uint32_t magic, struct multiboot_info* mbi)
+void init_memory_map(uint32_t magic, struct multiboot_tag* mbi)
 {
     assert(magic == MULTIBOOT2_BOOTLOADER_MAGIC);
-    if (mbi->flags & MULTIBOOT_INFO_MEMORY)
-    {
-        printk("mem_lower = %uKB, mem_upper = %uKB\n",
-            (uint32_t)mbi->mem_lower, (uint32_t)mbi->mem_upper);
-    }
+    // if (mbi->flags & MULTIBOOT_INFO_MEMORY)
+    // {
+    //     printk("mem_lower = %uKB, mem_upper = %uKB\n",
+    //         (uint32_t)mbi->mem_lower, (uint32_t)mbi->mem_upper);
+    // }
 
-    if (mbi->flags & MULTIBOOT_INFO_MEM_MAP)
-    {
-        printk("mmap_addr = 0x%x, mmap_length = 0x%x\n",
-            (uint32_t)mbi->mmap_addr, (uint32_t)mbi->mmap_length);
-        // struct multiboot_mmap_entry* mmap;
+    // if (mbi->flags & MULTIBOOT_INFO_MEM_MAP)
+    // {
+    //     printk("mmap_addr = 0x%x, mmap_length = 0x%x\n",
+    //         (uint32_t)mbi->mmap_addr, (uint32_t)mbi->mmap_length);
+    //     struct multiboot_mmap_entry* mmap;
         // for (mmap = (struct multiboot_mmap_entry*)((uint64_t)mbi->mmap_addr);
         //     (uint64_t)mmap < (mbi->mmap_addr + mbi->mmap_length);
         //     mmap = (struct multiboot_mmap_entry*)((uint64_t)mmap
@@ -58,7 +58,7 @@ void init_memory_map(uint32_t magic, struct multiboot_info* mbi)
         //         mmap->len_low,
         //         (uint32_t)mmap->type);
         // }
-    }
+    // }
     // mem_map.block_size = *(uint32_t*)MEMORY_BLOCK_SIZE_ADDR;
     // mem_map.map = (struct e820map*)MEMORY_INFO_ADDR;
 }

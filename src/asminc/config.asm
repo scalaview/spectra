@@ -9,5 +9,5 @@
 %define P4_TABLE_PHY        (p4_table - KERNEL_VMA)
 %define P3_TABLE_PHY        (p3_table - KERNEL_VMA)
 %define P2_TABLE_PHY        (p2_table - KERNEL_VMA)
-%define MB_MAGICA           0x9000
-%define MBI_PHYA            0x9008
+%define MB_MAGICA           (multiboot_magic - KERNEL_VMA)
+%define MBI_PHYA            (multiboot_info - KERNEL_VMA)

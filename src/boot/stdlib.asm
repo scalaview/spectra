@@ -37,24 +37,24 @@ detect_long_mode_support:
     jz .not_support
     ret
 .not_support:
-    htl
+    hlt
 
 global set_up_page_tables
 ; map 4-level paging, 2Mb page size
 set_up_page_tables:
     mov eax, P3_TABLE_PHY
     or eax, WRITABLE_PRESENT
-    mov [P4_TABLE_PHY], eax ; make p4 entry point to p3
+    mov dword[P4_TABLE_PHY], eax ; make p4 entry point to p3
 
     mov ebx, (KERNEL_VMA >> 39)
     and ebx, 0x1ff  ; get p4 index
-    mov [P4_TABLE_PHY + (ebx * 8)], eax
+    mov dword[P4_TABLE_PHY + (ebx * 8)], eax
 
     mov eax, P2_TABLE_PHY
     or eax, WRITABLE_PRESENT
     mov ebx, dword(KERNEL_VMA >> 30)
     and ebx, 0x1ff  ; get p3 index
-    mov [P3_TABLE_PHY + (ebx * 8)], eax
+    mov dword[P3_TABLE_PHY + (ebx * 8)], eax
 
     ; map 512 entries in p2 table
     mov ecx, 0
@@ -62,7 +62,7 @@ set_up_page_tables:
     mov eax, PAGE_SIZE
     mul ecx
     or eax, 0b10000011 ; huge(07) + writable(02) + present(01)
-    mov [P2_TABLE_PHY + (ecx * 8)], eax
+    mov dword[P2_TABLE_PHY + (ecx * 8)], eax
 
     inc ecx
     cmp ecx, 512 ; the p2 was done when maped 512 entries

@@ -5,6 +5,8 @@ section .text
 extern kernel_main
 extern gdt64_descriptor
 extern init_pic
+extern multiboot_magic
+extern multiboot_info
 
 global long_cseg
 long_cseg:
@@ -25,8 +27,8 @@ _start:
     mov rsp, rbp
 
     call init_pic
-    mov rdi, [MB_MAGICA]
-    mov esi, [MBI_PHYA]
+    mov rdi, qword[MB_MAGICA]
+    mov esi, dword[MBI_PHYA]
 
     call kernel_main
     hlt

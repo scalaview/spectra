@@ -11,8 +11,8 @@ extern enable_paging
 
 global start
 start:
-    mov [MBI_PHYA], ebx
-    mov [MB_MAGICA], eax
+    mov dword[MBI_PHYA], ebx
+    mov dword[MB_MAGICA], eax
     mov ebp, STACK_P
     mov esp, ebp
 
@@ -75,3 +75,10 @@ gdt64_descriptor:
     dw gdt64_end - gdt64_start - 1    ; 16-bit Size (Limit) of GDT.
     dq gdt64_start                     ; Base Address of GDT. (CPU will zero extend to 64-bit)
 
+global multiboot_magic
+multiboot_magic:
+    dd  0
+
+global multiboot_info
+multiboot_info:
+    dd 0

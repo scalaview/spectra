@@ -27,8 +27,6 @@ _start:
     mov rsp, rbp
 
     call init_pic
-    mov rdi, qword[MB_MAGICA]
-    mov esi, dword[MBI_PHYA]
 
     call kernel_main
     hlt

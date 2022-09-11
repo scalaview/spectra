@@ -36,7 +36,7 @@ detect_long_mode_support:
     test edx, (1<<29)
     jz .not_support
     ret
-.not_support
+.not_support:
     htl
 
 global set_up_page_tables

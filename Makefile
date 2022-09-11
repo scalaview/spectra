@@ -10,10 +10,9 @@ ASM_INC_DIR = ./src/asminc
 ASM_INCLUDES = $(addprefix -i, $(ASM_INC_DIR))
 ASM_FLAGS = -f elf64 -g -F dwarf
 OS_BIN = ./bin/os.bin
-OS_BOCHS_BIN =./bin/os_bochs.bin
-OS_BIN_DISK = ./bin/disk
-
-BOCHS_BASIC_IMG = bochs.img
+DISK_ORIGIN_IMG = ./disk.img
+TMP_DIR = /mnt/d
+GRUB_CONF_PATH = ./src/grub.cfg
 
 OS_BIN_FILES =	./bin/kernel.elf
 
@@ -42,16 +41,20 @@ FLAGS = -mcmodel=large -std=gnu99 -g -ffreestanding -falign-jumps -falign-functi
 dir:
 	mkdir -p $(BIN_DIR)
 
-all: dir $(OS_BIN_FILES)
-	@mkdir -p $(OS_BIN_DISK)/boot/grub
-	@cp ./bin/kernel.elf $(OS_BIN_DISK)/boot/kernel.elf
-	@cp ./src/grub.cfg $(OS_BIN_DISK)/boot/grub
-	@grub-mkrescue -o $(OS_BIN) $(OS_BIN_DISK)
-	@make boch_img
+all: dir $(OS_BIN_FILES) disk
 
-boch_img:
-	cp $(BOCHS_BASIC_IMG) $(OS_BOCHS_BIN)
-	dd if=$(OS_BIN) of=$(OS_BOCHS_BIN) bs=512 count=20000 conv=notrunc
+disk:
+ifneq ("$(wildcard $(DISK_ORIGIN_IMG))","")
+	sudo mkdir -p $(TMP_DIR)
+	cp $(DISK_ORIGIN_IMG) $(OS_BIN)
+	sudo mount -o loop,offset=1048576 $(OS_BIN) $(TMP_DIR)
+	sudo cp $(OS_BIN_FILES) $(TMP_DIR)/boot
+	sudo cp $(GRUB_CONF_PATH) $(TMP_DIR)/boot/grub
+	sync
+	sudo umount $(TMP_DIR)
+else
+	echo "Making $(DISK_ORIGIN_IMG) file first."
+endif
 
 ./bin/kernel.elf: $(KFILES)
 	$(LD) -nostdlib -n -T ./src/linker.ld ${KFILES} -o ./bin/kernel.elf

@@ -11,21 +11,17 @@ ASM_INCLUDES = $(addprefix -i, $(ASM_INC_DIR))
 ASM_FLAGS = -f elf64 -g -F dwarf
 OS_BIN = ./bin/os.bin
 OS_BOCHS_BIN =./bin/os_bochs.bin
-
-LOADER_FILES = ./build/boot/stage.asm.o \
-			   ./build/boot/loader.o \
-			   ./build/io/io.asm.o \
-			   ./build/disk/disk.o \
-			   ./build/string/string.o \
-			   ./build/loader/elf_loader.o
+OS_BIN_DISK = ./bin/disk
 
 BOCHS_BASIC_IMG = bochs.img
 
-OS_BIN_FILES =  ./bin/boot.bin \
-				./bin/loader.bin \
-				./bin/kernel.elf
+OS_BIN_FILES =	./bin/kernel.elf
 
-KFILES =./build/kernel.asm.o \
+KFILES =./build/boot/multiboot_header.asm.o \
+		./build/boot/stage1.asm.o \
+		./build/boot/stage2.asm.o \
+		./build/boot/stdlib.asm.o \
+		./build/boot/reserved.asm.o \
 		./build/kernel.o \
 		./build/string/string.o \
 		./build/memory/kmemory.o \
@@ -47,25 +43,18 @@ dir:
 	mkdir -p $(BIN_DIR)
 
 all: dir $(OS_BIN_FILES)
-	dd if=/dev/zero bs=512 count=5 >> $(OS_BIN)
-	dd if=./bin/boot.bin of=$(OS_BIN) bs=512 count=1 conv=notrunc
-	dd if=./bin/loader.bin of=$(OS_BIN) bs=512 count=4 seek=1 conv=notrunc
-	dd if=./bin/kernel.elf of=$(OS_BIN) bs=512 count=20000 seek=5 conv=notrunc
+	@mkdir -p $(OS_BIN_DISK)/boot/grub
+	@cp ./bin/kernel.elf $(OS_BIN_DISK)/boot/kernel.elf
+	@cp ./src/grub.cfg $(OS_BIN_DISK)/boot/grub
+	@grub-mkrescue -o $(OS_BIN) $(OS_BIN_DISK)
+	@make boch_img
+
+boch_img:
 	cp $(BOCHS_BASIC_IMG) $(OS_BOCHS_BIN)
-	dd if=./bin/boot.bin of=$(OS_BOCHS_BIN) bs=512 count=1 conv=notrunc
-	dd if=./bin/loader.bin of=$(OS_BOCHS_BIN) bs=512 count=4 seek=1 conv=notrunc
-	dd if=./bin/kernel.elf of=$(OS_BOCHS_BIN) bs=512 count=20000 seek=5 conv=notrunc
-
-./bin/boot.bin: ./src/boot/boot.asm
-	$(ASM) -f bin ./src/boot/boot.asm -o ./bin/boot.bin
-
-./bin/loader.bin: $(LOADER_FILES)
-	$(LD) --build-id=none -T ./src/boot/linker.ld $(LOADER_FILES) -nostdlib -o ./build/boot/loader.elf
-	objcopy -O binary ./build/boot/loader.elf ./bin/loader.bin
+	dd if=$(OS_BIN) of=$(OS_BOCHS_BIN) bs=512 count=20000 conv=notrunc
 
 ./bin/kernel.elf: $(KFILES)
-	$(LD) --build-id=none -O0 -nostdlib -T ./src/linker.ld ${KFILES} -o ./bin/kernel.elf
-	objcopy -O binary ./bin/kernel.elf ./bin/kernel.bin
+	$(LD) -nostdlib -n -T ./src/linker.ld ${KFILES} -o ./bin/kernel.elf
 
 build/%.asm.o: src/%.asm
 	@printf "\e[32;1mAssembling\e[0m $<\n"

@@ -49,7 +49,7 @@ struct pml4_table* paging_initialize(uint64_t vir_base_addr, uint64_t vir_max_ad
 
 struct pml4_table* kernel_paging_initialize()
 {
-    return paging_initialize(KERNEL_VM_BASE, KERNEL_VM_MAX, KERNEL_PHY_BASE, PAGING_IS_WRITEABLE | PAGING_PRESENT);
+    return paging_initialize(KERNEL_VMA, KERNEL_VM_MAX, KERNEL_PHY_BASE, PAGING_IS_WRITEABLE | PAGING_PRESENT);
 }
 
 void free_paging_directory(pdp_entry* dir)

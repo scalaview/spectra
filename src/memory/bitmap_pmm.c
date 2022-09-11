@@ -10,11 +10,6 @@ const struct pmm_manager bitmap_pmm_manager;
 struct heap_bitmap_table kernel_bitmap_heap_table;
 struct bitmap_heap kernel_bitmap_heap;
 
-static void init_bitmap_pmm()
-{
-    init_memory_map();
-}
-
 static void init_bitmap_kheap()
 {
     struct mem_map* mem_map = get_memory_map();
@@ -52,7 +47,7 @@ static void free(void* ptr)
 
 const struct pmm_manager bitmap_pmm_manager = {
     .name = "bitmap_pmm_manager",
-    .init = init_bitmap_pmm,
+    .init = unpack_multiboot,
     .init_kheap = init_bitmap_kheap,
     .alloc = alloc,
     .free = free

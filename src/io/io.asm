@@ -1,16 +1,7 @@
 section .asm
 
 global insb
-global insw
-global outb
-global outw
-
 ; unsigned char insb(unsigned short port);
-; unsigned short insw(unsigned short port);
-
-; void outb(unsigned short port, unsigned char val);
-; void outw(unsigned short port, unsigned short val);
-
 insb:
     push rbp
 
@@ -23,6 +14,8 @@ insb:
     pop rbp
     ret
 
+global insw
+; unsigned short insw(unsigned short port);
 insw:
     push rbp
     mov rbp, rsp
@@ -34,6 +27,8 @@ insw:
     pop rbp
     ret
 
+global outb
+; void outb(unsigned short port, unsigned char val);
 outb:
     push rbp
     mov rbp, rsp
@@ -44,6 +39,8 @@ outb:
     pop rbp
     ret
 
+global outw
+; void outw(unsigned short port, unsigned short val);
 outw:
     push rbp
     mov rbp, rsp

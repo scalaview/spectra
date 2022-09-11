@@ -1,8 +1,6 @@
 section .asm
 
 global load_paging_directory
-global setup_paging_directory
-
 load_paging_directory:
     push rbp
     mov rbp, rsp
@@ -12,6 +10,7 @@ load_paging_directory:
     pop rbp
     ret
 
+global setup_paging_directory
 setup_paging_directory:
     push rbp
     mov rbp, rsp

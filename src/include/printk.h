@@ -12,7 +12,7 @@ struct terminal_screen {
     uint16_t* buffer;
     uint16_t row;
     uint16_t column;
-};
+}__attribute__((packed));
 
 // https://en.wikipedia.org/wiki/Printk
 int printk(const char* format, ...);

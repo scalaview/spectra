@@ -19,6 +19,8 @@
         "bitmap_heap.h": "c",
         "status.h": "c",
         "kheap.h": "c",
-        "paging.h": "c"
+        "paging.h": "c",
+        "assert.h": "c",
+        "multiboot.h": "c"
     }
 }

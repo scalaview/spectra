@@ -8,6 +8,8 @@ extern clear_screen
 extern detect_long_mode_support
 extern set_up_page_tables
 extern enable_paging
+extern multiboot_magic
+extern multiboot_info
 
 global start
 start:
@@ -74,11 +76,3 @@ gdt64_end:
 gdt64_descriptor:
     dw gdt64_end - gdt64_start - 1    ; 16-bit Size (Limit) of GDT.
     dq gdt64_start                     ; Base Address of GDT. (CPU will zero extend to 64-bit)
-
-global multiboot_magic
-multiboot_magic:
-    dd  0
-
-global multiboot_info
-multiboot_info:
-    dd 0

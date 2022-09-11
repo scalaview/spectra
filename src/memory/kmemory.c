@@ -33,7 +33,8 @@ void* memcpy(void* dest, void* src, int len)
 
 void init_memory_map(struct multiboot_tag_mmap* tag)
 {
-    struct e820map* e_map = (struct e820map*)MEMORY_INFO_ADDR;
+    extern void* mbimemory_info;
+    struct e820map* e_map = (struct e820map*)(mbimemory_info);
     uint32_t size = 0;
     mem_map.map = e_map;
     multiboot_memory_map_t* mmap;

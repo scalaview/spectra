@@ -91,6 +91,10 @@ enable_paging:
 
     ret
 
+global halt
+halt:
+    hlt
+
 section .data
 align 4096
 

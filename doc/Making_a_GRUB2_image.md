@@ -1,4 +1,4 @@
-I'm following this [guide](https://wiki.osdev.org/User:Graham/Making_a_GRUB2_image), it works on `Ubuntu 20.04.3 LTS`.
+I follow this [guide](https://wiki.osdev.org/User:Graham/Making_a_GRUB2_image), it works on `Ubuntu 20.04.3 LTS`.
 
 ## Making the image
 Create an empty image file and set up a loop device for it, just pick a valiable loop will be fine, you can check it by `sudo losetup`, here we used loop0:

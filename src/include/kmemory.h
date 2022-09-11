@@ -41,6 +41,6 @@ void get_memory_info();
 void init_memory_map(struct multiboot_tag_mmap* tag);
 struct mem_map* get_memory_map();
 // https://www.gnu.org/software/grub/manual/multiboot2/multiboot.html
-void unpack_multiboot(uint32_t magic, struct multiboot_info* mbi_phya);
+void unpack_multiboot();
 
 #endif

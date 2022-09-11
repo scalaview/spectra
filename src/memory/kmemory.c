@@ -81,12 +81,14 @@ void get_memory_info()
 
 }
 
-void unpack_multiboot(uint32_t magic, struct multiboot_info* mbi_phya)
+void unpack_multiboot()
 {
-    assert(magic == MULTIBOOT2_BOOTLOADER_MAGIC);
+    extern uint32_t multiboot_magic;
+    extern struct multiboot_info* multiboot_info;
+    assert(multiboot_magic == MULTIBOOT2_BOOTLOADER_MAGIC);
 
     struct multiboot_tag* tag;
-    for (tag = (struct multiboot_tag*)mbi_phya->tags;
+    for (tag = (struct multiboot_tag*)multiboot_info->tags;
         tag->type != MULTIBOOT_TAG_TYPE_END;
         tag = (struct multiboot_tag*)((multiboot_uint8_t*)tag
             + ((tag->size + 7) & ~7)))

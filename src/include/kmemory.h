@@ -37,6 +37,7 @@ struct multiboot_info
 
 void* memset(void* ptr, int c, size_t size);
 void* memcpy(void* dest, void* src, int len);
+int memcmp(void* s1, void* s2, int count);
 void get_memory_info();
 void init_memory_map(struct multiboot_tag_mmap* tag);
 struct mem_map* get_memory_map();

@@ -1,6 +1,6 @@
 #include "heap/kheap.h"
 #include "pmm.h"
-
+#include "kmemory.h"
 
 void kernel_heap_initialize()
 {
@@ -16,4 +16,15 @@ void* kmalloc(size_t size)
 void kfree(void* ptr)
 {
     pmm_manager->free(ptr);
+}
+
+void* kzalloc(size_t size)
+{
+    void* ptr = kmalloc(size);
+
+    if (!ptr) {
+        return 0;
+    }
+    memset(ptr, 0x00, size);
+    return ptr;
 }

@@ -2,6 +2,7 @@
 #define FILE_H
 
 #include <stdint.h>
+#include "path.h"
 
 typedef unsigned int FILE_SEEK_MODE;
 enum

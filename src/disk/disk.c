@@ -1,4 +1,11 @@
 #include "io.h"
+#include "disk.h"
+#include "config.h"
+#include "file.h"
+#include "assert.h"
+#include "kmemory.h"
+
+struct disk disk;
 
 // ata_lba_read function C implement
 int disk_read_sector(int lba, int total, void* buffer)
@@ -29,4 +36,23 @@ int disk_read_sector(int lba, int total, void* buffer)
 
     }
     return 0;
+}
+
+void disk_search_and_initialize()
+{
+    memset(&disk, 0, sizeof(disk));
+    disk.type = OS_DISK_TYPE_REAL;
+    disk.sector_size = OS_SECTOR_SIZE;
+    disk.id = 0;
+    disk.filesystem = fs_resolve(&disk);
+    assert(disk.filesystem);
+}
+
+struct disk* get_disk(int index)
+{
+    // Only one disk now
+    if (index != 0)
+        return 0;
+
+    return &disk;
 }

@@ -1,10 +1,11 @@
+#include <stdbool.h>
 #include "path.h"
 #include "string.h"
 #include "heap/kheap.h"
 #include "status.h"
 #include "kmemory.h"
 
-static int valid_path(const char* filename)
+static bool valid_path(const char* filename)
 {
     int len = strnlen(filename, OS_MAX_PATH);
     return (len >= 3 && isdigit(filename[0]) && memcmp((void*)&filename[1], ":/", 2) == 0);
@@ -26,7 +27,7 @@ static struct path_root* create_root_path(int drive_no)
 {
     struct path_root* root = kzalloc(sizeof(struct path_root));
     root->drive_no = drive_no;
-    root->root = 0;
+    root->root = 0x0;
     return root;
 }
 
@@ -34,7 +35,7 @@ static const char* get_path_part(const char** path)
 {
     char* result = kzalloc(OS_MAX_PATH);
     int i = 0;
-    while (**path != '/' && **path != 0x00)
+    while (**path != '/' && **path != 0x0)
     {
         result[i] = **path;
         *path += 1;

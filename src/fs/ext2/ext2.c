@@ -67,7 +67,7 @@ static int read_inode(uint32_t block_size, uint32_t inode_no, struct disk_stream
 {
     uint32_t offset = BLOCK_OFFSET(group_desc->inode_table, block_size) + (inode_no - 1) * sizeof(struct ext2_inode);
     disk_streamer_seek(stream, offset);
-    int res = disk_streamer_read(stream, inode, sizeof(struct ext2_block_group_descriptor));
+    int res = disk_streamer_read(stream, inode, sizeof(struct ext2_inode));
     return res;
 }
 
@@ -123,7 +123,7 @@ static struct ext2_inode* ext2_find_inode_in_directory(struct disk* idisk, struc
 
     int size = 0;
     while ((size < dir_inode->size) && entry->inode) {
-        if (strncmp(path, (char*)entry->name, strlen(path)))
+        if (!strncmp(path, (char*)entry->name, strlen(path)))
         {
             target = kzalloc(sizeof(struct ext2_inode));
             read_inode(ext2_stream->block_size, entry->inode, stream, &ext2_stream->group_descriptor, target);

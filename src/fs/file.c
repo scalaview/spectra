@@ -120,7 +120,7 @@ FILE_MODE file_get_mode_by_string(const char* str)
 FILE* fopen(const char* filename, const char* mode_str)
 {
     int res = 0;
-    FILE* stream = NULL;
+    FILE* fptr = NULL;
     struct path_root* root_path = path_parse(filename);
     if (!root_path)
     {
@@ -177,10 +177,10 @@ FILE* fopen(const char* filename, const char* mode_str)
 
 out:
     if (res <= 0)
-        return stream;
-    stream = kzalloc(sizeof(FILE));
-    stream->fd = res;
-    return stream;
+        return fptr;
+    fptr = kzalloc(sizeof(FILE));
+    fptr->fd = res;
+    return fptr;
 }
 
 int fstat(int fd, struct file_stat* statbuf)

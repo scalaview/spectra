@@ -2,6 +2,8 @@
 #define FILE_H
 
 #include <stdint.h>
+#include <stddef.h>
+
 #include "path.h"
 
 typedef unsigned int FILE_SEEK_MODE;
@@ -53,15 +55,22 @@ struct file_descriptor
 {
     int index;
     struct filesystem* filesystem;
-    void* fd;
+    void* stream;
     struct disk* disk;
 };
 
+struct io_file
+{
+    uint32_t fd;
+};
+
+typedef struct io_file FILE;
+
 void fs_initialize();
-int fopen(const char* filename, const char* mode_str);
-int fread(void* ptr, uint32_t size, uint32_t nmemb, int fd);
+FILE* fopen(const char* filename, const char* mode_str);
+size_t fread(void* ptr, uint32_t size, uint32_t nmemb, FILE* stream);
 int fseek(int fd, int offset, FILE_SEEK_MODE mode);
-int fclose(int fd);
+int fclose(FILE* stream);
 int fstat(int fd, struct file_stat* stat);
 
 void fs_insert_filesystem(struct filesystem* filesystem);

@@ -9,13 +9,12 @@
 #include "path.h"
 #include "disk.h"
 
-
 struct filesystem* filesystems[OS_MAX_FILESYSTEMS];
 struct file_descriptor* file_descriptors[OS_MAX_FILE_DESCRIPTORS];
 
 static struct filesystem** get_free_filesystem()
 {
-    for (int i = 0; i < OS_MAX_FILESYSTEMS;i++)
+    for (int i = 0; i < OS_MAX_FILESYSTEMS; i++)
     {
         if (filesystems[i] == 0)
         {
@@ -117,9 +116,10 @@ FILE_MODE file_get_mode_by_string(const char* str)
     return mode;
 }
 
-int fopen(const char* filename, const char* mode_str)
+FILE* fopen(const char* filename, const char* mode_str)
 {
     int res = 0;
+    FILE* stream = NULL;
     struct path_root* root_path = path_parse(filename);
     if (!root_path)
     {
@@ -165,9 +165,82 @@ int fopen(const char* filename, const char* mode_str)
         goto out;
     }
     desc->filesystem = disk->filesystem;
-    desc->fd = descriptor_data;
+    desc->stream = descriptor_data;
     desc->disk = disk;
     res = desc->index;
+
+out:
+    if (res <= 0)
+        return stream;
+    stream = kzalloc(sizeof(FILE));
+    stream->fd = res;
+    return stream;
+}
+
+int fstat(int fd, struct file_stat* statbuf)
+{
+    int res = 0;
+    struct file_descriptor* desc = file_get_descriptor(fd);
+    if (!desc)
+    {
+        res = -EIO;
+        goto out;
+    }
+    res = desc->filesystem->stat(desc->disk, desc->stream, statbuf);
+out:
+    return res;
+}
+
+int fclose(FILE* stream)
+{
+    int res = 0;
+    struct file_descriptor* desc = file_get_descriptor(stream->fd);
+    if (!desc)
+    {
+        res = -EIO;
+        goto out;
+    }
+    res = desc->filesystem->close(desc->stream);
+    if (res == SUCCESS)
+    {
+        free_file_descriptor(desc);
+    }
+out:
+    return res;
+}
+
+int fseek(int fd, int offset, FILE_SEEK_MODE mode)
+{
+    int res = 0;
+    struct file_descriptor* desc = file_get_descriptor(fd);
+    if (!desc)
+    {
+        res = -EIO;
+        goto out;
+    }
+
+    res = desc->filesystem->seek(desc->stream, offset, mode);
+out:
+    return res;
+}
+
+size_t fread(void* ptr, uint32_t size, uint32_t nmemb, FILE* stream)
+{
+    int res = 0;
+    if (size == 0 || nmemb == 0 || !stream || stream->fd < 1)
+    {
+        res = -EINVARG;
+        goto out;
+    }
+
+    struct file_descriptor* desc = file_get_descriptor(stream->fd);
+    if (!desc)
+    {
+        res = -EINVARG;
+        goto out;
+    }
+
+    res = desc->filesystem->read(desc->disk, desc->stream, size, nmemb, (char*)ptr);
 
 out:
     return res;

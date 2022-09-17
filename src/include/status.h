@@ -6,6 +6,6 @@
 #define ENOMEM      2
 #define EBADPATH    3
 #define EIO         4
-
+#define EFSNOTUS    5
 
 #endif

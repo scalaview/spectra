@@ -42,6 +42,8 @@ static void* alloc(size_t size)
 
 static void free(void* ptr)
 {
+    if (!ptr)
+        return;
     bitmap_heap_free(&kernel_bitmap_heap, ptr);
 }
 

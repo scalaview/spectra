@@ -60,4 +60,5 @@ void interrupt_handler(int interrupt_no, struct interrupt_frame* frame)
     printk("interrupt_no: %d, frame error_code: %d", interrupt_no, frame->error_code);
     /* Acknowledge master PIC. */
     outb(0x20, 0x20);
+    assert(1);
 }

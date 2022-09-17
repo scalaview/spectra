@@ -8,6 +8,7 @@
 #include "string.h"
 #include "path.h"
 #include "disk.h"
+#include "fs/ext2.h"
 
 struct filesystem* filesystems[OS_MAX_FILESYSTEMS];
 struct file_descriptor* file_descriptors[OS_MAX_FILE_DESCRIPTORS];
@@ -34,7 +35,7 @@ void fs_insert_filesystem(struct filesystem* filesystem)
 
 static void load_filesystem()
 {
-
+    fs_insert_filesystem(ext2_initialize());
 }
 
 static void fs_load()
@@ -89,7 +90,7 @@ struct filesystem* fs_resolve(struct disk* disk)
     struct filesystem* fs = 0;
     for (int i = 0; i < OS_MAX_FILESYSTEMS; i++)
     {
-        if (filesystems[i] != 0 && filesystems[i]->resolve(disk) == 0)
+        if (filesystems[i] != 0 && filesystems[i]->resolve(disk) > 0)
         {
             fs = filesystems[i];
             break;
@@ -151,7 +152,12 @@ FILE* fopen(const char* filename, const char* mode_str)
         res = -EINVARG;
         goto out;
     }
-    void* descriptor_data = disk->filesystem->open(disk, root_path->root, mode);
+    void* descriptor_data;
+    res = disk->filesystem->open(disk, root_path->root, mode, &descriptor_data);
+    if (res <= 0)
+    {
+
+    }
     if (!descriptor_data)
     {
         res = -EINVARG;

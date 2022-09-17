@@ -27,8 +27,8 @@ typedef unsigned int FILE_STAT_FLASS;
 
 struct disk;
 struct file_stat;
-typedef void* (*FS_OPEN_FUNCTION)(struct disk* disk, struct path_part* path, FILE_MODE mode);
-typedef int (*FS_READ_FUNCTION)(struct disk* disk, void* fd, uint32_t size, uint32_t nmemb, char* out);
+typedef int (*FS_OPEN_FUNCTION)(struct disk* disk, struct path_part* path, FILE_MODE mode, void** ptr);
+typedef size_t(*FS_READ_FUNCTION)(struct disk* disk, void* fd, uint32_t size, uint32_t nmemb, char* out);
 typedef int (*FS_RESOLVE_FUNCTION)(struct disk* disk);
 typedef int (*FS_CLOSE_FUNCTION)(void* fd);
 typedef int (*FS_SEEK_FUNCTION)(void* fd, uint32_t offset, FILE_SEEK_MODE seek_mode);

@@ -156,14 +156,8 @@ FILE* fopen(const char* filename, const char* mode_str)
     res = disk->filesystem->open(disk, root_path->root, mode, &descriptor_data);
     if (res <= 0)
     {
-
-    }
-    if (!descriptor_data)
-    {
-        res = -EINVARG;
         goto out;
     }
-
     struct file_descriptor* desc = 0;
     res = new_file_descriptor(&desc);
     if (res < 0)

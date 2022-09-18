@@ -4,4 +4,4 @@ target remote | qemu-system-x86_64 -hda ./bin/os.bin -S -gdb stdio
 # break *0x100020
 # break *0x100042
 break kernel_main
-break ext2_find_inode_in_directory
+break ext2_open

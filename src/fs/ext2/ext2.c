@@ -121,15 +121,16 @@ static struct ext2_inode* ext2_find_inode_in_directory(struct disk* idisk, struc
     }
 
     int size = 0;
-    while ((size < dir_inode->size) && entry->inode) {
-        if (!strncmp(path, (char*)entry->name, strlen(path)))
+    struct ext2_dir_entry_2* t_entry = entry;
+    while ((size < dir_inode->size) && t_entry->inode) {
+        if (!strncmp(path, (char*)t_entry->name, strlen(path)))
         {
             target = kzalloc(sizeof(struct ext2_inode));
-            read_inode(ext2_stream->block_size, entry->inode, stream, &ext2_stream->group_descriptor, target);
+            read_inode(ext2_stream->block_size, t_entry->inode, stream, &ext2_stream->group_descriptor, target);
             break;
         }
-        entry = (void*)entry + entry->rec_len;
-        size += entry->rec_len;
+        t_entry = (void*)t_entry + t_entry->rec_len;
+        size += t_entry->rec_len;
     }
 out:
     kfree(entry);
@@ -214,7 +215,7 @@ int ext2_open(struct disk* disk, struct path_part* path, FILE_MODE mode, void** 
     descriptor->inode = ext2_get_file_inode(disk, path);
     if (!descriptor->inode)
     {
-        res = -EIO;
+        res = -EFNOTFOUND;
         goto out;
     }
     descriptor->position = 0;

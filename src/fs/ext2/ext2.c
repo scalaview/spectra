@@ -112,6 +112,11 @@ static struct ext2_inode* ext2_find_inode_in_directory(struct disk* idisk, struc
         res = -ENOMEM;
         goto out;
     }
+    if (!dir_inode->size)
+    {
+        res = -EFNOTFOUND;
+        goto out;
+    }
     disk_streamer_seek(stream, BLOCK_OFFSET(dir_inode->block[0], ext2_stream->block_size));
     res = disk_streamer_read(stream, entry, ext2_stream->block_size);
 

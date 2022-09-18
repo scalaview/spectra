@@ -61,6 +61,7 @@ struct file_descriptor
 
 struct io_file
 {
+    int flag;
     uint32_t fd;
 };
 

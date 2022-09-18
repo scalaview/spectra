@@ -120,7 +120,7 @@ FILE_MODE file_get_mode_by_string(const char* str)
 FILE* fopen(const char* filename, const char* mode_str)
 {
     int res = 0;
-    FILE* fptr = NULL;
+    FILE* fptr = kzalloc(sizeof(FILE));
     struct path_root* root_path = path_parse(filename);
     if (!root_path)
     {
@@ -154,7 +154,7 @@ FILE* fopen(const char* filename, const char* mode_str)
     }
     void* descriptor_data;
     res = disk->filesystem->open(disk, root_path->root, mode, &descriptor_data);
-    if (res <= 0)
+    if (res < 0)
     {
         goto out;
     }
@@ -171,8 +171,10 @@ FILE* fopen(const char* filename, const char* mode_str)
 
 out:
     if (res <= 0)
+    {
+        fptr->flag = res;
         return fptr;
-    fptr = kzalloc(sizeof(FILE));
+    }
     fptr->fd = res;
     return fptr;
 }

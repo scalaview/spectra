@@ -29,7 +29,7 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
 
     // struct path_root* ipath = path_parse("0:/boot/kernel.elf");
     // printk("%d", ipath->drive_no);
-    FILE* fd = fopen("0:/doc/Making_a_GRUB2_image.md", "r");
+    FILE* fd = fopen("0:/data/hello.txt", "r");
     if (fd);
 
     assert(0);

@@ -13,6 +13,7 @@ OS_BIN = ./bin/os.bin
 DISK_ORIGIN_IMG = ./disk.img
 TMP_DIR = /mnt/d
 GRUB_CONF_PATH = ./src/grub.cfg
+FILES_DIR = ./files/data
 
 OS_BIN_FILES =	./bin/kernel.elf
 
@@ -55,6 +56,7 @@ ifneq ("$(wildcard $(DISK_ORIGIN_IMG))","")
 	sudo mount -o loop,offset=1048576 $(OS_BIN) $(TMP_DIR)
 	sudo cp $(OS_BIN_FILES) $(TMP_DIR)/boot
 	sudo cp $(GRUB_CONF_PATH) $(TMP_DIR)/boot/grub
+	sudo cp -r $(FILES_DIR) $(TMP_DIR)/
 	sync
 	sudo umount $(TMP_DIR)
 else

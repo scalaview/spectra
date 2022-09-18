@@ -29,7 +29,7 @@ int disk_streamer_seek(struct disk_stream* stream, int position)
     return SUCCESS;
 }
 
-size_t disk_streamer_read(struct disk_stream* stream, void* out, int total)
+int disk_streamer_read(struct disk_stream* stream, void* out, int total)
 {
     int res = 0;
     uint32_t sector = stream->position / IO_SECTOR_SIZE;
@@ -64,7 +64,6 @@ size_t disk_streamer_read(struct disk_stream* stream, void* out, int total)
 out:
     kfree(buffer);
     return res;
-
 }
 
 void disk_streamer_close(struct disk_stream* stream)

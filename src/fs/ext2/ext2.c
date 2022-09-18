@@ -4,10 +4,11 @@
 #include "status.h"
 #include "stream.h"
 #include "string.h"
+#include "kmemory.h"
 
 int ext2_resolve(struct disk* disk);
 int ext2_open(struct disk* disk, struct path_part* path, FILE_MODE mode, void** ptr);
-size_t ext2_read(struct disk* disk, void* descriptor, uint32_t size, uint32_t nmemb, char* out_ptr);
+int ext2_read(struct disk* disk, void* descriptor, uint32_t size, uint32_t nmemb, char* out_ptr);
 int ext2_seek(void* fd, uint32_t offset, FILE_SEEK_MODE seek_mode);
 int ext2_stat(struct disk* disk, void* fd, struct file_stat* stat);
 int ext2_close(void* fd);
@@ -51,6 +52,7 @@ static int read_ext2_superblock(struct disk_stream* stream, struct ext2_superblo
     if (superblock->magic != EXT2_SUPER_MAGIC)
     {
         res = -EFSNOTUS;
+        memset(superblock, 0, sizeof(struct ext2_superblock));
     }
 out:
     return res;
@@ -59,16 +61,14 @@ out:
 static int ext2_get_block_group_descriptor(struct disk_stream* stream, uint32_t block_size, struct ext2_block_group_descriptor* group_desc)
 {
     disk_streamer_seek(stream, MBR_END_POSITION + block_size);
-    int res = disk_streamer_read(stream, group_desc, sizeof(struct ext2_block_group_descriptor));
-    return res;
+    return disk_streamer_read(stream, group_desc, sizeof(struct ext2_block_group_descriptor));
 }
 
 static int read_inode(uint32_t block_size, uint32_t inode_no, struct disk_stream* stream, struct ext2_block_group_descriptor* group_desc, struct ext2_inode* inode)
 {
     uint32_t offset = BLOCK_OFFSET(group_desc->inode_table, block_size) + (inode_no - 1) * sizeof(struct ext2_inode);
     disk_streamer_seek(stream, offset);
-    int res = disk_streamer_read(stream, inode, sizeof(struct ext2_inode));
-    return res;
+    return disk_streamer_read(stream, inode, sizeof(struct ext2_inode));
 }
 
 static int read_root_directory(uint32_t block_size, struct disk_stream* stream, struct ext2_block_group_descriptor* group_desc, struct ext2_inode* root_inode)
@@ -117,7 +117,6 @@ static struct ext2_inode* ext2_find_inode_in_directory(struct disk* idisk, struc
 
     if (res <= 0)
     {
-        res = -EIO;
         goto out;
     }
 
@@ -224,7 +223,7 @@ out:
     return res;
 }
 
-size_t ext2_read(struct disk* disk, void* descriptor, uint32_t size, uint32_t nmemb, char* out_ptr)
+int ext2_read(struct disk* disk, void* descriptor, uint32_t size, uint32_t nmemb, char* out_ptr)
 {
     return 0;
 }

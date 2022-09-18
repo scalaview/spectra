@@ -23,7 +23,6 @@ enum
     FILE_MODE_INVALID
 };
 
-typedef unsigned int FILE_STAT_FLASS;
 
 struct disk;
 struct file_stat;
@@ -36,7 +35,11 @@ typedef int (*FS_STAT_FUNCTION)(struct disk* disk, void* fd, struct file_stat* s
 
 struct file_stat
 {
-    FILE_STAT_FLASS flags;
+    uint16_t mode;
+    uint32_t atime;			// Last access time, POSIX
+    uint32_t ctime;			// Creation time
+    uint32_t mtime;			// Last modified time
+    uint32_t dtime;			// Deletion time
     uint32_t filesize;
 };
 
@@ -62,7 +65,7 @@ struct file_descriptor
 struct io_file
 {
     int flag;
-    uint32_t fd;
+    uint32_t fdi;
 };
 
 typedef struct io_file FILE;

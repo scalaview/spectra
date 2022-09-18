@@ -175,7 +175,7 @@ out:
         fptr->flag = res;
         return fptr;
     }
-    fptr->fd = res;
+    fptr->fdi = res;
     return fptr;
 }
 
@@ -196,7 +196,7 @@ out:
 int fclose(FILE* stream)
 {
     int res = 0;
-    struct file_descriptor* desc = file_get_descriptor(stream->fd);
+    struct file_descriptor* desc = file_get_descriptor(stream->fdi);
     if (!desc)
     {
         res = -EIO;
@@ -229,13 +229,13 @@ out:
 size_t fread(void* ptr, uint32_t size, uint32_t nmemb, FILE* stream)
 {
     int res = 0;
-    if (size == 0 || nmemb == 0 || !stream || stream->fd < 1)
+    if (size == 0 || nmemb == 0 || !stream || stream->fdi < 1)
     {
         res = -EINVARG;
         goto out;
     }
 
-    struct file_descriptor* desc = file_get_descriptor(stream->fd);
+    struct file_descriptor* desc = file_get_descriptor(stream->fdi);
     if (!desc)
     {
         res = -EINVARG;

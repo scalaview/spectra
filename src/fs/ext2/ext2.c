@@ -8,7 +8,7 @@
 
 int ext2_resolve(struct disk* disk);
 int ext2_open(struct disk* disk, struct path_part* path, FILE_MODE mode, void** ptr);
-int ext2_read(struct disk* disk, void* descriptor, uint32_t size, uint32_t nmemb, char* out_ptr);
+int ext2_read(struct disk* idisk, void* fd, uint32_t size, uint32_t nmemb, char* out_ptr);
 int ext2_seek(void* fd, uint32_t offset, FILE_SEEK_MODE seek_mode);
 int ext2_stat(struct disk* disk, void* fd, struct file_stat* stat);
 int ext2_close(void* fd);
@@ -99,6 +99,14 @@ out:
     return res;
 }
 
+static int ext2_read_dir_entry(struct disk* idisk, uint32_t offset, void* entry)
+{
+    struct ext2_stream* ext2_stream = idisk->fd;
+    struct disk_stream* stream = ext2_stream->directory_stream;
+    disk_streamer_seek(stream, BLOCK_OFFSET(offset, ext2_stream->block_size));
+    int res = disk_streamer_read(stream, entry, ext2_stream->block_size);
+    return res;
+}
 
 static struct ext2_inode* ext2_find_inode_in_directory(struct disk* idisk, struct ext2_inode* dir_inode, const char* path)
 {
@@ -117,9 +125,7 @@ static struct ext2_inode* ext2_find_inode_in_directory(struct disk* idisk, struc
         res = -EFNOTFOUND;
         goto out;
     }
-    disk_streamer_seek(stream, BLOCK_OFFSET(dir_inode->block[0], ext2_stream->block_size));
-    res = disk_streamer_read(stream, entry, ext2_stream->block_size);
-
+    res = ext2_read_dir_entry(idisk, dir_inode->block[0], entry);
     if (res <= 0)
     {
         goto out;
@@ -229,9 +235,45 @@ out:
     return res;
 }
 
-int ext2_read(struct disk* disk, void* descriptor, uint32_t size, uint32_t nmemb, char* out_ptr)
+int ext2_read(struct disk* idisk, void* fd, uint32_t size, uint32_t nmemb, char* out_ptr)
 {
-    return 0;
+    int res = 0;
+    struct ext2_file_descriptor* descriptor = (struct ext2_file_descriptor*)fd;
+    char* t_out_ptr = out_ptr;
+    struct ext2_inode* desc_inode = descriptor->inode;
+    if (!desc_inode)
+    {
+        res = -EINVARG;
+        goto out;
+    }
+    struct ext2_stream* ext2_stream = idisk->fd;
+    struct ext2_dir_entry_2* entry = kzalloc(ext2_stream->block_size);
+    if (!entry)
+    {
+        res = -ENOMEM;
+        goto out;
+    }
+    if (!desc_inode->size)
+    {
+        res = -EFNOTFOUND;
+        goto out;
+    }
+    uint32_t read = 0;
+    for (int i = 0; i < 13 && read < desc_inode->size && read < size; i++)
+    {
+        uint32_t left = size - read;
+        res = ext2_read_dir_entry(idisk, desc_inode->block[i], entry);
+        if (res <= 0)
+        {
+            goto out;
+        }
+        size_t read_size = left > ext2_stream->block_size ? ext2_stream->block_size : left;
+        memcpy(t_out_ptr, entry, read_size);
+        t_out_ptr += read_size;
+        read += read_size;
+    }
+out:
+    return res;
 }
 
 int ext2_seek(void* fd, uint32_t offset, FILE_SEEK_MODE seek_mode)
@@ -241,7 +283,22 @@ int ext2_seek(void* fd, uint32_t offset, FILE_SEEK_MODE seek_mode)
 
 int ext2_stat(struct disk* disk, void* fd, struct file_stat* stat)
 {
-    return 0;
+    int res = 0;
+    struct ext2_file_descriptor* descriptor = (struct ext2_file_descriptor*)fd;
+    struct ext2_inode* desc_inode = descriptor->inode;
+    if (!desc_inode)
+    {
+        res = -EINVARG;
+        goto out;
+    }
+    stat->atime = desc_inode->atime;
+    stat->ctime = desc_inode->ctime;
+    stat->dtime = desc_inode->dtime;
+    stat->filesize = desc_inode->size;
+    stat->mode = desc_inode->mode;
+    stat->mtime = desc_inode->mtime;
+out:
+    return res;
 }
 
 int ext2_close(void* fd)

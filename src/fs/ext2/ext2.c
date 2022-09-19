@@ -357,6 +357,9 @@ int ext2_seek(void* fd, uint32_t offset, FILE_SEEK_MODE seek_mode)
         }
         descriptor->position += offset;
         break;
+    default:
+        res = -EINVARG;
+        break;
     }
 out:
     return res;
@@ -382,8 +385,16 @@ out:
     return res;
 }
 
+static void ext2_free_inode(struct ext2_inode* inode)
+{
+    kfree(inode);
+}
+
 int ext2_close(void* fd)
 {
+    struct ext2_file_descriptor* descriptor = (struct ext2_file_descriptor*)fd;
+    ext2_free_inode(descriptor->inode);
+    kfree(descriptor);
     return 0;
 }
 

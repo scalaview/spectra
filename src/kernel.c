@@ -38,5 +38,8 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
     fseek(fd, stat->filesize - 100, SEEK_SET);
     fread(str, 100, 1, fd);
     printk("read from 0:/data/hello.txt: %s", str);
+    fclose(fd);
+    kfree(fd);
+    kfree(str);
     assert(0);
 }

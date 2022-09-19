@@ -29,6 +29,9 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
 
     // struct path_root* ipath = path_parse("0:/boot/kernel.elf");
     // printk("%d", ipath->drive_no);
+    void* ptr = kzalloc(100);
+    printk("%x\n", vir2phy(ptr));
+    kfree(ptr);
     FILE* fd = fopen("0:/data/hello.txt", "r");
     assert(fd->fdi);
     struct file_stat* stat = kzalloc(sizeof(struct file_stat));
@@ -41,5 +44,8 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
     fclose(fd);
     kfree(fd);
     kfree(str);
+    ptr = kzalloc(100);
+    printk("%x\n", vir2phy(ptr));
+    kfree(ptr);
     assert(0);
 }

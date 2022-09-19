@@ -73,7 +73,7 @@ typedef struct io_file FILE;
 void fs_initialize();
 FILE* fopen(const char* filename, const char* mode_str);
 size_t fread(void* ptr, uint32_t size, uint32_t nmemb, FILE* stream);
-int fseek(int fd, int offset, FILE_SEEK_MODE mode);
+int fseek(FILE* fd, int offset, FILE_SEEK_MODE mode);
 int fclose(FILE* stream);
 int fstat(int fd, struct file_stat* stat);
 

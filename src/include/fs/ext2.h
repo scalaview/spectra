@@ -43,6 +43,9 @@
 
 #define S_ISDIR(mode)       (mode & 0x4000)
 
+#define EXT2_I_BLOCK_DIRECT     12
+#define EXT2_I_BLOCK_INDIRECT     13
+
 struct ext2_superblock {
     uint32_t inodes_count;			// Total # of inodes
     uint32_t blocks_count;			// Total # of blocks
@@ -144,7 +147,7 @@ struct ext2_dir_entry_2 {
     uint8_t name[];
 } __attribute__((packed));
 
-struct ext2_stream
+struct ext2_fs_descriptor
 {
     uint32_t block_size;
     struct ext2_superblock header;

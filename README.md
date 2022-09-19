@@ -7,6 +7,7 @@ TODO
 
 ## :heavy_check_mark: TODO
 - [ ] Multitasking
-- [ ] Filesystem
+- [✔] Filesystem
+- [✔] Ext2 Read/Stat/Close/Seek
 - [ ] Process
 - [ ] Multitasking

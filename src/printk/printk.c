@@ -108,8 +108,15 @@ int read_string(char* buffer, int position, const char* str)
     for (int i = 0; i < len;i++)
     {
         buffer[position++] = str[i];
+        if (str[i] == '\n' || position >= BUFFER_SIZE)
+        {
+            // Flush to screen
+            print_to_screen(buffer, position, &terminal_screen, 0xf);
+            position = 0;
+        }
+
     }
-    return len;
+    return position;
 }
 
 void terminal_screen_initialize()
@@ -151,7 +158,7 @@ int printk(const char* format, ...)
             break;
         case 's':
             string = va_arg(args, char*);
-            buffer_size += read_string(buffer, buffer_size, string);
+            buffer_size = read_string(buffer, buffer_size, string);
             break;
         default:
             buffer[buffer_size++] = '%';

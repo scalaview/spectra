@@ -21,6 +21,12 @@
         "kheap.h": "c",
         "paging.h": "c",
         "assert.h": "c",
-        "multiboot.h": "c"
+        "multiboot.h": "c",
+        "file.h": "c",
+        "stdio.h": "c",
+        "__file.h": "c",
+        "path.h": "c",
+        "stream.h": "c",
+        "ext2.h": "c"
     }
 }

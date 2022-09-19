@@ -13,6 +13,7 @@ OS_BIN = ./bin/os.bin
 DISK_ORIGIN_IMG = ./disk.img
 TMP_DIR = /mnt/d
 GRUB_CONF_PATH = ./src/grub.cfg
+FILES_DIR = ./files/data
 
 OS_BIN_FILES =	./bin/kernel.elf
 
@@ -34,7 +35,12 @@ KFILES =./build/boot/multiboot_header.asm.o \
 		./build/interrupt/idt.o \
 		./build/io/io.asm.o \
 		./build/memory/paging/paging.asm.o \
-		./build/memory/paging/paging.o
+		./build/memory/paging/paging.o \
+		./build/disk/disk.o \
+		./build/fs/path.o \
+		./build/fs/file.o \
+		./build/disk/stream.o \
+		./build/fs/ext2/ext2.o
 
 FLAGS = -mcmodel=large -std=gnu99 -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label $(INCLUDES) -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc -save-temps=obj
 
@@ -50,6 +56,7 @@ ifneq ("$(wildcard $(DISK_ORIGIN_IMG))","")
 	sudo mount -o loop,offset=1048576 $(OS_BIN) $(TMP_DIR)
 	sudo cp $(OS_BIN_FILES) $(TMP_DIR)/boot
 	sudo cp $(GRUB_CONF_PATH) $(TMP_DIR)/boot/grub
+	sudo cp -r $(FILES_DIR) $(TMP_DIR)/
 	sync
 	sudo umount $(TMP_DIR)
 else

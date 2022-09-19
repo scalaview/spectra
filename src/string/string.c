@@ -1,5 +1,6 @@
 #include <stdint.h>
 #include "string.h"
+#include <stdbool.h>
 
 char* itoa(int64_t i, char* text)
 {
@@ -52,4 +53,38 @@ int strlen(const char* ptr)
     }
 
     return len;
+}
+
+int strnlen(const char* ptr, int max)
+{
+    int i = 0;
+    for (i = 0; i < max; i++)
+    {
+        if (ptr[i] == 0)
+            break;
+    }
+    return i;
+}
+
+bool isdigit(char c)
+{
+    return c >= 48 && c <= 57;
+}
+
+int to_numeric(char c)
+{
+    return c - 48;
+}
+
+char* strcpy(char* dest, const char* src)
+{
+    char* res = dest;
+    while (*src != 0)
+    {
+        *dest = *src;
+        src += 1;
+        dest += 1;
+    }
+    dest = 0x00;
+    return res;
 }

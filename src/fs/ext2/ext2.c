@@ -6,11 +6,11 @@
 #include "string.h"
 #include "kmemory.h"
 
-int ext2_resolve(struct disk* disk);
-int ext2_open(struct disk* disk, struct path_part* path, FILE_MODE mode, void** ptr);
+int ext2_resolve(struct disk* idisk);
+int ext2_open(struct disk* idisk, struct path_part* path, FILE_MODE mode, void** ptr);
 int ext2_read(struct disk* idisk, void* fd, uint32_t size, uint32_t nmemb, char* out_ptr);
 int ext2_seek(void* fd, uint32_t offset, FILE_SEEK_MODE seek_mode);
-int ext2_stat(struct disk* disk, void* fd, struct file_stat* stat);
+int ext2_stat(struct disk* idisk, void* fd, struct file_stat* stat);
 int ext2_close(void* fd);
 
 struct filesystem ext2_fs =
@@ -170,16 +170,16 @@ out:
     return current_item;
 }
 
-int ext2_resolve(struct disk* disk)
+int ext2_resolve(struct disk* idisk)
 {
     int res = 0;
     struct ext2_fs_descriptor* ext2_fs_descriptor = kzalloc(sizeof(struct ext2_fs_descriptor));
-    ext2_initialize_stream(disk, ext2_fs_descriptor);
+    ext2_initialize_stream(idisk, ext2_fs_descriptor);
 
-    disk->fd = ext2_fs_descriptor;
-    disk->filesystem = &ext2_fs;
+    idisk->fd = ext2_fs_descriptor;
+    idisk->filesystem = &ext2_fs;
 
-    struct disk_stream* stream = create_disk_streamer(disk->id);
+    struct disk_stream* stream = create_disk_streamer(idisk->id);
     if (!stream)
     {
         res = -ENOMEM;
@@ -201,7 +201,7 @@ out:
         disk_streamer_close(ext2_fs_descriptor->cluster_read_stream);
         disk_streamer_close(ext2_fs_descriptor->directory_stream);
         kfree(ext2_fs_descriptor);
-        disk->fd = 0;
+        idisk->fd = 0;
     }
     if (stream)
         disk_streamer_close(stream);
@@ -209,7 +209,7 @@ out:
 }
 
 
-int ext2_open(struct disk* disk, struct path_part* path, FILE_MODE mode, void** ptr)
+int ext2_open(struct disk* idisk, struct path_part* path, FILE_MODE mode, void** ptr)
 {
     int res = 0;
     if (mode != FILE_MODE_READ) // Only support read now
@@ -223,7 +223,7 @@ int ext2_open(struct disk* disk, struct path_part* path, FILE_MODE mode, void** 
         res = -ENOMEM;
         goto out;
     }
-    descriptor->inode = ext2_get_file_inode(disk, path);
+    descriptor->inode = ext2_get_file_inode(idisk, path);
     if (!descriptor->inode)
     {
         res = -EFNOTFOUND;
@@ -365,7 +365,7 @@ out:
     return res;
 }
 
-int ext2_stat(struct disk* disk, void* fd, struct file_stat* stat)
+int ext2_stat(struct disk* idisk, void* fd, struct file_stat* stat)
 {
     int res = 0;
     struct ext2_file_descriptor* descriptor = (struct ext2_file_descriptor*)fd;

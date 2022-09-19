@@ -32,7 +32,7 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
     void* ptr = kzalloc(100);
     printk("%x\n", vir2phy(ptr));
     kfree(ptr);
-    FILE* fd = fopen("0:/data/hello.txt", "r");
+    FILE* fd = fopen("0:/data/ext2.html", "r");
     assert(fd->fdi);
     struct file_stat* stat = kzalloc(sizeof(struct file_stat));
     fstat(fd->fdi, stat);
@@ -40,7 +40,7 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
     assert(str);
     fseek(fd, stat->filesize - 100, SEEK_SET);
     fread(str, 100, 1, fd);
-    printk("read from 0:/data/hello.txt: %s", str);
+    printk("read from 0:/data/ext2.html: %s", str);
     fclose(fd);
     kfree(fd);
     kfree(str);

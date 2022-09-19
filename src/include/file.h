@@ -26,12 +26,12 @@ enum
 
 struct disk;
 struct file_stat;
-typedef int (*FS_OPEN_FUNCTION)(struct disk* disk, struct path_part* path, FILE_MODE mode, void** ptr);
-typedef int (*FS_READ_FUNCTION)(struct disk* disk, void* fd, uint32_t size, uint32_t nmemb, char* out);
-typedef int (*FS_RESOLVE_FUNCTION)(struct disk* disk);
+typedef int (*FS_OPEN_FUNCTION)(struct disk* idisk, struct path_part* path, FILE_MODE mode, void** ptr);
+typedef int (*FS_READ_FUNCTION)(struct disk* idisk, void* fd, uint32_t size, uint32_t nmemb, char* out);
+typedef int (*FS_RESOLVE_FUNCTION)(struct disk* idisk);
 typedef int (*FS_CLOSE_FUNCTION)(void* fd);
 typedef int (*FS_SEEK_FUNCTION)(void* fd, uint32_t offset, FILE_SEEK_MODE seek_mode);
-typedef int (*FS_STAT_FUNCTION)(struct disk* disk, void* fd, struct file_stat* stat);
+typedef int (*FS_STAT_FUNCTION)(struct disk* idisk, void* fd, struct file_stat* stat);
 
 struct file_stat
 {

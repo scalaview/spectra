@@ -8,6 +8,8 @@
 
 #include <stdint.h>
 
+#define BUFFER_SIZE     1024
+
 struct terminal_screen {
     uint16_t* buffer;
     uint16_t row;

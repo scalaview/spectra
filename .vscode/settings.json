@@ -27,6 +27,8 @@
         "__file.h": "c",
         "path.h": "c",
         "stream.h": "c",
-        "ext2.h": "c"
+        "ext2.h": "c",
+        "gdt.h": "c",
+        "tss.h": "c"
     }
 }

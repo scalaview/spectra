@@ -8,13 +8,17 @@
 #include "path.h"
 #include "file.h"
 #include "disk.h"
+#include "tss.h"
 
 extern struct pml4_table* kernel_chunk;
 
 void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
 {
+
     terminal_screen_initialize();
     idt_initialize();
+
+    initialize_tss();
 
     kernel_heap_initialize();
     // get_memory_info();

@@ -6,8 +6,9 @@
 #define ALIGN_SIZE  4096
 #define PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE 512
 #define PAGE_SIZE   0x200000    //2MB
-#define PAGING_IS_WRITEABLE     0b00000010
-#define PAGING_PRESENT          0b00000001
+#define PAGING_ACCESS_FROM_ALL      0b00000100
+#define PAGING_IS_WRITEABLE         0b00000010
+#define PAGING_PRESENT              0b00000001
 
 // https://wiki.osdev.org/Paging
 typedef union pml4_struct {

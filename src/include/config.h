@@ -1,6 +1,8 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include "paging/paging.h"
+
 #define KERNEL_PHY_BASE         0x0
 #define KERNEL_VMA              0xffff800000000000
 #define KERNEL_VM_MAX           0xffff800040000000
@@ -14,4 +16,12 @@
 
 #define OS_MAX_FILESYSTEMS      16
 #define OS_MAX_FILE_DESCRIPTORS 512
+
+#define RANG_3_PHY_BASE         0x600000
+#define RANG_3_VMA              0x400000
+#define RANG_3_VM_MAX           (RANG_3_VMA + (2 * PAGE_SIZE))
+#define RANG_3_STACK_SIZE       1024 * 16
+#define RANG_3_STACK_PTR        (RANG_3_VMA - RANG_3_STACK_SIZE)
+#define USER_DATA_SEGMENT       0x23
+#define USER_CODE_SEGMENT       0x1b
 #endif

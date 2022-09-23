@@ -9,6 +9,7 @@
 #include "file.h"
 #include "disk.h"
 #include "tss.h"
+#include "task.h"
 
 extern struct pml4_table* kernel_chunk;
 
@@ -51,5 +52,8 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
     ptr = kzalloc(100);
     printk("%x\n", vir2phy(ptr));
     kfree(ptr);
+
+    struct task* task = create_task(NULL);
+    if (task);
     assert(0);
 }

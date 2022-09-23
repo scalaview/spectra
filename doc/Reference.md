@@ -51,6 +51,9 @@
 
 [Operating Systems Development - User land](http://www.brokenthorn.com/Resources/OSDev23.html)
 
+[Task State Segment](https://wiki.osdev.org/Task_State_Segment)
+
+[Tss Struct](https://www.sandpile.org/x86/tss.htm)
 
 ## Filesystem
 [Ext2](https://wiki.osdev.org/Ext2)
@@ -60,3 +63,9 @@
 [The Ext2 Filesystem](http://www.science.smith.edu/~nhowe/262/oldlabs/ext2.html)
 
 [Making A GRUB2 image with Ext2](./Making_a_GRUB2_image.md)
+
+
+## GDT
+[Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table)
+
+[GDT Tutorial](https://wiki.osdev.org/GDT_Tutorial)

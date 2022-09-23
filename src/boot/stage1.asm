@@ -35,6 +35,8 @@ section .data
 
 global gdt64_start
 global gdt64_descriptor
+global gdt_tss64
+
 gdt64_start:
 
 .null:
@@ -61,7 +63,7 @@ gdt64_start:
     dw 0                         ; Base (low).
     db 0                         ; Base (middle)
     db 11111000b                 ; Present=1 + DPL=00 + S=1 (system segment) + Type=1000(Execute only)
-    db 00100000b                ; Granularity, 64 bits flag, limit19:16.
+    db 00100000b                 ; Granularity, 64 bits flag, limit19:16.
     db 0                         ; Base (high).
 
 .user_data:                      ; The data descriptor.
@@ -71,8 +73,19 @@ gdt64_start:
     db 11110010b                 ; Present=1 + DPL=00 + S=1 + Type=0010(Read/Write)
     db 00000000b                 ; Granularity.
     db 0                         ; Base (high).
-gdt64_end:
+
+.gdt64_end:
+
+gdt_tss64:                           ; The TSS descriptor
+    dw 0                         ; Limit
+    dw 0                         ; Base (bytes 0-2)
+    db 0                         ; Base (byte 3)
+    db 10001001b                 ; Type, present
+    db 00000000b                 ; Misc
+    db 0                         ; Base (byte 4)
+    dd 0                         ; Base (bytes 5-8)
+    dd 0                         ; Zero / reserved
 
 gdt64_descriptor:
-    dw gdt64_end - gdt64_start - 1    ; 16-bit Size (Limit) of GDT.
+    dw $ - gdt64_start - 1    ; 16-bit Size (Limit) of GDT.
     dq gdt64_start                     ; Base Address of GDT. (CPU will zero extend to 64-bit)

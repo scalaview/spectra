@@ -2,10 +2,12 @@
 #define PAGING_H
 
 #include <stdint.h>
+#include "heap/bitmap_heap.h"
 
 #define ALIGN_SIZE  4096
 #define PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE 512
-#define PAGE_SIZE   0x200000    //2MB
+#define PAGE_SIZE_2M               0x200000    //2MB
+#define PAGE_SIZE_4K               4096
 #define PAGING_ACCESS_FROM_ALL      0b00000100
 #define PAGING_IS_WRITEABLE         0b00000010
 #define PAGING_PRESENT              0b00000001
@@ -62,7 +64,7 @@ struct pd_table
 
 extern void* load_paging_directory();
 extern void* setup_paging_directory(void* pml4_table);
-struct pml4_table* paging_initialize(uint64_t vir_base_addr, uint64_t vir_max_addr, uint64_t phy_addr, uint8_t flags);
+struct pml4_table* paging_initialize(uint64_t vir_base_addr, uint64_t vir_max_addr, uint64_t phy_addr, uint32_t page_size, uint8_t flags);
 struct pml4_table* kernel_paging_initialize();
 void free_paging(struct pml4_table* pml4_table);
 

@@ -18,7 +18,7 @@ struct task* task_list_current()
 int task_initialize(struct task* task, struct process* process)
 {
     memset(task, 0, sizeof(struct task));
-    task->page_chunk = paging_initialize((RANG_3_VMA - PAGE_SIZE), RANG_3_VM_MAX, RANG_3_PHY_BASE, PAGING_IS_WRITEABLE | PAGING_PRESENT | PAGING_ACCESS_FROM_ALL);
+    task->page_chunk = paging_initialize((RANG_3_VMA - 4 * PAGE_SIZE_4K), RANG_3_VM_MAX, RANG_3_PHY_BASE, PAGE_SIZE_4K, PAGING_IS_WRITEABLE | PAGING_PRESENT | PAGING_ACCESS_FROM_ALL);
     if (!task->page_chunk)
     {
         return -ENOMEM;

@@ -4,12 +4,17 @@
 #include "assert.h"
 #include "config.h"
 
+
 struct pml4_table* kernel_chunk;
 
 // 2MB paging struct initialize
-struct pml4_table* paging_initialize(uint64_t vir_base_addr, uint64_t vir_max_addr, uint64_t phy_addr, uint8_t flags)
+struct pml4_table* paging_initialize(uint64_t vir_base_addr, uint64_t vir_max_addr, uint64_t phy_addr, uint32_t page_size, uint8_t flags)
 {
-    assert(phy_addr % PAGE_SIZE == 0);
+    assert(page_size == PAGE_SIZE_2M || page_size == PAGE_SIZE_4K);
+    assert(phy_addr % page_size == 0);
+    assert(vir_base_addr % page_size == 0);
+    assert(vir_max_addr % page_size == 0);
+
     // 64-bit processors support 48-bit virtual addressing and 256-TiB virtual address spaces.
     uint64_t base_address = (vir_base_addr << 16) >> 16;
     uint64_t max_address = (vir_max_addr << 16) >> 16;
@@ -23,8 +28,8 @@ struct pml4_table* paging_initialize(uint64_t vir_base_addr, uint64_t vir_max_ad
     for (int i = lev_4_start_index; i <= lev_4_end_index; i++)
     {
         uint64_t current_lev_4_address = i * (((uint64_t)2) << 38);
-        pdp_entry* pdp_entries = kmalloc(sizeof(pdp_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE);
-        memset(pdp_entries, 0, sizeof(pdp_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE);
+        pdp_entry* pdp3_entries = kmalloc(sizeof(pdp_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE);
+        memset(pdp3_entries, 0, sizeof(pdp_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE);
         for (int j = 0;j < PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE; j++)
         {
             uint64_t current_lev_3_address = current_lev_4_address + j * (((uint64_t)2) << 29);
@@ -32,15 +37,38 @@ struct pml4_table* paging_initialize(uint64_t vir_base_addr, uint64_t vir_max_ad
                 continue;
             if (current_lev_3_address >= max_address)
                 break;
-            pdp_entry* pd_entries = kmalloc(sizeof(pdp_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE);
-            memset(pd_entries, 0, sizeof(pdp_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE);
+            pdp_entry* pd2_entries = kmalloc(sizeof(pdp_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE);
+            memset(pd2_entries, 0, sizeof(pdp_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE);
             for (int z = 0; z < PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE; z++)
             {
-                pd_entries[z].entry = (offset + (i - lev_4_start_index) * (PAGE_SIZE * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE) + j * (PAGE_SIZE * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE) + z * PAGE_SIZE) | (0b10000000 | flags); //2MB paging, Set Huge 1
+                if (page_size == PAGE_SIZE_2M)
+                {
+                    pd2_entries[z].entry = (offset + (i - lev_4_start_index) * (page_size * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE) + j * (page_size * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE) + z * page_size) | (0b10000000 | flags); //2MB paging, Set Huge 1
+                }
+                if (page_size == PAGE_SIZE_4K)
+                {
+                    uint64_t current_lev_2_address = current_lev_3_address + z * (((uint64_t)2) << 20);
+                    if (current_lev_2_address < base_address)
+                        continue;
+                    if (current_lev_2_address >= max_address)
+                        break;
+                    pdp_entry* pd1_entries = kmalloc(sizeof(pdp_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE);
+                    memset(pd1_entries, 0, sizeof(pdp_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE);
+                    for (int t = 0; t < PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE; t++)
+                    {
+                        pd1_entries[t].entry = (offset + (i - lev_4_start_index) * (page_size * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE) + j * (page_size * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE) + z * (page_size * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE) + t * page_size) | flags;
+                    }
+                    pd2_entries[z].entry = vir2phy(pd1_entries) | flags;
+                    if (z >= 224)
+                    {
+                        int pp = 100;
+                        if (pp);
+                    }
+                }
             }
-            pdp_entries[j].entry = vir2phy(pd_entries) | flags;
+            pdp3_entries[j].entry = vir2phy(pd2_entries) | flags;
         }
-        pml4_entries[i].entry = vir2phy(pdp_entries) | flags;
+        pml4_entries[i].entry = vir2phy(pdp3_entries) | flags;
     }
     struct pml4_table* pml4_table = kmalloc(sizeof(struct pml4_table));
     pml4_table->entries = pml4_entries;
@@ -49,7 +77,7 @@ struct pml4_table* paging_initialize(uint64_t vir_base_addr, uint64_t vir_max_ad
 
 struct pml4_table* kernel_paging_initialize()
 {
-    return paging_initialize(KERNEL_VMA, KERNEL_VM_MAX, KERNEL_PHY_BASE, PAGING_IS_WRITEABLE | PAGING_PRESENT);
+    return paging_initialize(KERNEL_VMA, KERNEL_VM_MAX, KERNEL_PHY_BASE, PAGE_SIZE_2M, PAGING_IS_WRITEABLE | PAGING_PRESENT);
 }
 
 void free_paging_directory(pdp_entry* dir)

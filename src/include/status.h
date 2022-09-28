@@ -14,4 +14,9 @@
 
 /* FS ERROR */
 
+/* TASK ERROR */
+#define EISTAKEN                1000
+#define ENOTASK                 1001
+/* TASK ERROR */
+
 #endif

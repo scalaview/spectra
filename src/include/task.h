@@ -37,6 +37,8 @@ struct task
     struct process* process;
     struct task* next;
     struct task* prev;
+    void* rptr;
+    void* tptr;
 };
 
 struct tasks_manager
@@ -46,7 +48,8 @@ struct tasks_manager
     struct task* tail;
 };
 
-
 struct task* create_task(struct process* process);
+void task_switch(struct registers* registers);
+void task_launch(struct task* task);
 
 #endif

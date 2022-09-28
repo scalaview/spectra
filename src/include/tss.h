@@ -28,5 +28,6 @@ extern struct tss_entry tss;
 
 void tss_load(int tss_segment);
 void initialize_tss();
+void set_tss_rsp0(uint64_t rsp0);
 
 #endif

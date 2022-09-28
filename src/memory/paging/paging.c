@@ -59,11 +59,6 @@ struct pml4_table* paging_initialize(uint64_t vir_base_addr, uint64_t vir_max_ad
                         pd1_entries[t].entry = (offset + (i - lev_4_start_index) * (page_size * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE) + j * (page_size * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE) + z * (page_size * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE) + t * page_size) | flags;
                     }
                     pd2_entries[z].entry = vir2phy(pd1_entries) | flags;
-                    if (z >= 224)
-                    {
-                        int pp = 100;
-                        if (pp);
-                    }
                 }
             }
             pdp3_entries[j].entry = vir2phy(pd2_entries) | flags;

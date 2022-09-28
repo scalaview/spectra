@@ -4,7 +4,6 @@
 #include "kmemory.h"
 
 struct tss_entry tss;
-
 void initialize_tss()
 {
     extern void* kernel_stack_ptr;
@@ -25,3 +24,7 @@ void initialize_tss()
     tss_load(TSS_SEGMENT);
 }
 
+void set_tss_rsp0(uint64_t rsp0)
+{
+    tss.rsp0 = rsp0;
+}

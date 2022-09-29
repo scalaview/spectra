@@ -52,7 +52,7 @@ struct pml4_table* paging_initialize(uint64_t vir_base_addr, uint64_t vir_max_ad
                         offset_count++;
                     }
                 }
-                if (page_size == PAGE_SIZE_4K)
+                else if (page_size == PAGE_SIZE_4K)
                 {
                     uint64_t current_lev_2_start_address = current_lev_3_start_address + z * (((uint64_t)2) << 20);
                     uint64_t current_lev_2_end_address = current_lev_2_start_address + PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE * PAGE_SIZE_4K;

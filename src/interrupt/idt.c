@@ -51,7 +51,7 @@ void idt_initialize()
     {
         idt_set(i, interrupt_pointers[i], 0xEE);
     }
-
+    idt_set(46, no_interrupt, 0xEE);
     load_idt(&idtr_descriptor64);
 }
 
@@ -60,6 +60,11 @@ void interrupt_handler(int interrupt_no, struct interrupt_frame* frame)
     printk("interrupt_no: %d, frame error_code: %d", interrupt_no, frame->error_code);
     /* Acknowledge master PIC. */
     outb(0x20, 0x20);
-    while (1);
-    assert(1);
+    switch (interrupt_no)
+    {
+    case 32: // timer
+        break;
+    default:
+        while (1);
+    }
 }

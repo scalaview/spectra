@@ -59,6 +59,6 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
         printk("init process fail!");
         assert(0);
     }
-    launch(process->id);
+    process_launch(process->id);
     assert(0);
 }

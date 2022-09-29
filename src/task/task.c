@@ -37,12 +37,29 @@ int task_initialize(struct task* task, struct process* process)
         res = -ENOMEM;
         goto out;
     }
+    // map kernel page
+    extern struct pml4_table* kernel_chunk;
+    pml4_entry* kernel_entry = kernel_chunk->entries;
+    pml4_entry* task_entry = task->page_chunk->entries;
+
+    for (int i = 0; i < PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE; i++)
+    {
+        if (kernel_entry->entry != 0 && task_entry->entry == 0)
+        {
+            task_entry->entry = kernel_entry->entry;
+        }
+        kernel_entry++;
+        task_entry++;
+    }
     task->rptr = program_memory;
     task->tptr = (char*)program_memory + process->program_info.stack_size;
-    task->registers.cs = USER_CODE_SEGMENT;
-    task->registers.ss = USER_DATA_SEGMENT;
-    task->registers.rsp = RANG_3_STACK_PTR;
-    task->registers.rip = RANG_3_STACK_IP;
+    task->registers = (struct registers*)program_memory;
+    task->registers->r12 = 100;
+    task->registers->cs = USER_CODE_SEGMENT | 3;
+    task->registers->ss = USER_DATA_SEGMENT | 3;
+    task->registers->rsp = RANG_3_STACK_PTR;
+    task->registers->rip = RANG_3_VMA;
+    task->registers->rflags = 0x202;
     task->process = process;
 
 out:
@@ -70,5 +87,5 @@ out:
 
 void task_launch(struct task* task)
 {
-    task_switch(&task->registers);
+    task_switch(task->registers);
 }

@@ -19,6 +19,7 @@ struct pml4_table* paging_initialize(uint64_t vir_base_addr, uint64_t vir_max_ad
     uint64_t base_address = (vir_base_addr << 16) >> 16;
     uint64_t max_address = (vir_max_addr << 16) >> 16;
     uint64_t offset = (phy_addr << 16) >> 16;
+    uint32_t offset_count = 0;
 
     pml4_entry* pml4_entries = kmalloc(sizeof(pml4_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE);
     memset(pml4_entries, 0, sizeof(pml4_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE);
@@ -32,10 +33,11 @@ struct pml4_table* paging_initialize(uint64_t vir_base_addr, uint64_t vir_max_ad
         memset(pdp3_entries, 0, sizeof(pdp_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE);
         for (int j = 0;j < PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE; j++)
         {
-            uint64_t current_lev_3_address = current_lev_4_address + j * (((uint64_t)2) << 29);
-            if (current_lev_3_address < base_address)
+            uint64_t current_lev_3_start_address = current_lev_4_address + j * (((uint64_t)2) << 29);
+            uint64_t current_lev_3_end_address = current_lev_3_start_address + PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE * PAGE_SIZE_2M;
+            if (current_lev_3_end_address < base_address)
                 continue;
-            if (current_lev_3_address >= max_address)
+            if (current_lev_3_start_address >= max_address)
                 break;
             pdp_entry* pd2_entries = kmalloc(sizeof(pdp_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE);
             memset(pd2_entries, 0, sizeof(pdp_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE);
@@ -43,20 +45,36 @@ struct pml4_table* paging_initialize(uint64_t vir_base_addr, uint64_t vir_max_ad
             {
                 if (page_size == PAGE_SIZE_2M)
                 {
-                    pd2_entries[z].entry = (offset + (i - lev_4_start_index) * (page_size * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE) + j * (page_size * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE) + z * page_size) | (0b10000000 | flags); //2MB paging, Set Huge 1
+                    uint64_t current_lev_2_address = current_lev_3_start_address + z * page_size;
+                    if (current_lev_2_address >= base_address && current_lev_2_address < max_address)
+                    {
+                        pd2_entries[z].entry = (offset + offset_count * page_size) | (0b10000000 | flags); //2MB paging, Set Huge 1
+                        offset_count++;
+                    }
                 }
                 if (page_size == PAGE_SIZE_4K)
                 {
-                    uint64_t current_lev_2_address = current_lev_3_address + z * (((uint64_t)2) << 20);
-                    if (current_lev_2_address < base_address)
+                    uint64_t current_lev_2_start_address = current_lev_3_start_address + z * (((uint64_t)2) << 20);
+                    uint64_t current_lev_2_end_address = current_lev_2_start_address + PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE * PAGE_SIZE_4K;
+                    if (current_lev_2_end_address < base_address)
                         continue;
-                    if (current_lev_2_address >= max_address)
+                    if (current_lev_2_start_address >= max_address)
                         break;
                     pdp_entry* pd1_entries = kmalloc(sizeof(pdp_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE);
                     memset(pd1_entries, 0, sizeof(pdp_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE);
                     for (int t = 0; t < PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE; t++)
                     {
-                        pd1_entries[t].entry = (offset + (i - lev_4_start_index) * (page_size * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE) + j * (page_size * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE) + z * (page_size * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE) + t * page_size) | flags;
+                        uint64_t current_lev_1_address = current_lev_2_start_address + t * page_size;
+                        if (current_lev_1_address >= base_address && current_lev_1_address < max_address)
+                        {
+                            if (current_lev_1_address == 0x400000)
+                            {
+                                int o = 100;
+                                if (o);
+                            }
+                            pd1_entries[t].entry = (offset + offset_count * page_size) | flags;
+                            offset_count++;
+                        }
                     }
                     pd2_entries[z].entry = vir2phy(pd1_entries) | flags;
                 }

@@ -23,5 +23,6 @@ struct process
 };
 
 int process_initialize(struct process** process);
-int launch(uint32_t pid);
+int process_launch(uint32_t pid);
+
 #endif

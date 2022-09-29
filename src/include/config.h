@@ -21,7 +21,6 @@
 #define RANG_3_VM_MAX           (RANG_3_VMA + (2 * PAGE_SIZE_2M))
 #define RANG_3_STACK_SIZE       PAGE_SIZE_4K * 4
 #define RANG_3_STACK_PTR        RANG_3_VMA
-#define RANG_3_STACK_IP         (RANG_3_STACK_PTR - RANG_3_STACK_SIZE)
-#define USER_DATA_SEGMENT       0x1b
-#define USER_CODE_SEGMENT       0x13
+#define USER_DATA_SEGMENT       0x18
+#define USER_CODE_SEGMENT       0x10
 #endif

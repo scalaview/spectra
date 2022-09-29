@@ -99,7 +99,7 @@ void switch_vm(struct pml4_table* pml4_table)
     setup_paging_directory(vir2phy(pml4_table->entries));
 }
 
-int launch(uint32_t pid)
+int process_launch(uint32_t pid)
 {
     int res = 0;
     struct process* process = get_process(pid);

@@ -4,6 +4,7 @@
 #include "status.h"
 #include "paging/paging.h"
 #include "process.h"
+#include "assert.h"
 
 struct tasks_manager tasks_manager = {
     .head = NULL,
@@ -15,6 +16,38 @@ struct task* task_list_current()
 {
     return tasks_manager.current;
 };
+
+static void task_save_state(struct task* task, struct interrupt_frame* frame)
+{
+    task->registers->rax = frame->rax;
+    task->registers->rbx = frame->rbx;
+    task->registers->rcx = frame->rcx;
+    task->registers->rdx = frame->rdx;
+    task->registers->rsi = frame->rsi;
+    task->registers->rdi = frame->rdi;
+    task->registers->rbp = frame->rbp;
+    task->registers->r8 = frame->r8;
+    task->registers->r9 = frame->r9;
+    task->registers->r10 = frame->r10;
+    task->registers->r11 = frame->r11;
+    task->registers->r12 = frame->r12;
+    task->registers->r13 = frame->r13;
+    task->registers->r14 = frame->r14;
+    task->registers->r15 = frame->r15;
+
+    task->registers->rip = frame->rip;
+    task->registers->cs = frame->cs;
+    task->registers->rflags = frame->rflags;
+    task->registers->rsp = frame->rsp;
+    task->registers->ss = frame->ss;
+}
+
+void task_save_current_state(struct interrupt_frame* frame)
+{
+    struct task* task = task_list_current();
+    assert(task);
+    task_save_state(task, frame);
+}
 
 int task_initialize(struct task* task, struct process* process)
 {

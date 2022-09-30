@@ -23,4 +23,8 @@
 #define RANG_3_STACK_PTR        RANG_3_VMA
 #define USER_DATA_SEGMENT       0x20
 #define USER_CODE_SEGMENT       0x18
+
+
+#define OS_MAX_ISR80H_COMMANDS  1024
+
 #endif

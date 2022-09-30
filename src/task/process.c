@@ -110,6 +110,7 @@ int process_launch(uint32_t pid)
     }
     set_tss_rsp0((uint64_t)process->primary->tptr);
     switch_vm(process->primary->page_chunk);
+    set_user_registers();
     task_launch(process->primary);
 out:
     return res;

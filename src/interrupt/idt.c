@@ -4,12 +4,16 @@
 #include "assert.h"
 #include "printk.h"
 #include "io.h"
+#include "task.h"
 
 struct idt_desc64 idt_descriptors64[TOTAL_INTERRUPTS];
 struct idtr_desc64 idtr_descriptor64;
+static ISR80H_COMMAND isr80h_commands[OS_MAX_ISR80H_COMMANDS];
 
+extern void isr80h_wrapper();
 extern void load_idt(struct idtr_desc64* ptr);
 extern void* interrupt_pointers[TOTAL_INTERRUPTS];
+extern void set_kernel_registers();
 
 void idt_set(int interrupt_no, void* address, uint8_t attribute)
 {
@@ -52,6 +56,7 @@ void idt_initialize()
         idt_set(i, interrupt_pointers[i], 0xEE);
     }
     idt_set(46, no_interrupt, 0xEE);
+    idt_set(0x80, isr80h_wrapper, 0xEE);
     load_idt(&idtr_descriptor64);
 }
 
@@ -67,4 +72,52 @@ void interrupt_handler(int interrupt_no, struct interrupt_frame* frame)
     default:
         while (1);
     }
+}
+
+void isr80h_register_command(int command_id, ISR80H_COMMAND command)
+{
+    if (command_id < 0 || command_id >= OS_MAX_ISR80H_COMMANDS)
+    {
+        printk("The command is out of range\n");
+        assert(0);
+    }
+    if (isr80h_commands[command_id])
+    {
+        printk("The command already exists\n");
+        assert(0);
+    }
+    assert(!isr80h_commands[command_id]);
+    isr80h_commands[command_id] = command;
+}
+
+void* isr80h_handle_command(int command, struct interrupt_frame* frame)
+{
+    void* result = 0;
+    if (command < 0 || command >= OS_MAX_ISR80H_COMMANDS)
+    {
+        return 0; // Invalid command
+    }
+
+    ISR80H_COMMAND command_func = isr80h_commands[command];
+    if (!command_func)
+    {
+        return 0;
+    }
+
+    result = command_func(frame);
+    return result;
+}
+
+void isr80h_handler(struct interrupt_frame* frame)
+{
+    set_kernel_registers();
+    int64_t command = frame->rdx;
+    int64_t param_count = frame->rdi;
+
+    if (param_count < 0 || command < 0) {
+        frame->rax = 0;
+        return;
+    }
+    task_save_current_state(frame);
+    frame->rax = (uint64_t)isr80h_handle_command(command, frame);
 }

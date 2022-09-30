@@ -10,6 +10,7 @@
 #include "disk.h"
 #include "tss.h"
 #include "process.h"
+#include "isr80h.h"
 
 extern struct pml4_table* kernel_chunk;
 
@@ -40,6 +41,9 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
     fs_initialize();
     disk_search_and_initialize();
     // enable_interrupts();
+
+    isr80h_register_commands();
+
     struct pml4_table* pm4 = 0;
     paging_initialize_pml4_table(&pm4, KERNEL_VMA, KERNEL_VM_MAX, KERNEL_PHY_BASE, PAGE_SIZE_2M, PAGING_IS_WRITEABLE | PAGING_PRESENT);
     free_paging(pm4);

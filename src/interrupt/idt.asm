@@ -5,6 +5,7 @@ section .text
 %define PIC2_DATA           0xA1
 
 extern interrupt_handler
+extern isr80h_handler
 
 global enable_interrupts
 enable_interrupts:
@@ -41,6 +42,16 @@ init_pic:   ; https://wiki.osdev.org/PIC
     ; mov al, 11111111b
     ; out PIC2_COMMAND, al ; disable PIC2
     ret
+
+global isr80h_wrapper
+isr80h_wrapper:
+    push 0 ; error code
+    %include "save_registers.asm"
+    mov rdi, rsp
+    call isr80h_handler
+    %include "restore_registers.asm"
+    add rsp, 8
+    iretq
 
 %macro INT_NOERRCODE 1
   global int%1

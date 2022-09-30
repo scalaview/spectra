@@ -7,11 +7,11 @@
 
 struct pml4_table* kernel_chunk;
 
-void paging_initialize_pml4_table(struct pml4_table* pml4_table, uint64_t vir_base_addr, uint64_t vir_max_addr, uint64_t phy_addr, uint32_t page_size, uint8_t flags)
+void paging_initialize_pml4_table(struct pml4_table** pml4_table, uint64_t vir_base_addr, uint64_t vir_max_addr, uint64_t phy_addr, uint32_t page_size, uint8_t flags)
 {
-    if (!pml4_table)
+    if (!*pml4_table)
     {
-        pml4_table = kzalloc(sizeof(struct pml4_table));
+        *pml4_table = kzalloc(sizeof(struct pml4_table));
     }
     assert(page_size == PAGE_SIZE_2M || page_size == PAGE_SIZE_4K);
     assert(phy_addr % page_size == 0);
@@ -25,14 +25,14 @@ void paging_initialize_pml4_table(struct pml4_table* pml4_table, uint64_t vir_ba
     uint32_t offset_count = 0;
 
     pml4_entry* pml4_entries;
-    if (pml4_table->entries)
+    if ((*pml4_table)->entries)
     {
-        pml4_entries = pml4_table->entries;
+        pml4_entries = (*pml4_table)->entries;
     }
     else
     {
         pml4_entries = kzalloc(sizeof(pml4_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE);
-        pml4_table->entries = pml4_entries;
+        (*pml4_table)->entries = pml4_entries;
     }
     uint32_t lev_4_start_index = (uint32_t)(base_address >> 39);
     uint32_t lev_4_end_index = (uint32_t)(max_address >> 39);
@@ -47,7 +47,7 @@ void paging_initialize_pml4_table(struct pml4_table* pml4_table, uint64_t vir_ba
         }
         else
         {
-            pdp3_entries = (pdp_entry*)((uint64_t)(pml4_entries[i].fields.address << 12));
+            pdp3_entries = (pdp_entry*)phy2vir(pml4_entries[i].fields.address << 12);
         }
         for (int j = 0;j < PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE; j++)
         {
@@ -65,7 +65,7 @@ void paging_initialize_pml4_table(struct pml4_table* pml4_table, uint64_t vir_ba
             }
             else
             {
-                pd2_entries = (pdp_entry*)((uint64_t)(pdp3_entries[j].fields.address << 12));
+                pd2_entries = (pdp_entry*)phy2vir(pdp3_entries[j].fields.address << 12);
             }
             for (int z = 0; z < PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE; z++)
             {
@@ -94,7 +94,7 @@ void paging_initialize_pml4_table(struct pml4_table* pml4_table, uint64_t vir_ba
                     }
                     else
                     {
-                        pd1_entries = (pdp_entry*)((uint64_t)(pd2_entries[z].fields.address << 12));
+                        pd1_entries = (pdp_entry*)phy2vir(pd2_entries[z].fields.address << 12);
                     }
                     for (int t = 0; t < PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE; t++)
                     {
@@ -115,7 +115,7 @@ void paging_initialize_pml4_table(struct pml4_table* pml4_table, uint64_t vir_ba
 struct pml4_table* paging_initialize(uint64_t vir_base_addr, uint64_t vir_max_addr, uint64_t phy_addr, uint32_t page_size, uint8_t flags)
 {
     struct pml4_table* pml4_table = kzalloc(sizeof(struct pml4_table));
-    paging_initialize_pml4_table(pml4_table, vir_base_addr, vir_max_addr, phy_addr, page_size, flags);
+    paging_initialize_pml4_table(&pml4_table, vir_base_addr, vir_max_addr, phy_addr, page_size, flags);
     return pml4_table;
 }
 
@@ -124,7 +124,7 @@ struct pml4_table* kernel_paging_initialize()
     return paging_initialize(KERNEL_VMA, KERNEL_VM_MAX, KERNEL_PHY_BASE, PAGE_SIZE_2M, PAGING_IS_WRITEABLE | PAGING_PRESENT);
 }
 
-void free_paging_directory(pdp_entry* dir)
+void free_paging_directory(pdp_entry* dir, uint16_t level)
 {
     for (int i = 0; i < PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE; i++)
     {
@@ -137,15 +137,19 @@ void free_paging_directory(pdp_entry* dir)
                 kfree(e);
                 continue;
             }
-            free_paging_directory(e);
+            if (level == 2)
+            {
+                kfree(e);
+                continue;
+            }
+            free_paging_directory(e, level - 1);
         }
     }
     kfree(dir);
-
 }
 
 void free_paging(struct pml4_table* pml4_table)
 {
-    free_paging_directory((pdp_entry*)pml4_table->entries);
+    free_paging_directory((pdp_entry*)pml4_table->entries, 4);
     kfree(pml4_table);
 }

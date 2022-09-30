@@ -41,10 +41,10 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
     disk_search_and_initialize();
     // enable_interrupts();
     struct pml4_table* pm4 = 0;
-    paging_initialize_pml4_table(&pm4, KERNEL_VMA, KERNEL_VM_MAX, 0x3000000, PAGE_SIZE_2M, PAGING_IS_WRITEABLE | PAGING_PRESENT);
+    paging_initialize_pml4_table(&pm4, KERNEL_VMA, KERNEL_VM_MAX, KERNEL_PHY_BASE, PAGE_SIZE_2M, PAGING_IS_WRITEABLE | PAGING_PRESENT);
     free_paging(pm4);
     pm4 = 0;
-    paging_initialize_pml4_table(&pm4, KERNEL_VMA, KERNEL_VM_MAX, 0x3000000, PAGE_SIZE_2M, PAGING_IS_WRITEABLE | PAGING_PRESENT);
+    paging_initialize_pml4_table(&pm4, KERNEL_VMA, KERNEL_VM_MAX, KERNEL_PHY_BASE, PAGE_SIZE_2M, PAGING_IS_WRITEABLE | PAGING_PRESENT);
     paging_initialize_pml4_table(&pm4, 0x400000, 0x800000, 0x2000000, PAGE_SIZE_4K, PAGING_IS_WRITEABLE | PAGING_PRESENT | PAGING_ACCESS_FROM_ALL);
     free_paging(pm4);
 

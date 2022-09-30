@@ -26,31 +26,15 @@ int task_initialize(struct task* task, struct process* process)
         res = -ENOMEM;
         goto out;
     }
-    // initialize stack and task memory space, 16KB stack size
-    task->page_chunk = paging_initialize(
-        (((uint64_t)process->program_info.virtual_base_address) - process->program_info.stack_size),
-        ((uint64_t)process->program_info.virtual_end_address), vir2phy(program_memory),
-        PAGE_SIZE_4K,
-        PAGING_IS_WRITEABLE | PAGING_PRESENT | PAGING_ACCESS_FROM_ALL);
+    // map kernel page
+    task->page_chunk = kernel_paging_initialize();
     if (!task->page_chunk)
     {
         res = -ENOMEM;
         goto out;
     }
-    // map kernel page
-    extern struct pml4_table* kernel_chunk;
-    pml4_entry* kernel_entry = kernel_chunk->entries;
-    pml4_entry* task_entry = task->page_chunk->entries;
-
-    for (int i = 0; i < PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE; i++)
-    {
-        if (kernel_entry->entry != 0 && task_entry->entry == 0)
-        {
-            task_entry->entry = kernel_entry->entry;
-        }
-        kernel_entry++;
-        task_entry++;
-    }
+    // initialize stack and task memory space, 16KB stack size
+    paging_initialize_pml4_table(&task->page_chunk, (((uint64_t)process->program_info.virtual_base_address) - process->program_info.stack_size), ((uint64_t)process->program_info.virtual_end_address), vir2phy(program_memory), PAGE_SIZE_4K, PAGING_IS_WRITEABLE | PAGING_PRESENT | PAGING_ACCESS_FROM_ALL);
     task->rptr = program_memory;
     task->tptr = (char*)program_memory + process->program_info.stack_size;
     task->registers = (struct registers*)program_memory;

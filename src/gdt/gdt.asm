@@ -1,7 +1,7 @@
 
 %include "config.asm"
 
-section .asm
+section .text
 global gdt_load
 
 ; void gdt_load(struct gdt* gdt);

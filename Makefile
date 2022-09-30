@@ -13,6 +13,7 @@ OS_BIN = ./bin/os.bin
 DISK_ORIGIN_IMG = ./disk.img
 TMP_DIR = /mnt/d
 GRUB_CONF_PATH = ./src/grub.cfg
+LINK_FILE = ./src/linker.ld
 FILES_DIR = ./files/data
 
 OS_BIN_FILES =	./bin/kernel.elf
@@ -50,29 +51,38 @@ KFILES =./build/boot/multiboot_header.asm.o \
 		./build/systemctl/isr80h.o \
 		./build/systemctl/command/io.o
 
+APP_BIN_FILES = ./programs/apps/start/bin/start.bin
+LIB_FILES 	= ./programs/stdlib/bin/stdlib.elf
+
 FLAGS = -mcmodel=large -std=gnu99 -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label $(INCLUDES) -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc -save-temps=obj
 
 dir:
+	mkdir -p $(OBJ_DIR)
 	mkdir -p $(BIN_DIR)
 
-all: dir $(OS_BIN_FILES) disk
+all: dir $(OS_BIN_FILES) programs disk
 
 disk:
 ifneq ("$(wildcard $(DISK_ORIGIN_IMG))","")
 	sudo mkdir -p $(TMP_DIR)
 	cp $(DISK_ORIGIN_IMG) $(OS_BIN)
 	sudo mount -o loop,offset=1048576 $(OS_BIN) $(TMP_DIR)
+	sudo mkdir -p $(TMP_DIR)/boot/grub
+	sudo mkdir -p $(TMP_DIR)/usr/bin
+	sudo mkdir -p $(TMP_DIR)/usr/lib
 	sudo cp $(OS_BIN_FILES) $(TMP_DIR)/boot
 	sudo cp $(GRUB_CONF_PATH) $(TMP_DIR)/boot/grub
 	sudo cp -r $(FILES_DIR) $(TMP_DIR)/
+	sudo cp $(APP_BIN_FILES) $(TMP_DIR)/usr/bin
+	sudo cp $(LIB_FILES) $(TMP_DIR)/usr/lib
 	sync
 	sudo umount $(TMP_DIR)
 else
 	echo "Making $(DISK_ORIGIN_IMG) file first."
 endif
 
-./bin/kernel.elf: $(KFILES)
-	$(LD) -nostdlib -n -T ./src/linker.ld ${KFILES} -o ./bin/kernel.elf
+$(OS_BIN_FILES): $(KFILES)
+	$(LD) -nostdlib -n -T $(LINK_FILE) ${KFILES} -o $@
 
 build/%.asm.o: src/%.asm
 	@printf "\e[32;1mAssembling\e[0m $<\n"
@@ -83,6 +93,10 @@ build/%.o: src/%.c
 	@printf "\e[32;1mCompiling\e[0m $<\n"
 	@mkdir -p $(shell dirname $@)
 	$(GCC) $(INCLUDES) $(FLAGS) -c $< -o $@
+
+programs:
+	@make -C ./programs/apps/start clean
+	@make -C ./programs/apps/start all
 
 clean:
 	rm -rf $(OBJ_DIR)

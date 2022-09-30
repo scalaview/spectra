@@ -1,8 +1,8 @@
 [BITS 64]
 section .text
 global start
-extern main
+extern user_main
 
 start:
-    call main
+    call user_main
     jmp $

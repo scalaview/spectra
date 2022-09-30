@@ -59,6 +59,12 @@ int task_initialize(struct task* task, struct process* process)
         res = -ENOMEM;
         goto out;
     }
+    void* kernel_stack = kzalloc(4 * PAGE_SIZE_4K);
+    if (!kernel_stack)
+    {
+        res = -ENOMEM;
+        goto out;
+    }
     // map kernel page
     task->page_chunk = kernel_paging_initialize();
     if (!task->page_chunk)
@@ -67,9 +73,10 @@ int task_initialize(struct task* task, struct process* process)
         goto out;
     }
     // initialize stack and task memory space, 16KB stack size
-    paging_initialize_pml4_table(&task->page_chunk, (((uint64_t)process->program_info.virtual_base_address) - process->program_info.stack_size), ((uint64_t)process->program_info.virtual_end_address), vir2phy(program_memory), PAGE_SIZE_4K, PAGING_IS_WRITEABLE | PAGING_PRESENT | PAGING_ACCESS_FROM_ALL);
-    task->rptr = program_memory;
-    task->tptr = (char*)program_memory + process->program_info.stack_size;
+    paging_initialize_pml4_table(&task->page_chunk, align_down(((uint64_t)process->program_info.virtual_base_address) - process->program_info.stack_size), align_up((uint64_t)process->program_info.virtual_end_address), vir2phy(align_down(program_memory)), PAGE_SIZE_4K, PAGING_IS_WRITEABLE | PAGING_PRESENT | PAGING_ACCESS_FROM_ALL);
+    task->tstack_top = program_memory;
+    task->entry = (void*)(((char*)program_memory) + process->program_info.stack_size);
+    task->kstack = (void*)(((char*)kernel_stack) + 4 * PAGE_SIZE_4K);
     task->registers = (struct registers*)program_memory;
     task->registers->r12 = 100;
     task->registers->cs = USER_CODE_SEGMENT | 3;
@@ -104,5 +111,6 @@ out:
 
 void task_launch(struct task* task)
 {
+    tasks_manager.current = task;
     task_switch(task->registers);
 }

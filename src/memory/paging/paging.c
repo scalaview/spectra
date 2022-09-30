@@ -2,21 +2,26 @@
 #include "heap/kheap.h"
 #include "kmemory.h"
 #include "assert.h"
+#include "status.h"
 #include "config.h"
 
 
 struct pml4_table* kernel_chunk;
 
-void paging_initialize_pml4_table(struct pml4_table** pml4_table, uint64_t vir_base_addr, uint64_t vir_max_addr, uint64_t phy_addr, uint32_t page_size, uint8_t flags)
+int paging_initialize_pml4_table(struct pml4_table** pml4_table, uint64_t vir_base_addr, uint64_t vir_max_addr, uint64_t phy_addr, uint32_t page_size, uint8_t flags)
 {
+    if (page_size != PAGE_SIZE_2M && page_size != PAGE_SIZE_4K)
+    {
+        return -EIO;
+    }
+    if (phy_addr % page_size != 0 || vir_base_addr % page_size != 0 || vir_max_addr % page_size != 0)
+    {
+        return -EINVARG;
+    }
     if (!*pml4_table)
     {
         *pml4_table = kzalloc(sizeof(struct pml4_table));
     }
-    assert(page_size == PAGE_SIZE_2M || page_size == PAGE_SIZE_4K);
-    assert(phy_addr % page_size == 0);
-    assert(vir_base_addr % page_size == 0);
-    assert(vir_max_addr % page_size == 0);
 
     // 64-bit processors support 48-bit virtual addressing and 256-TiB virtual address spaces.
     uint64_t base_address = (vir_base_addr << 16) >> 16;
@@ -109,13 +114,26 @@ void paging_initialize_pml4_table(struct pml4_table** pml4_table, uint64_t vir_b
             }
         }
     }
+    return 0;
 }
 
 // 2MB/4K paging struct initialize
 struct pml4_table* paging_initialize(uint64_t vir_base_addr, uint64_t vir_max_addr, uint64_t phy_addr, uint32_t page_size, uint8_t flags)
 {
+    int res = 0;
     struct pml4_table* pml4_table = kzalloc(sizeof(struct pml4_table));
-    paging_initialize_pml4_table(&pml4_table, vir_base_addr, vir_max_addr, phy_addr, page_size, flags);
+    if (!pml4_table)
+    {
+        res = -ENOMEM;
+        goto out;
+    }
+    res = paging_initialize_pml4_table(&pml4_table, vir_base_addr, vir_max_addr, phy_addr, page_size, flags);
+out:
+    if (res)
+    {
+        kfree(pml4_table);
+        return 0;
+    }
     return pml4_table;
 }
 

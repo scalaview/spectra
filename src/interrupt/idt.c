@@ -55,6 +55,7 @@ void idt_initialize()
     {
         idt_set(i, interrupt_pointers[i], 0xEE);
     }
+    idt_set(32, no_interrupt, 0xEE);
     idt_set(46, no_interrupt, 0xEE);
     idt_set(0x80, isr80h_wrapper, 0xEE);
     load_idt(&idtr_descriptor64);
@@ -111,10 +112,10 @@ void* isr80h_handle_command(int command, struct interrupt_frame* frame)
 void isr80h_handler(struct interrupt_frame* frame)
 {
     set_kernel_registers();
-    int64_t command = frame->rdx;
-    int64_t param_count = frame->rdi;
+    int64_t command = frame->rdi;
+    int64_t argc = frame->rsi;
 
-    if (param_count < 0 || command < 0) {
+    if (argc < 0 || command < 0) {
         frame->rax = 0;
         return;
     }

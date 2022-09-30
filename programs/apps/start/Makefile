@@ -14,9 +14,8 @@ STD_LIB_BIN = ../../stdlib/bin/stdlib.elf
 APP_BIN = ./bin/start.bin
 APP_ELF_FILES =	./bin/start.elf
 
-FILES = $(STD_LIB_BIN) \
-		 ./build/start.o \
-		 ./build/start.asm.o
+FILES =	./build/start.o \
+		$(STD_LIB_BIN)
 
 FLAGS = -mcmodel=large -std=gnu99 -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label $(INCLUDES) -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc -save-temps=obj
 
@@ -49,3 +48,5 @@ build/%.o: src/%.c
 clean:
 	rm -rf $(OBJ_DIR)
 	rm -rf $(BIN_DIR)
+
+.PHONY: clean

@@ -104,7 +104,7 @@ int printf(const char* format, ...)
         }
         // assert(buffer_size < 1024);
     }
-    buffer_size = sys_print(buffer, buffer_size, 0xf);
+    buffer_size = sys_print(buffer, buffer_size, 0xE);
     va_end(args);
     return buffer_size;
 }

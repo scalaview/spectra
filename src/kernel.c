@@ -29,6 +29,7 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
     kfree(p);
 
     kernel_chunk = kernel_paging_initialize();
+    assert(kernel_chunk);
     p = kzalloc(1);
     printk("after kernel paging remap %x\n", vir2phy(p));
     kfree(p);
@@ -74,7 +75,7 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
     kfree(ptr);
 
     struct process* process = 0;
-    if (process_initialize(&process))
+    if (process_initialize("0:/usr/bin/start.bin", &process) < 0)
     {
         printk("init process fail!");
         assert(0);

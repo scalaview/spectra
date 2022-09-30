@@ -32,26 +32,26 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
     disk_search_and_initialize();
     // enable_interrupts();
 
-    // struct path_root* ipath = path_parse("0:/boot/kernel.elf");
-    // printk("%d", ipath->drive_no);
-    // void* ptr = kzalloc(100);
-    // printk("%x\n", vir2phy(ptr));
-    // kfree(ptr);
-    // FILE* fd = fopen("0:/data/ext2", "r");
-    // assert(fd->fdi);
-    // struct file_stat* stat = kzalloc(sizeof(struct file_stat));
-    // fstat(fd->fdi, stat);
-    // char* str = kzalloc(stat->filesize);
-    // assert(str);
-    // fseek(fd, stat->filesize - 100, SEEK_SET);
-    // fread(str, 100, 1, fd);
-    // printk("read from 0:/data/ext2: %s", str);
-    // fclose(fd);
-    // kfree(fd);
-    // kfree(str);
-    // ptr = kzalloc(100);
-    // printk("%x\n", vir2phy(ptr));
-    // kfree(ptr);
+    struct path_root* ipath = path_parse("0:/boot/kernel.elf");
+    printk("%d", ipath->drive_no);
+    void* ptr = kzalloc(100);
+    printk("%x\n", vir2phy(ptr));
+    kfree(ptr);
+    FILE* fd = fopen("0:/data/ext2", "r");
+    assert(fd->fdi);
+    struct file_stat* stat = kzalloc(sizeof(struct file_stat));
+    fstat(fd->fdi, stat);
+    char* str = kzalloc(stat->filesize);
+    assert(str);
+    fseek(fd, stat->filesize - 100, SEEK_SET);
+    fread(str, 100, 1, fd);
+    printk("read from 0:/data/ext2: %s", str);
+    fclose(fd);
+    kfree(fd);
+    kfree(str);
+    ptr = kzalloc(100);
+    printk("%x\n", vir2phy(ptr));
+    kfree(ptr);
 
     struct process* process = 0;
     if (process_initialize(&process))

@@ -60,7 +60,7 @@ dir:
 	mkdir -p $(OBJ_DIR)
 	mkdir -p $(BIN_DIR)
 
-all: dir $(OS_BIN_FILES) programs disk
+all: dir $(OS_BIN_FILES) user_apps disk
 
 disk:
 ifneq ("$(wildcard $(DISK_ORIGIN_IMG))","")
@@ -94,9 +94,10 @@ build/%.o: src/%.c
 	@mkdir -p $(shell dirname $@)
 	$(GCC) $(INCLUDES) $(FLAGS) -c $< -o $@
 
-programs:
-	@make -C ./programs/apps/start clean
-	@make -C ./programs/apps/start all
+user_apps:
+	@printf "\e[32;1mMaking apps\e[0m $<\n"
+	make -C ./programs/apps/start clean
+	make -C ./programs/apps/start all
 
 clean:
 	rm -rf $(OBJ_DIR)

@@ -37,8 +37,9 @@ struct task
     struct process* process;
     struct task* next;
     struct task* prev;
-    void* rptr;
-    void* tptr;
+    void* tstack_top;
+    void* entry;
+    void* kstack;
 };
 
 struct tasks_manager

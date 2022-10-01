@@ -39,8 +39,8 @@ init_pic:   ; https://wiki.osdev.org/PIC
     out PIC2_DATA, al
     ; End remap of the master PIC
 
-    ; mov al, 11111111b
-    ; out PIC2_COMMAND, al ; disable PIC2
+    mov al, 11111111b
+    out PIC2_DATA, al ; disable PIC2
     ret
 
 global no_interrupt_handler

@@ -29,6 +29,11 @@
         "stream.h": "c",
         "ext2.h": "c",
         "gdt.h": "c",
-        "tss.h": "c"
+        "tss.h": "c",
+        "process.h": "c",
+        "task.h": "c",
+        "io.h": "c",
+        "isr80h.h": "c",
+        "lib.h": "c"
     }
 }

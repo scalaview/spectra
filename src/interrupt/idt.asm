@@ -1,10 +1,11 @@
-section .asm
+section .text
 %define PIC1_COMMAND        0x20
 %define PIC1_DATA           0x21
 %define PIC2_COMMAND        0xA0
 %define PIC2_DATA           0xA1
 
 extern interrupt_handler
+extern isr80h_handler
 
 global enable_interrupts
 enable_interrupts:
@@ -38,9 +39,27 @@ init_pic:   ; https://wiki.osdev.org/PIC
     out PIC2_DATA, al
     ; End remap of the master PIC
 
-    ; mov al, 11111111b
-    ; out PIC2_COMMAND, al ; disable PIC2
+    mov al, 11111111b
+    out PIC2_DATA, al ; disable PIC2
     ret
+
+global no_interrupt_handler
+no_interrupt_handler:
+    %include "save_registers.asm"
+    mov al, 0x20
+    out 0x20, al
+    %include "restore_registers.asm"
+    iretq
+
+global isr80h_wrapper
+isr80h_wrapper:
+    push 0 ; error code
+    %include "save_registers.asm"
+    mov rdi, rsp
+    call isr80h_handler
+    %include "restore_registers.asm"
+    add rsp, 8
+    iretq
 
 %macro INT_NOERRCODE 1
   global int%1

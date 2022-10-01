@@ -37,13 +37,18 @@ struct interrupt_frame {
     uint64_t error_code;
     uint64_t rip;
     uint64_t cs;
-    uint64_t flags;
+    uint64_t rflags;
     uint64_t rsp;
     uint64_t ss;
 } __attribute__((packed));
 
+typedef void* (*ISR80H_COMMAND)(struct interrupt_frame* frame);
+
+
 void idt_initialize();
-void interrupt_handler();
+void interrupt_handler(int interrupt_no, struct interrupt_frame* frame);
+void isr80h_handler(struct interrupt_frame* frame);
+void isr80h_register_command(int command_id, ISR80H_COMMAND command);
 
 extern void enable_interrupts();
 extern void disable_interrupts();

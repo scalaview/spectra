@@ -1,4 +1,4 @@
-section .asm
+section .text
 
 global insb
 ; unsigned char insb(unsigned short port);

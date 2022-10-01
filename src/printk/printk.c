@@ -52,11 +52,11 @@ void screen_write_char(struct terminal_screen* terminal_screen, char c, char col
     }
 }
 
-void print_to_screen(const char* buffer, int size, struct terminal_screen* terminal_screen, char color)
+void print_to_screen(const char* buffer, int size, char color)
 {
     for (int i = 0; i < size; i++)
     {
-        screen_write_char(terminal_screen, buffer[i], color);
+        screen_write_char(&terminal_screen, buffer[i], color);
     }
 }
 
@@ -111,7 +111,7 @@ int read_string(char* buffer, int position, const char* str)
         if (str[i] == '\n' || position >= BUFFER_SIZE)
         {
             // Flush to screen
-            print_to_screen(buffer, position, &terminal_screen, 0xf);
+            print_to_screen(buffer, position, 0xf);
             position = 0;
         }
 
@@ -167,7 +167,7 @@ int printk(const char* format, ...)
         }
         assert(buffer_size < 1024);
     }
-    print_to_screen(buffer, buffer_size, &terminal_screen, 0xf);
+    print_to_screen(buffer, buffer_size, 0xf);
     va_end(args);
     return buffer_size;
 }

@@ -10,6 +10,7 @@
 #include "disk.h"
 #include "tss.h"
 #include "process.h"
+#include "isr80h.h"
 
 extern struct pml4_table* kernel_chunk;
 
@@ -28,6 +29,7 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
     kfree(p);
 
     kernel_chunk = kernel_paging_initialize();
+    assert(kernel_chunk);
     p = kzalloc(1);
     printk("after kernel paging remap %x\n", vir2phy(p));
     kfree(p);
@@ -40,11 +42,14 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
     fs_initialize();
     disk_search_and_initialize();
     // enable_interrupts();
+
+    isr80h_register_commands();
+
     struct pml4_table* pm4 = 0;
-    paging_initialize_pml4_table(&pm4, KERNEL_VMA, KERNEL_VM_MAX, 0x3000000, PAGE_SIZE_2M, PAGING_IS_WRITEABLE | PAGING_PRESENT);
+    paging_initialize_pml4_table(&pm4, KERNEL_VMA, KERNEL_VM_MAX, KERNEL_PHY_BASE, PAGE_SIZE_2M, PAGING_IS_WRITEABLE | PAGING_PRESENT);
     free_paging(pm4);
     pm4 = 0;
-    paging_initialize_pml4_table(&pm4, KERNEL_VMA, KERNEL_VM_MAX, 0x3000000, PAGE_SIZE_2M, PAGING_IS_WRITEABLE | PAGING_PRESENT);
+    paging_initialize_pml4_table(&pm4, KERNEL_VMA, KERNEL_VM_MAX, KERNEL_PHY_BASE, PAGE_SIZE_2M, PAGING_IS_WRITEABLE | PAGING_PRESENT);
     paging_initialize_pml4_table(&pm4, 0x400000, 0x800000, 0x2000000, PAGE_SIZE_4K, PAGING_IS_WRITEABLE | PAGING_PRESENT | PAGING_ACCESS_FROM_ALL);
     free_paging(pm4);
 
@@ -70,7 +75,7 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
     kfree(ptr);
 
     struct process* process = 0;
-    if (process_initialize(&process))
+    if (process_initialize("0:/usr/bin/start.bin", &process) < 0)
     {
         printk("init process fail!");
         assert(0);

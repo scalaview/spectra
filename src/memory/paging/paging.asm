@@ -1,4 +1,4 @@
-section .asm
+section .text
 
 global load_paging_directory
 load_paging_directory:

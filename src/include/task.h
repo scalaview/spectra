@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include "paging/paging.h"
-
+#include "idt.h"
 
 struct registers
 {
@@ -37,8 +37,9 @@ struct task
     struct process* process;
     struct task* next;
     struct task* prev;
-    void* rptr;
-    void* tptr;
+    void* tstack_top;
+    void* entry;
+    void* kstack;
 };
 
 struct tasks_manager
@@ -51,5 +52,8 @@ struct tasks_manager
 struct task* create_task(struct process* process);
 void task_switch(struct registers* registers);
 void task_launch(struct task* task);
+void task_save_current_state(struct interrupt_frame* frame);
+
+extern void set_user_registers();
 
 #endif

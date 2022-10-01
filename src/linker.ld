@@ -17,11 +17,6 @@ SECTIONS
         *(.text)
     }
 
-    .asm ALIGN (0x1000) : AT(ADDR(.asm) - KERNEL_VMA)
-    {
-        *(.asm)
-    }
-
     .rodata ALIGN (0x1000) : AT(ADDR(.rodata) - KERNEL_VMA)
     {
         *(.rodata)

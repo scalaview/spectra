@@ -43,6 +43,14 @@ init_pic:   ; https://wiki.osdev.org/PIC
     ; out PIC2_COMMAND, al ; disable PIC2
     ret
 
+global no_interrupt_handler
+no_interrupt_handler:
+    %include "save_registers.asm"
+    mov al, 0x20
+    out 0x20, al
+    %include "restore_registers.asm"
+    iretq
+
 global isr80h_wrapper
 isr80h_wrapper:
     push 0 ; error code

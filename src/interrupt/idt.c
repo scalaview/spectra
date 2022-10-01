@@ -10,6 +10,7 @@ struct idt_desc64 idt_descriptors64[TOTAL_INTERRUPTS];
 struct idtr_desc64 idtr_descriptor64;
 static ISR80H_COMMAND isr80h_commands[OS_MAX_ISR80H_COMMANDS];
 
+extern void no_interrupt_handler();
 extern void isr80h_wrapper();
 extern void load_idt(struct idtr_desc64* ptr);
 extern void* interrupt_pointers[TOTAL_INTERRUPTS];
@@ -38,12 +39,6 @@ void idt_set(int interrupt_no, void* address, uint8_t attribute)
     idt_desc64->offset_3 = (uint32_t)(((uint64_t)address) >> 32);
 }
 
-void no_interrupt()
-{
-    /* Acknowledge master PIC. */
-    outb(0x20, 0x20);
-}
-
 void idt_initialize()
 {
     memset(&idt_descriptors64, 0, sizeof(idt_descriptors64));
@@ -55,8 +50,7 @@ void idt_initialize()
     {
         idt_set(i, interrupt_pointers[i], 0xEE);
     }
-    idt_set(32, no_interrupt, 0xEE);
-    idt_set(46, no_interrupt, 0xEE);
+    idt_set(32, no_interrupt_handler, 0xEE);
     idt_set(0x80, isr80h_wrapper, 0xEE);
     load_idt(&idtr_descriptor64);
 }
@@ -66,13 +60,7 @@ void interrupt_handler(int interrupt_no, struct interrupt_frame* frame)
     printk("interrupt_no: %d, frame error_code: %d", interrupt_no, frame->error_code);
     /* Acknowledge master PIC. */
     outb(0x20, 0x20);
-    switch (interrupt_no)
-    {
-    case 32: // timer
-        break;
-    default:
-        while (1);
-    }
+    return;
 }
 
 void isr80h_register_command(int command_id, ISR80H_COMMAND command)

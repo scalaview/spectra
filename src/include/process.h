@@ -22,7 +22,7 @@ struct process
     struct program_info program_info;
 };
 
-int process_initialize(struct process** process);
+int process_initialize(const char* fullpath, struct process** process);
 int process_launch(uint32_t pid);
 
 #endif

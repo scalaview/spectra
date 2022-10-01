@@ -3,14 +3,14 @@
 
 void* isr80h_command0_print(struct interrupt_frame* frame)
 {
-    int64_t param_count = frame->rdi;
-    int64_t* argptr = (int64_t*)frame->rsi;
-    if (param_count < 2)
+    int64_t argc = frame->rsi;
+    int64_t* argv = (int64_t*)frame->rdx;
+    if (argc < 2)
     {
         printk("missing params in print");
         return 0;
     }
-    print_to_screen((char*)argptr[0], (int)argptr[1], 0xe);
+    print_to_screen((char*)argv[0], (int)argv[1], (char)argv[2]);
 
-    return (void*)argptr[1];
+    return (void*)argv[1];
 }

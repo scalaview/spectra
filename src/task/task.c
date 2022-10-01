@@ -59,6 +59,12 @@ int task_initialize(struct task* task, struct process* process)
         res = -ENOMEM;
         goto out;
     }
+    void* kernel_stack = kzalloc(4 * PAGE_SIZE_4K);
+    if (!kernel_stack)
+    {
+        res = -ENOMEM;
+        goto out;
+    }
     // map kernel page
     task->page_chunk = kernel_paging_initialize();
     if (!task->page_chunk)
@@ -68,15 +74,15 @@ int task_initialize(struct task* task, struct process* process)
     }
     // initialize stack and task memory space, 16KB stack size
     paging_initialize_pml4_table(&task->page_chunk, (((uint64_t)process->program_info.virtual_base_address) - process->program_info.stack_size), ((uint64_t)process->program_info.virtual_end_address), vir2phy(program_memory), PAGE_SIZE_4K, PAGING_IS_WRITEABLE | PAGING_PRESENT | PAGING_ACCESS_FROM_ALL);
-    task->rptr = program_memory;
-    task->tptr = (char*)program_memory + process->program_info.stack_size;
+    task->tstack_top = program_memory;
+    task->entry = (void*)(((char*)program_memory) + process->program_info.stack_size);
+    task->kstack = (void*)(((char*)kernel_stack) + 4 * PAGE_SIZE_4K);
     task->registers = (struct registers*)program_memory;
-    task->registers->r12 = 100;
     task->registers->cs = USER_CODE_SEGMENT | 3;
     task->registers->ss = USER_DATA_SEGMENT | 3;
     task->registers->rsp = RANG_3_STACK_PTR;
     task->registers->rip = RANG_3_VMA;
-    task->registers->rflags = 0x202;
+    task->registers->rflags = 0x202; // enable interrupt
     task->process = process;
 
 out:
@@ -104,5 +110,6 @@ out:
 
 void task_launch(struct task* task)
 {
+    tasks_manager.current = task;
     task_switch(task->registers);
 }

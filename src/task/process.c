@@ -107,7 +107,7 @@ int process_read_binary_program_state(const char* fullpath, struct process* proc
     process->program_info.size = stat->filesize;
     process->program_info.stack_size = 4 * PAGE_SIZE_4K; //16K
     process->program_info.virtual_base_address = (void*)RANG_3_VMA;
-    process->program_info.virtual_end_address = process->program_info.virtual_base_address + process->program_info.size;
+    process->program_info.virtual_end_address = (void*)align_up(((uint64_t)process->program_info.virtual_base_address) + process->program_info.size);
 out:
     fclose(fd);
     if (stat)

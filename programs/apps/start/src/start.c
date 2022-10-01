@@ -7,7 +7,7 @@ int main(int argc, char** argv)
     {
         i++;
     }
-    printf("process starts\n");
+    printf("process starts, %x\n", &i);
     while (1);
     return 0;
 }

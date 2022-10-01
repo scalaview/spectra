@@ -73,12 +73,11 @@ int task_initialize(struct task* task, struct process* process)
         goto out;
     }
     // initialize stack and task memory space, 16KB stack size
-    paging_initialize_pml4_table(&task->page_chunk, align_down(((uint64_t)process->program_info.virtual_base_address) - process->program_info.stack_size), align_up((uint64_t)process->program_info.virtual_end_address), vir2phy(align_down(program_memory)), PAGE_SIZE_4K, PAGING_IS_WRITEABLE | PAGING_PRESENT | PAGING_ACCESS_FROM_ALL);
+    paging_initialize_pml4_table(&task->page_chunk, (((uint64_t)process->program_info.virtual_base_address) - process->program_info.stack_size), ((uint64_t)process->program_info.virtual_end_address), vir2phy(program_memory), PAGE_SIZE_4K, PAGING_IS_WRITEABLE | PAGING_PRESENT | PAGING_ACCESS_FROM_ALL);
     task->tstack_top = program_memory;
     task->entry = (void*)(((char*)program_memory) + process->program_info.stack_size);
     task->kstack = (void*)(((char*)kernel_stack) + 4 * PAGE_SIZE_4K);
     task->registers = (struct registers*)program_memory;
-    task->registers->r12 = 100;
     task->registers->cs = USER_CODE_SEGMENT | 3;
     task->registers->ss = USER_DATA_SEGMENT | 3;
     task->registers->rsp = RANG_3_STACK_PTR;

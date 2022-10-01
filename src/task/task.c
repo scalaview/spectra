@@ -82,7 +82,7 @@ int task_initialize(struct task* task, struct process* process)
     task->registers->ss = USER_DATA_SEGMENT | 3;
     task->registers->rsp = RANG_3_STACK_PTR;
     task->registers->rip = RANG_3_VMA;
-    task->registers->rflags = 0x202;
+    task->registers->rflags = 0x202; // enable interrupt
     task->process = process;
 
 out:

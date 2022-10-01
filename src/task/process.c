@@ -198,7 +198,6 @@ int process_launch(uint32_t pid)
         res = -EISTAKEN;
         goto out;
     }
-    printk("set_tss_rsp0: %x\n", vir2phy(process->primary->kstack));
     set_tss_rsp0((uint64_t)process->primary->kstack);
     switch_vm(process->primary->page_chunk);
     set_user_registers();

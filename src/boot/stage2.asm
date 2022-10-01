@@ -7,6 +7,7 @@ extern gdt64_descriptor
 extern init_pic
 extern multiboot_magic
 extern multiboot_info
+extern set_kernel_registers
 
 global long_cseg
 long_cseg:
@@ -17,11 +18,7 @@ _start:
     mov rax, gdt64_descriptor
     lgdt [rax]
 
-    mov ax, DATA_SEG
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
+    call set_kernel_registers
     mov ss, ax
     mov rbp, STACK_V
     mov rsp, rbp

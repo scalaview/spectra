@@ -11,7 +11,6 @@
 %define P2_TABLE_PHY        (p2_table - KERNEL_VMA)
 %define MB_MAGICA           (multiboot_magic - KERNEL_VMA)
 %define MBI_PHYA            (multiboot_info - KERNEL_VMA)
-%define RANG3_STACK_SIZE    4096
 
 global kernel_stack_ptr
 kernel_stack_ptr    equ         STACK_V

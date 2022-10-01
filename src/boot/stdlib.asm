@@ -91,6 +91,15 @@ enable_paging:
 
     ret
 
+global set_kernel_registers
+set_kernel_registers:
+    mov ax, DATA_SEG
+    mov ds, ax
+    mov es, ax
+    mov gs, ax
+    mov fs, ax
+    ret
+
 global halt
 halt:
     hlt

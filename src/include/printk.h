@@ -19,5 +19,6 @@ struct terminal_screen {
 // https://en.wikipedia.org/wiki/Printk
 int printk(const char* format, ...);
 void terminal_screen_initialize();
+void print_to_screen(const char* buffer, int size, char color);
 
 #endif

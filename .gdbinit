@@ -1,4 +1,4 @@
-add-symbol-file ./bin/kernel.elf
+add-symbol-file ./kernel/bin/kernel.elf
 add-symbol-file ./programs/apps/start/bin/start.elf
 target remote | qemu-system-x86_64 -hda ./bin/os.bin -S -gdb stdio
 # break *0x200000
@@ -14,8 +14,9 @@ target remote | qemu-system-x86_64 -hda ./bin/os.bin -S -gdb stdio
 # b isr80h_wrapper
 # b isr80h_handler
 # b printf
-b isr80h_command0_print
+# b isr80h_command0_print
 # b task_switch
 # b sys_print
 # b main
-# b interrupt_handler
+# b paging_initialize_pml4_table
+b kernel_main

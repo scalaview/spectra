@@ -5,22 +5,80 @@
 #include "status.h"
 #include "config.h"
 
-
 struct pml4_table* kernel_chunk;
+
+int paging_initialize_pdp_entry(pdp_entry* pd_entries, uint64_t base_address, uint64_t max_address, uint64_t offset, uint32_t* offset_count_ptr, uint64_t prev_lev_start_address, uint32_t page_size, uint64_t current_level_page_size, uint8_t flags)
+{
+    int res = 0;
+    if (page_size != PAGE_SIZE_2M && page_size != PAGE_SIZE_4K)
+    {
+        res = -EINVARG;
+        goto out;
+    }
+    if (base_address % page_size != 0 || max_address % page_size != 0 || offset % page_size != 0)
+    {
+        res = -EINVARG;
+        goto out;
+    }
+    int max_index = ((max_address - prev_lev_start_address) % current_level_page_size) != 0 ? ((max_address - prev_lev_start_address + current_level_page_size) / current_level_page_size) : ((max_address - prev_lev_start_address) / current_level_page_size);
+    int start_index = base_address > prev_lev_start_address ? ((base_address - prev_lev_start_address) / current_level_page_size) : 0;
+    for (int i = start_index; i < max_index && i < PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE; i++)
+    {
+        if (page_size == current_level_page_size)
+        {
+            pd_entries[i].entry = (offset + (*offset_count_ptr) * page_size) | (((page_size == PAGE_SIZE_1G || page_size == PAGE_SIZE_2M) ? 0b10000000 : 0) | flags); //1GB or 2MB paging, Set Huge 1
+            (*offset_count_ptr)++;
+        }
+        else
+        {
+            pdp_entry* next_entries;
+            if (!pd_entries[i].fields.address)
+            {
+                next_entries = kzalloc(sizeof(pdp_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE);
+                pd_entries[i].entry = vir2phy(next_entries) | flags;
+            }
+            else
+            {
+                next_entries = (pdp_entry*)phy2vir(pd_entries[i].fields.address << 12);
+            }
+            uint64_t current_start_address = prev_lev_start_address + (uint64_t)i * current_level_page_size;
+            res = paging_initialize_pdp_entry(next_entries, base_address, max_address, offset, offset_count_ptr, current_start_address, page_size, current_level_page_size / PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE, flags);
+            if (res < 0)
+            {
+                if (!pd_entries[i].fields.address)
+                {
+                    pd_entries[i].entry = 0;
+                    kfree(next_entries);
+                }
+                goto out;
+            }
+        }
+    }
+out:
+    return res;
+}
 
 int paging_initialize_pml4_table(struct pml4_table** pml4_table, uint64_t vir_base_addr, uint64_t vir_max_addr, uint64_t phy_addr, uint32_t page_size, uint8_t flags)
 {
+    int res = 0;
     if (page_size != PAGE_SIZE_2M && page_size != PAGE_SIZE_4K)
     {
-        return -EIO;
+        res = -EINVARG;
+        goto out;
     }
     if (phy_addr % page_size != 0 || vir_base_addr % page_size != 0 || vir_max_addr % page_size != 0)
     {
-        return -EINVARG;
+        res = -EINVARG;
+        goto out;
     }
     if (!*pml4_table)
     {
         *pml4_table = kzalloc(sizeof(struct pml4_table));
+        if (!*pml4_table)
+        {
+            res = -ENOMEM;
+            goto out;
+        }
     }
 
     // 64-bit processors support 48-bit virtual addressing and 256-TiB virtual address spaces.
@@ -43,7 +101,7 @@ int paging_initialize_pml4_table(struct pml4_table** pml4_table, uint64_t vir_ba
     uint32_t lev_4_end_index = (uint32_t)(max_address >> 39);
     for (int i = lev_4_start_index; i <= lev_4_end_index; i++)
     {
-        uint64_t current_lev_4_address = i * (((uint64_t)2) << 38);
+        uint64_t current_lev_4_address = (uint64_t)i * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE * PAGE_SIZE_1G;
         pdp_entry* pdp3_entries;
         if (!pml4_entries[i].fields.address)
         {
@@ -54,67 +112,19 @@ int paging_initialize_pml4_table(struct pml4_table** pml4_table, uint64_t vir_ba
         {
             pdp3_entries = (pdp_entry*)phy2vir(pml4_entries[i].fields.address << 12);
         }
-        for (int j = 0;j < PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE; j++)
+        res = paging_initialize_pdp_entry(pdp3_entries, base_address, max_address, offset, &offset_count, current_lev_4_address, page_size, ((uint64_t)PAGE_SIZE_1G), flags);
+        if (res < 0)
         {
-            uint64_t current_lev_3_start_address = current_lev_4_address + j * (((uint64_t)2) << 29);
-            uint64_t current_lev_3_end_address = current_lev_3_start_address + PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE * PAGE_SIZE_2M;
-            if (current_lev_3_end_address < base_address)
-                continue;
-            if (current_lev_3_start_address >= max_address)
-                break;
-            pdp_entry* pd2_entries;
-            if (!pdp3_entries[j].fields.address)
+            if (!pml4_entries[i].fields.address)
             {
-                pd2_entries = kzalloc(sizeof(pdp_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE);
-                pdp3_entries[j].entry = vir2phy(pd2_entries) | flags;
-            }
-            else
-            {
-                pd2_entries = (pdp_entry*)phy2vir(pdp3_entries[j].fields.address << 12);
-            }
-            for (int z = 0; z < PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE; z++)
-            {
-                if (page_size == PAGE_SIZE_2M)
-                {
-                    uint64_t current_lev_2_address = current_lev_3_start_address + z * page_size;
-                    if (current_lev_2_address >= base_address && current_lev_2_address < max_address)
-                    {
-                        pd2_entries[z].entry = (offset + offset_count * page_size) | (0b10000000 | flags); //2MB paging, Set Huge 1
-                        offset_count++;
-                    }
-                }
-                else if (page_size == PAGE_SIZE_4K)
-                {
-                    uint64_t current_lev_2_start_address = current_lev_3_start_address + z * (((uint64_t)2) << 20);
-                    uint64_t current_lev_2_end_address = current_lev_2_start_address + PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE * PAGE_SIZE_4K;
-                    if (current_lev_2_end_address < base_address)
-                        continue;
-                    if (current_lev_2_start_address >= max_address)
-                        break;
-                    pdp_entry* pd1_entries;
-                    if (!pd2_entries[z].fields.address)
-                    {
-                        pd1_entries = kzalloc(sizeof(pdp_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE);
-                        pd2_entries[z].entry = vir2phy(pd1_entries) | flags;
-                    }
-                    else
-                    {
-                        pd1_entries = (pdp_entry*)phy2vir(pd2_entries[z].fields.address << 12);
-                    }
-                    for (int t = 0; t < PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE; t++)
-                    {
-                        uint64_t current_lev_1_address = current_lev_2_start_address + t * page_size;
-                        if (current_lev_1_address >= base_address && current_lev_1_address < max_address)
-                        {
-                            pd1_entries[t].entry = (offset + offset_count * page_size) | flags;
-                            offset_count++;
-                        }
-                    }
-                }
+                pml4_entries[i].entry = 0;
+                kfree(pdp3_entries);
+                goto out;
             }
         }
     }
-    return 0;
+out:
+    return res;
 }
 
 // 2MB/4K paging struct initialize

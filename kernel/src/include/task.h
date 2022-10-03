@@ -33,12 +33,11 @@ struct registers
 struct task
 {
     struct pml4_table* page_chunk;
-    struct registers* registers;
+    struct registers registers;
     struct process* process;
     struct task* next;
     struct task* prev;
-    void* tstack_top;
-    void* entry;
+    void* tstack;
     void* kstack;
 };
 

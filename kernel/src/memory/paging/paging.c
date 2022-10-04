@@ -97,30 +97,13 @@ int paging_initialize_pml4_table(struct pml4_table** pml4_table, uint64_t vir_ba
         pml4_entries = kzalloc(sizeof(pml4_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE);
         (*pml4_table)->entries = pml4_entries;
     }
-    uint32_t lev_4_start_index = (uint32_t)(base_address >> 39);
-    uint32_t lev_4_end_index = (uint32_t)(max_address >> 39);
-    for (int i = lev_4_start_index; i <= lev_4_end_index; i++)
+    res = paging_initialize_pdp_entry((pdp_entry*)pml4_entries, base_address, max_address, offset, &offset_count, 0, page_size, (uint64_t)PAGE_SIZE_1G * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE, flags);
+    if (res < 0)
     {
-        uint64_t current_lev_4_address = (uint64_t)i * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE * PAGE_SIZE_1G;
-        pdp_entry* pdp3_entries;
-        if (!pml4_entries[i].fields.address)
+        if (!(*pml4_table)->entries)
         {
-            pdp3_entries = kzalloc(sizeof(pdp_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE_SIZE);
-            pml4_entries[i].entry = vir2phy(pdp3_entries) | flags;
-        }
-        else
-        {
-            pdp3_entries = (pdp_entry*)phy2vir(pml4_entries[i].fields.address << 12);
-        }
-        res = paging_initialize_pdp_entry(pdp3_entries, base_address, max_address, offset, &offset_count, current_lev_4_address, page_size, ((uint64_t)PAGE_SIZE_1G), flags);
-        if (res < 0)
-        {
-            if (!pml4_entries[i].fields.address)
-            {
-                pml4_entries[i].entry = 0;
-                kfree(pdp3_entries);
-                goto out;
-            }
+            (*pml4_table)->entries = 0;
+            kfree(pml4_entries);
         }
     }
 out:

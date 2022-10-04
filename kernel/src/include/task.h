@@ -33,25 +33,32 @@ struct registers
 struct task
 {
     struct pml4_table* page_chunk;
-    struct registers* registers;
+    struct registers registers;
     struct process* process;
     struct task* next;
     struct task* prev;
-    void* tstack_top;
-    void* entry;
+    void* tstack;
     void* kstack;
 };
 
 struct tasks_manager
 {
-    struct task* head;
-    struct task* current;
-    struct task* tail;
+    struct task_wrapper* head;
+    struct task_wrapper* current;
+    struct task_wrapper* tail;
+};
+
+struct task_wrapper
+{
+    struct task* task;
+
+    struct task_wrapper* prev;
+    struct task_wrapper* next;
 };
 
 struct task* create_task(struct process* process);
 void task_switch(struct registers* registers);
-void task_launch(struct task* task);
+int task_launch(struct task* task);
 void task_save_current_state(struct interrupt_frame* frame);
 
 extern void set_user_registers();

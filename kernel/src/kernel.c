@@ -10,6 +10,7 @@
 #include "disk.h"
 #include "tss.h"
 #include "process.h"
+#include "task.h"
 #include "isr80h.h"
 
 extern struct pml4_table* kernel_chunk;
@@ -80,6 +81,9 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
         printk("init process fail!");
         assert(0);
     }
+    struct task* task = 0;
+    process_initialize_task(process, &task);
+    task_launch(task);
     process_launch(process->id);
     assert(0);
 }

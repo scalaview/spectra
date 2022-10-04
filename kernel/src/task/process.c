@@ -3,7 +3,6 @@
 #include "heap/kheap.h"
 #include "task.h"
 #include "config.h"
-#include "tss.h"
 #include "kmemory.h"
 #include "paging/paging.h"
 #include "file.h"
@@ -89,7 +88,7 @@ static int process_initialize_program(const char* fullpath, struct process* proc
     return process_load_binary_program(fullpath, process);
 }
 
-int process_initialize_task(struct process* process)
+int process_initialize_task(struct process* process, struct task** out_task)
 {
     int res = 0;
     struct task* task;
@@ -103,6 +102,7 @@ int process_initialize_task(struct process* process)
     {
         process->primary = task;
     }
+    *out_task = task;
 out:
     if (res < 0)
     {
@@ -132,13 +132,14 @@ int process_load(const int process_id, const char* fullpath, struct process** pr
     {
         goto out;
     }
-
-    res = process_initialize_task(process);
+    struct task* task = 0;
+    res = process_initialize_task(process, &task);
     if (res < 0)
     {
         goto out;
     }
     process->id = process_id;
+    process->parent_id = process->id;
     *process_ptr = process;
     process_table[process_id] = process;
 out:
@@ -164,11 +165,6 @@ out:
     return res;
 }
 
-void switch_vm(struct pml4_table* pml4_table)
-{
-    setup_paging_directory(vir2phy(pml4_table->entries));
-}
-
 int process_launch(uint32_t pid)
 {
     int res = 0;
@@ -178,9 +174,6 @@ int process_launch(uint32_t pid)
         res = -EISTAKEN;
         goto out;
     }
-    set_tss_rsp0((uint64_t)process->primary->kstack);
-    switch_vm(process->primary->page_chunk);
-    set_user_registers();
     task_launch(process->primary);
 out:
     return res;

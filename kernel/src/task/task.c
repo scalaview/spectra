@@ -5,6 +5,7 @@
 #include "paging/paging.h"
 #include "process.h"
 #include "assert.h"
+#include "tss.h"
 
 struct tasks_manager tasks_manager = {
     .head = NULL,
@@ -14,8 +15,45 @@ struct tasks_manager tasks_manager = {
 
 struct task* task_list_current()
 {
-    return tasks_manager.current;
+    struct task_wrapper* task_wrapper = tasks_manager.current;
+    if (!task_wrapper)
+        return 0;
+    return task_wrapper->task;
 };
+
+int task_list_set_current(struct task* task)
+{
+    struct task_wrapper* task_wrapper = kzalloc(sizeof(struct task_wrapper));
+    if (!task_wrapper)
+    {
+        return -ENOMEM;
+    }
+    task_wrapper->task = task;
+    tasks_manager.current = task_wrapper;
+    return 0;
+}
+
+int task_list_add_one(struct task* task)
+{
+    struct task_wrapper* task_wrapper = kzalloc(sizeof(struct task_wrapper));
+    if (!task_wrapper)
+    {
+        return -ENOMEM;
+    }
+    task_wrapper->task = task;
+    if (!tasks_manager.head)
+    {
+        tasks_manager.head = task_wrapper;
+    }
+    if (tasks_manager.tail)
+    {
+        task_wrapper->prev = tasks_manager.tail;
+    }
+    tasks_manager.tail = task_wrapper;
+    return 0;
+};
+
+
 
 static void task_save_state(struct task* task, struct interrupt_frame* frame)
 {
@@ -127,8 +165,19 @@ out:
     return task;
 }
 
-void task_launch(struct task* task)
+void switch_vm(struct pml4_table* pml4_table)
 {
-    tasks_manager.current = task;
+    setup_paging_directory(vir2phy(pml4_table->entries));
+}
+
+int task_launch(struct task* task)
+{
+    int res = task_list_set_current(task);
+    if (res < 0)
+        return res;
+    set_tss_rsp0((uint64_t)task->kstack);
+    switch_vm(task->page_chunk);
+    set_user_registers();
     task_switch(&task->registers);
+    return 0;
 }

@@ -18,11 +18,13 @@ struct program_info
 struct process
 {
     uint16_t id;
+    uint16_t parent_id;
     struct task* primary;
     struct program_info program_info;
 };
 
 int process_initialize(const char* fullpath, struct process** process);
 int process_launch(uint32_t pid);
+int process_initialize_task(struct process* process, struct task** out_task);
 
 #endif

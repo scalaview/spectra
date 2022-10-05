@@ -2,8 +2,16 @@
 #define TASK_H
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "paging/paging.h"
 #include "idt.h"
+
+typedef enum
+{
+    READY,
+    WAIT,
+    TERMINATE
+} TASKSTATE;
 
 struct registers
 {
@@ -35,31 +43,40 @@ struct task
     struct pml4_table* page_chunk;
     struct registers registers;
     struct process* process;
+    TASKSTATE state;
     struct task* next;
     struct task* prev;
+    struct task* thead; //threads head
     void* tstack;
     void* kstack;
 };
 
-struct tasks_manager
-{
-    struct task_wrapper* head;
-    struct task_wrapper* current;
-    struct task_wrapper* tail;
-};
-
 struct task_wrapper
 {
-    struct task* task;
-
-    struct task_wrapper* prev;
-    struct task_wrapper* next;
+    struct task* next;
+    struct task* tail;
 };
+
+struct tasks_manager
+{
+    struct task* current;
+    struct task_wrapper ready_list;
+    struct task_wrapper wait_list;
+    struct task_wrapper terminal_list;
+};
+
+extern struct tasks_manager tasks_manager;
 
 struct task* create_task(struct process* process);
 void task_switch(struct registers* registers);
-int task_launch(struct task* task);
+void task_launch(struct task* task);
 void task_save_current_state(struct interrupt_frame* frame);
+void task_list_set_current(struct task* task);
+bool is_list_empty(struct task_wrapper* list);
+void task_list_add_one(struct task_wrapper* list, struct task* task);
+void task_list_remove_one(struct task_wrapper* list, struct task* task);
+void task_run_schedule();
+void task_read_list_append_one(struct task* task);
 
 extern void set_user_registers();
 

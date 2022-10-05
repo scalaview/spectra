@@ -83,7 +83,9 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
     }
     struct task* task = 0;
     process_initialize_task(process, &task);
-    task_launch(task);
+    // task_launch(task);
     process_launch(process->id);
+    task_read_list_append_one(task);
+    task_run_schedule();
     assert(0);
 }

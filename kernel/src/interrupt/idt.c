@@ -5,16 +5,53 @@
 #include "printk.h"
 #include "io.h"
 #include "task.h"
+#include "status.h"
 
 struct idt_desc64 idt_descriptors64[TOTAL_INTERRUPTS];
 struct idtr_desc64 idtr_descriptor64;
 static ISR80H_COMMAND isr80h_commands[OS_MAX_ISR80H_COMMANDS];
+static INTERRUPT_CALLBACK_FUNCTION interrupt_callbacks[TOTAL_INTERRUPTS];
 
 extern void no_interrupt_handler();
 extern void isr80h_wrapper();
 extern void load_idt(struct idtr_desc64* ptr);
 extern void* interrupt_pointers[TOTAL_INTERRUPTS];
 extern void set_kernel_registers();
+
+const char* exception_messages[] = {
+    "Divide by zero Error", // 0
+    "Debug", // 1
+    "Non maskable Interrupt", // 2
+    "Breakpoint", // 3
+    "Overflow", // 4
+    "Bound Range Exceeded", // 5
+    "Invalid Opcode", // 6
+    "Device Not Available", // 7
+    "Double Fault", // 8
+    "Coprocessor Segment Overrun", // 9
+    "Bad TSS", // 10
+    "Segment Not Present", // 11
+    "Stack Fault", //12
+    "General Protection Fault", // 13
+    "Page Fault", // 14
+    "Reserved", // 15
+    "x87 Floating-Point Exception", // 16
+    "Alignment Check", // 17
+    "Machine Check", // 18
+    "SIMD Floating-Point Exception", // 19
+    "Virtualization Exception", // 20
+    "Control Protection Exception", // 21
+    "Reserved", // 22
+    "Reserved", // 23
+    "Reserved", // 24
+    "Reserved", // 25
+    "Reserved", // 26
+    "Reserved", // 27
+    "Hypervisor Injection Exception", // 28
+    "VMM Communication Exception", // 29
+    "Security Exception", // 30
+    "Reserved" // 31
+};
 
 void idt_set(int interrupt_no, void* address, uint8_t attribute)
 {
@@ -39,6 +76,21 @@ void idt_set(int interrupt_no, void* address, uint8_t attribute)
     idt_desc64->offset_3 = (uint32_t)(((uint64_t)address) >> 32);
 }
 
+void idt_handle_exception(int interrupt, struct interrupt_frame* frame)
+{
+    printk("%s: %d, error_code: %d", exception_messages[interrupt], interrupt, frame->error_code);
+}
+
+void interrupt_handler(int interrupt, struct interrupt_frame* frame)
+{
+    if (interrupt_callbacks[interrupt] != 0)
+    {
+        interrupt_callbacks[interrupt](interrupt, frame);
+    }
+    /* Acknowledge master PIC. */
+    outb(0x20, 0x20);
+}
+
 void idt_initialize()
 {
     memset(&idt_descriptors64, 0, sizeof(idt_descriptors64));
@@ -50,17 +102,26 @@ void idt_initialize()
     {
         idt_set(i, interrupt_pointers[i], 0xEE);
     }
+
     idt_set(32, no_interrupt_handler, 0xEE);
     idt_set(0x80, isr80h_wrapper, 0xEE);
+
+    for (int i = 0; i < 0x20; i++)
+    {
+        idt_register_interrupt_callback(i, idt_handle_exception);
+    }
     load_idt(&idtr_descriptor64);
 }
 
-void interrupt_handler(int interrupt_no, struct interrupt_frame* frame)
+int idt_register_interrupt_callback(int interrupt, INTERRUPT_CALLBACK_FUNCTION interrupt_callback)
 {
-    printk("interrupt_no: %d, frame error_code: %d", interrupt_no, frame->error_code);
-    /* Acknowledge master PIC. */
-    outb(0x20, 0x20);
-    return;
+    int res = SUCCESS;
+    if (interrupt < 0 || interrupt >= TOTAL_INTERRUPTS)
+    {
+        return -EINVARG;
+    }
+    interrupt_callbacks[interrupt] = interrupt_callback;
+    return res;
 }
 
 void isr80h_register_command(int command_id, ISR80H_COMMAND command)

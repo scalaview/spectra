@@ -7,6 +7,7 @@ SECTIONS
 
     .text : ALIGN(16)
     {
+        *(.start_entry)
         *(.text)
     }
 

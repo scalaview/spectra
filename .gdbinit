@@ -19,4 +19,4 @@ target remote | qemu-system-x86_64 -hda ./bin/os.bin -S -gdb stdio
 # b sys_print
 # b main
 # b paging_initialize_pml4_table
-b task_run_schedule
+b main_entry

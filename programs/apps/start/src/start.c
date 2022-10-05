@@ -8,6 +8,5 @@ int main(int argc, char** argv)
         i++;
     }
     printf("process starts, %x\n", &i);
-    while (1);
     return 0;
 }

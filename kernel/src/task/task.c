@@ -14,7 +14,12 @@ struct tasks_manager tasks_manager = {
 struct task* task_list_current()
 {
     return tasks_manager.current;
-};
+}
+
+struct task* task_list_next()
+{
+    return tasks_manager.ready_list.next;
+}
 
 void task_list_set_current(struct task* task)
 {
@@ -26,7 +31,7 @@ bool is_list_empty(struct task_wrapper* list)
     return (list->next == NULL);
 }
 
-void task_read_list_append_one(struct task* task)
+void task_ready_list_append_one(struct task* task)
 {
     task->state = READY;
     task_list_add_one(&tasks_manager.ready_list, task);
@@ -65,9 +70,9 @@ void task_list_remove_one(struct task_wrapper* list, struct task* task)
         goto out;
     }
 
-    if (list->tail == current)
+    if (list->tail == task)
     {
-        list->tail = current->prev;
+        list->tail = task->prev;
         res = SUCCESS;
         goto out;
     }
@@ -193,6 +198,7 @@ struct task* create_task(struct process* process)
         res = -ENOMEM;
         goto out;
     }
+    task->state = INIT;
     res = task_initialize(task, process);
 out:
     if (res < 0)
@@ -219,7 +225,34 @@ void task_launch(struct task* task)
 
 void task_run_schedule()
 {
-    assert(tasks_manager.ready_list.next);
+    if (is_list_empty(&tasks_manager.ready_list))
+    {
+        return;
+    }
     struct task* task_head = tasks_manager.ready_list.next;
+    task_list_remove_one(&tasks_manager.ready_list, task_head);
+    task_head->state = RUNNING;
     task_launch(task_head);
+}
+
+void yield()
+{
+    if (is_list_empty(&tasks_manager.ready_list))
+    {
+        return;
+    }
+    struct task* current = tasks_manager.current;
+    task_ready_list_append_one(current);
+    task_run_schedule();
+}
+
+
+
+void task_run_next()
+{
+    if (is_list_empty(&tasks_manager.ready_list))
+    {
+        return;
+    }
+    yield();
 }

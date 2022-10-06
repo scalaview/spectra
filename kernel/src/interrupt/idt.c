@@ -91,6 +91,16 @@ void interrupt_handler(int interrupt, struct interrupt_frame* frame)
     outb(0x20, 0x20);
 }
 
+void timer_handler(int interrupt, struct interrupt_frame* frame)
+{
+    if (task_list_next() != task_list_current())
+    {
+        task_save_current_state(frame);
+    }
+    outb(0x20, 0x20);
+    task_run_next();
+}
+
 void idt_initialize()
 {
     memset(&idt_descriptors64, 0, sizeof(idt_descriptors64));
@@ -103,13 +113,13 @@ void idt_initialize()
         idt_set(i, interrupt_pointers[i], 0xEE);
     }
 
-    idt_set(32, no_interrupt_handler, 0xEE);
     idt_set(0x80, isr80h_wrapper, 0xEE);
 
     for (int i = 0; i < 0x20; i++)
     {
         idt_register_interrupt_callback(i, idt_handle_exception);
     }
+    idt_register_interrupt_callback(0x20, timer_handler);
     load_idt(&idtr_descriptor64);
 }
 

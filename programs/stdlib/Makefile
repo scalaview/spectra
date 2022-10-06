@@ -16,7 +16,8 @@ FILES =	./build/entry.asm.o \
 		./build/memory.o \
 		./build/stdio.o \
 		./build/string.o \
-		./build/syscall.asm.o
+		./build/syscall.asm.o \
+		./build/unistd.o
 
 
 FLAGS = -mcmodel=large -std=gnu99 -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label $(INCLUDES) -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc -save-temps=obj

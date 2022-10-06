@@ -12,13 +12,7 @@ void* isr80h_command1_sleep(struct interrupt_frame* frame)
         return 0;
     }
     uint64_t current = get_current_ticks();
-    uint64_t pass = current;
     uint64_t sleep_seconds = argv[0];
-    // uint64_t end = current + sleep_seconds * 10;
-    task_sleep_current(sleep_seconds * 10);
-    while (current - pass < sleep_seconds) {
-        current = get_current_ticks();
-    }
-
+    task_sleep_until(current + sleep_seconds);
     return 0;
 }

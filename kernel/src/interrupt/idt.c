@@ -100,13 +100,13 @@ void interrupt_handler(int interrupt, struct interrupt_frame* frame)
 
 void timer_handler(int interrupt, struct interrupt_frame* frame)
 {
-    current_ticks++;
+    task_wake_up(++current_ticks);
+    outb(0x20, 0x20);
     if (task_list_next() != task_list_current())
     {
         task_save_current_state(frame);
+        yield();
     }
-    outb(0x20, 0x20);
-    task_run_next();
 }
 
 void idt_initialize()

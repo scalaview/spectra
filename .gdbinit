@@ -14,8 +14,9 @@ target remote | qemu-system-x86_64 -hda ./bin/os.bin -S -gdb stdio
 # b isr80h_handler
 # b printf
 # b process_launch
-# b task_switch
 # b sys_print
 # b main
-# b paging_initialize_pml4_table
-b timer_handler
+# b task_sleep
+b task_wake_up
+# b task_list_remove_one
+# b task_list_add_one

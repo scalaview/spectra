@@ -88,7 +88,7 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
 
 
     struct process* process1 = 0;
-    if (process_initialize("0:/usr/bin/start1.bin", &process1) < 0)
+    if (process_initialize("0:/usr/bin/hello.bin", &process1) < 0)
     {
         printk("init process fail!");
         assert(0);

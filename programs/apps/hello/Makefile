@@ -1,25 +1,22 @@
 
 LD = x86_64-elf-ld
 GCC = x86_64-elf-gcc
+OBJCOPY = x86_64-elf-objcopy
 ASM = nasm
-AR = x86_64-elf-ar
 OBJ_DIR = ./build
 BIN_DIR = ./bin
 INC_DIR = ./src/include
 INCLUDES = $(addprefix -I, $(INC_DIR))
+LINK_FILE = ./src/linker.ld
 ASM_FLAGS = -f elf64 -g -F dwarf
+STD_LIB_DIR = ../../stdlib/
+STD_LIB_BIN = ../../stdlib/bin/stdlib.elf
+APP_BIN = ./bin/hello.bin
+APP_ELF_FILES =	./bin/start.elf
+PROJECT_BUILD_PATH = ../../../build/apps
 
-STD_OBJ = ./bin/stdlib.elf
-PROJECT_BUILD_PATH = ../../build/lib
-
-FILES =	./build/entry.asm.o \
-		./build/entry.o \
-		./build/memory.o \
-		./build/stdio.o \
-		./build/string.o \
-		./build/syscall.asm.o \
-		./build/unistd.o
-
+FILES =	$(STD_LIB_BIN) \
+		./build/start.o
 
 FLAGS = -mcmodel=large -std=gnu99 -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label $(INCLUDES) -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc -save-temps=obj
 
@@ -27,10 +24,16 @@ dir:
 	mkdir -p $(BIN_DIR)
 	mkdir -p $(OBJ_DIR)
 
-all: dir $(STD_OBJ)
+all: dir lib $(APP_BIN)
 
-$(STD_OBJ): $(FILES)
-	$(LD) -m elf_x86_64 -relocatable ${FILES} -o $(STD_OBJ)
+lib:
+	@printf "\e[32;1mMaking dependencies\e[0m $<\n"
+	make -C $(STD_LIB_DIR) clean
+	make -C $(STD_LIB_DIR) all
+
+$(APP_BIN): $(FILES)
+	$(GCC) -g -T $(LINK_FILE) -o $(APP_ELF_FILES) -ffreestanding -O0 -nostdlib -fpic -g ${FILES}
+	$(OBJCOPY) -O binary $(APP_ELF_FILES) $@
 
 
 build/%.asm.o: src/%.asm
@@ -48,6 +51,6 @@ clean:
 	rm -rf $(BIN_DIR)
 
 install:
-	cp $(STD_OBJ) $(PROJECT_BUILD_PATH)
+	cp $(APP_BIN) $(PROJECT_BUILD_PATH)
 
-.PHONY: clean all install
+.PHONY: clean

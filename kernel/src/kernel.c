@@ -85,7 +85,15 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
     process_initialize_task(process, &task);
     // task_launch(task);
     process_launch(process->id);
-    task_read_list_append_one(task);
+    // task_read_list_append_one(task);
+
+    struct process* process1 = 0;
+    if (process_initialize("0:/usr/bin/start.bin", &process1) < 0)
+    {
+        printk("init process fail!");
+        assert(0);
+    }
+    process_launch(process1->id);
     task_run_schedule();
     assert(0);
 }

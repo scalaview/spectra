@@ -8,6 +8,9 @@
 
 typedef enum
 {
+    UNUSED,
+    INIT,
+    RUNNING,
     READY,
     WAIT,
     TERMINATE
@@ -76,7 +79,10 @@ bool is_list_empty(struct task_wrapper* list);
 void task_list_add_one(struct task_wrapper* list, struct task* task);
 void task_list_remove_one(struct task_wrapper* list, struct task* task);
 void task_run_schedule();
-void task_read_list_append_one(struct task* task);
+void task_ready_list_append_one(struct task* task);
+void task_run_next();
+struct task* task_list_current();
+struct task* task_list_next();
 
 extern void set_user_registers();
 

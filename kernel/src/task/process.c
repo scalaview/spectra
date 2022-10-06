@@ -175,7 +175,7 @@ int process_launch(uint32_t pid)
         goto out;
     }
     task_list_remove_one(&tasks_manager.wait_list, process->primary);
-    task_read_list_append_one(process->primary);
+    task_ready_list_append_one(process->primary);
 out:
     return res;
 }

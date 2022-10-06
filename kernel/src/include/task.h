@@ -44,7 +44,7 @@ struct registers
 struct task
 {
     struct pml4_table* page_chunk;
-    struct registers registers;
+    struct registers* registers;
     struct process* process;
     TASKSTATE state;
     struct task* next;
@@ -78,7 +78,6 @@ struct task* create_task(struct process* process);
 void task_switch(struct task* task);
 void task_start(void* stack_ptr);
 void task_launch(struct task* task);
-void task_save_current_state(struct interrupt_frame* frame);
 void task_list_set_current(struct task* task);
 bool is_list_empty(struct task_wrapper* list);
 void task_list_add_one(struct task_wrapper* list, struct task* task);

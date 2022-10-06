@@ -104,7 +104,6 @@ void timer_handler(int interrupt, struct interrupt_frame* frame)
     outb(0x20, 0x20);
     if (task_list_next() != task_list_current())
     {
-        task_save_current_state(frame);
         yield();
     }
 }
@@ -186,6 +185,5 @@ void isr80h_handler(struct interrupt_frame* frame)
         frame->rax = 0;
         return;
     }
-    task_save_current_state(frame);
     frame->rax = (uint64_t)isr80h_handle_command(command, frame);
 }

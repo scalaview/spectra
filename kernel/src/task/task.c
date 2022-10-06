@@ -8,52 +8,94 @@
 #include "tss.h"
 
 struct tasks_manager tasks_manager = {
-    .head = NULL,
-    .current = NULL,
-    .tail = NULL
+    .current = NULL
 };
 
 struct task* task_list_current()
 {
-    struct task_wrapper* task_wrapper = tasks_manager.current;
-    if (!task_wrapper)
-        return 0;
-    return task_wrapper->task;
-};
-
-int task_list_set_current(struct task* task)
-{
-    struct task_wrapper* task_wrapper = kzalloc(sizeof(struct task_wrapper));
-    if (!task_wrapper)
-    {
-        return -ENOMEM;
-    }
-    task_wrapper->task = task;
-    tasks_manager.current = task_wrapper;
-    return 0;
+    return tasks_manager.current;
 }
 
-int task_list_add_one(struct task* task)
+struct task* task_list_next()
 {
-    struct task_wrapper* task_wrapper = kzalloc(sizeof(struct task_wrapper));
-    if (!task_wrapper)
+    return tasks_manager.ready_list.next;
+}
+
+void task_list_set_current(struct task* task)
+{
+    tasks_manager.current = task;
+}
+
+bool is_list_empty(struct task_wrapper* list)
+{
+    return (list->next == NULL);
+}
+
+void task_ready_list_append_one(struct task* task)
+{
+    task->state = READY;
+    task_list_add_one(&tasks_manager.ready_list, task);
+}
+
+void task_list_add_one(struct task_wrapper* list, struct task* task)
+{
+    if (!list->next)
     {
-        return -ENOMEM;
+        list->next = task;
     }
-    task_wrapper->task = task;
-    if (!tasks_manager.head)
+    else
     {
-        tasks_manager.head = task_wrapper;
+        list->tail->next = task;
+        task->prev = list->tail;
     }
-    if (tasks_manager.tail)
-    {
-        task_wrapper->prev = tasks_manager.tail;
-    }
-    tasks_manager.tail = task_wrapper;
-    return 0;
+    list->tail = task;
 };
 
+void task_list_remove_one(struct task_wrapper* list, struct task* task)
+{
+    int res = 0;
+    struct task* current = list->next;
+    if (current == task)
+    {
+        list->next = current->next;
+        if (list->tail == current)
+        {
+            list->tail = current->prev;
+        }
+        else
+        {
+            current->next->prev = NULL;
+        }
+        res = SUCCESS;
+        goto out;
+    }
 
+    if (list->tail == task)
+    {
+        list->tail = task->prev;
+        res = SUCCESS;
+        goto out;
+    }
+
+    while (current)
+    {
+        if (current->next == task)
+        {
+            current->next = task->next;
+            task->prev = current;
+            res = SUCCESS;
+            break;
+        }
+        current = current->next;
+    }
+
+out:
+    if (res)
+    {
+        task->prev = NULL;
+        task->next = NULL;
+    }
+}
 
 static void task_save_state(struct task* task, struct interrupt_frame* frame)
 {
@@ -125,17 +167,18 @@ int task_initialize(struct task* task, struct process* process)
     task->registers.rsp = RANG_3_STACK_PTR;
     task->registers.rip = RANG_3_VMA;
     task->registers.rflags = 0x202; // enable interrupt
+    task->state = WAIT;
     task->process = process;
     if (process->primary)
     {
         struct task* tptr = process->primary;
-        while (tptr->next)
+        if (tptr->thead)
         {
-            tptr = tptr->next;
+            task->thead = tptr->thead;
         }
-        tptr->next = task;
-        task->prev = tptr;
+        tptr->thead = task; // link treads
     }
+    task_list_add_one(&tasks_manager.wait_list, task); //push to wait list
 
 out:
     if (res < 0)
@@ -155,6 +198,7 @@ struct task* create_task(struct process* process)
         res = -ENOMEM;
         goto out;
     }
+    task->state = INIT;
     res = task_initialize(task, process);
 out:
     if (res < 0)
@@ -170,14 +214,45 @@ void switch_vm(struct pml4_table* pml4_table)
     setup_paging_directory(vir2phy(pml4_table->entries));
 }
 
-int task_launch(struct task* task)
+void task_launch(struct task* task)
 {
-    int res = task_list_set_current(task);
-    if (res < 0)
-        return res;
+    task_list_set_current(task);
     set_tss_rsp0((uint64_t)task->kstack);
     switch_vm(task->page_chunk);
     set_user_registers();
     task_switch(&task->registers);
-    return 0;
+}
+
+void task_run_schedule()
+{
+    if (is_list_empty(&tasks_manager.ready_list))
+    {
+        return;
+    }
+    struct task* task_head = tasks_manager.ready_list.next;
+    task_list_remove_one(&tasks_manager.ready_list, task_head);
+    task_head->state = RUNNING;
+    task_launch(task_head);
+}
+
+void yield()
+{
+    if (is_list_empty(&tasks_manager.ready_list))
+    {
+        return;
+    }
+    struct task* current = tasks_manager.current;
+    task_ready_list_append_one(current);
+    task_run_schedule();
+}
+
+
+
+void task_run_next()
+{
+    if (is_list_empty(&tasks_manager.ready_list))
+    {
+        return;
+    }
+    yield();
 }

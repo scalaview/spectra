@@ -15,12 +15,19 @@ struct program_info
     size_t stack_size;
 };
 
+struct task_list
+{
+    struct task* head;
+    struct task* tail;
+};
+
 struct process
 {
     uint16_t id;
     uint16_t parent_id;
     struct task* primary;
     struct program_info program_info;
+    struct task_list children;
 };
 
 int process_initialize(const char* fullpath, struct process** process);

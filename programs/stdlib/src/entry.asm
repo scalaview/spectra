@@ -1,8 +1,8 @@
 [BITS 64]
-section .start_entry
-global start
+section .text
+global startup
 extern main_entry
 
-start:
+startup:
     call main_entry
     jmp $

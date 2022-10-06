@@ -1,5 +1,5 @@
 OUTPUT_FORMAT("elf64-x86-64")
-ENTRY(start)
+ENTRY(startup)
 
 SECTIONS
 {
@@ -7,7 +7,6 @@ SECTIONS
 
     .text : ALIGN(16)
     {
-        *(.start_entry)
         *(.text)
     }
 

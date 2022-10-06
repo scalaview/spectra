@@ -198,6 +198,7 @@ struct task* create_task(struct process* process)
         res = -ENOMEM;
         goto out;
     }
+    task->state = INIT;
     res = task_initialize(task, process);
 out:
     if (res < 0)

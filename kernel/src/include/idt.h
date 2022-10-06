@@ -50,6 +50,7 @@ void interrupt_handler(int interrupt_no, struct interrupt_frame* frame);
 void isr80h_handler(struct interrupt_frame* frame);
 void isr80h_register_command(int command_id, ISR80H_COMMAND command);
 int idt_register_interrupt_callback(int interrupt, INTERRUPT_CALLBACK_FUNCTION interrupt_callback);
+uint64_t get_current_ticks();
 
 extern void enable_interrupts();
 extern void disable_interrupts();

@@ -11,6 +11,7 @@ struct idt_desc64 idt_descriptors64[TOTAL_INTERRUPTS];
 struct idtr_desc64 idtr_descriptor64;
 static ISR80H_COMMAND isr80h_commands[OS_MAX_ISR80H_COMMANDS];
 static INTERRUPT_CALLBACK_FUNCTION interrupt_callbacks[TOTAL_INTERRUPTS];
+static uint64_t current_ticks;
 
 extern void no_interrupt_handler();
 extern void isr80h_wrapper();
@@ -53,6 +54,12 @@ const char* exception_messages[] = {
     "Reserved" // 31
 };
 
+
+uint64_t get_current_ticks()
+{
+    return current_ticks;
+}
+
 void idt_set(int interrupt_no, void* address, uint8_t attribute)
 {
     assert(interrupt_no >= 0);
@@ -93,6 +100,7 @@ void interrupt_handler(int interrupt, struct interrupt_frame* frame)
 
 void timer_handler(int interrupt, struct interrupt_frame* frame)
 {
+    current_ticks++;
     if (task_list_next() != task_list_current())
     {
         task_save_current_state(frame);

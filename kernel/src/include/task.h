@@ -52,6 +52,7 @@ struct task
     struct task* thead; //threads head
     void* tstack;
     void* kstack;
+    uint64_t wait;
 };
 
 struct task_wrapper
@@ -83,6 +84,7 @@ void task_ready_list_append_one(struct task* task);
 void task_run_next();
 struct task* task_list_current();
 struct task* task_list_next();
+struct task* task_sleep_current(int wait);
 
 extern void set_user_registers();
 

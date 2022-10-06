@@ -222,6 +222,12 @@ void task_launch(struct task* task)
     set_user_registers();
     task_switch(&task->registers);
 }
+struct task* task_remove_ready_list_head()
+{
+    struct task* task_head = tasks_manager.ready_list.next;
+    task_list_remove_one(&tasks_manager.ready_list, task_head);
+    return task_head;
+}
 
 void task_run_schedule()
 {
@@ -229,8 +235,7 @@ void task_run_schedule()
     {
         return;
     }
-    struct task* task_head = tasks_manager.ready_list.next;
-    task_list_remove_one(&tasks_manager.ready_list, task_head);
+    struct task* task_head = task_remove_ready_list_head();
     task_head->state = RUNNING;
     task_launch(task_head);
 }
@@ -255,4 +260,19 @@ void task_run_next()
         return;
     }
     yield();
+}
+
+void task_sleep(struct task* task, int wait)
+{
+    task->wait = wait;
+    task_list_remove_one(&tasks_manager.ready_list, task);
+
+    task->state = WAIT;
+    task_list_add_one(&tasks_manager.wait_list, task);
+}
+
+struct task* task_sleep_current(int wait)
+{
+    task_sleep(tasks_manager.current, wait);
+    return tasks_manager.current;
 }

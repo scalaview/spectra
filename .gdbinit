@@ -17,6 +17,5 @@ target remote | qemu-system-x86_64 -hda ./bin/os.bin -S -gdb stdio
 # b sys_print
 # b main
 # b task_sleep
-b task_wake_up
+# b task_wake_up
 # b task_list_remove_one
-# b task_list_add_one

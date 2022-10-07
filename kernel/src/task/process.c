@@ -7,8 +7,15 @@
 #include "paging/paging.h"
 #include "file.h"
 #include "printk.h"
+#include "assert.h"
 
 static struct process* process_table[OS_MAX_PROCESSES];
+
+struct process* get_current_process()
+{
+    assert(tasks_manager.current);
+    return tasks_manager.current->process;
+}
 
 int get_unused_process_index()
 {
@@ -139,7 +146,7 @@ int process_load(const int process_id, const char* fullpath, struct process** pr
         goto out;
     }
     process->id = process_id;
-    process->parent_id = process->id;
+    process->parent_id = 0;
     *process_ptr = process;
     process_table[process_id] = process;
 out:
@@ -176,6 +183,142 @@ int process_launch(uint32_t pid)
     }
     task_list_remove_one(&tasks_manager.wait_list, process->primary);
     task_ready_list_append_one(process->primary);
+out:
+    return res;
+}
+
+void process_wake_up(int id)
+{
+    struct process* process = get_process(id);
+    if (!process)
+        return;
+    struct task* task = process->primary;
+    while (task)
+    {
+        if (task->state == TASK_WAIT)
+        {
+            task_active(task);
+        }
+        task = task->th_next;
+    }
+}
+
+void process_free(struct process* process)
+{
+
+    struct process* child = process->children;
+    struct process* prev = 0;
+
+    while (child)
+    {
+        task_list_remove_one(&tasks_manager.terminated_list, child->primary);
+        task_free(child->primary);
+        prev = child;
+        child = prev->children;
+        kfree(prev);
+    }
+    task_list_remove_one(&tasks_manager.terminated_list, process->primary);
+    task_free(process->primary);
+    process_table[process->id] = 0;
+    kfree(process);
+}
+
+void process_exit()
+{
+    struct task* cur_task = tasks_manager.current;
+    struct process* master_process = get_process(cur_task->process->parent_id);
+    if (!master_process)
+        return;
+    struct process* cur_process = cur_task->process;
+    while (cur_process) {
+        struct task* task = cur_process->primary;
+        while (task)
+        {
+            if (task->state == TASK_READY)
+            {
+                task_list_remove_one(&tasks_manager.ready_list, task);
+            }
+            else if (task->state == TASK_WAIT)
+            {
+                task_list_remove_one(&tasks_manager.wait_list, task);
+            }
+            task->state = TASK_TERMINATE;
+            task_list_add_one(&tasks_manager.terminated_list, task);
+            task = task->th_next;
+        }
+        cur_process = cur_process->children;
+    }
+    process_wake_up(master_process->id); // 0 will be INIT process
+    task_schedule();
+}
+
+int process_waitpid(int pid)
+{
+    if (is_list_empty(&tasks_manager.terminated_list))
+    {
+        return 0;
+    }
+    if (!pid)
+        return 0;
+    struct process* current_process = get_current_process();
+    if (current_process->id == pid)
+        return 0; // can't wait for self
+    // wait for special pid
+    int res = 0;
+    struct process* process = process_table[pid];
+    while (!res)
+    {
+        struct task* task = process->primary;
+        res = 1;
+        while (task)
+        {
+            if (task->state != TASK_TERMINATE)
+            {
+                res = 0;
+                break;
+            }
+            task = task->th_next;
+        }
+        if (!res)
+        {
+            task_sleep(1);
+        }
+    }
+    // wait for all task terminated
+    process_free(process);
+    return pid;
+}
+
+int process_wait(int pid)
+{
+    if (is_list_empty(&tasks_manager.terminated_list))
+    {
+        return 0;
+    }
+    if (pid)
+    {
+        // wait for special pid
+        return process_waitpid(pid);
+    }
+    int32_t res = 0;
+    while (1)
+    {
+        struct task* task = tasks_manager.terminated_list.next;
+        struct process* current_process = get_current_process();
+        while (task)
+        {
+            if (current_process->id == task->process->parent_id)
+            {
+                assert(task->state == TASK_TERMINATE);
+                res = task->process->id;
+                process_free(task->process);
+                goto out;
+            }
+            task = task->next;
+        }
+        task_sleep(1);
+    }
+
 out:
     return res;
 }

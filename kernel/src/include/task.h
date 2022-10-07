@@ -8,12 +8,12 @@
 
 typedef enum
 {
-    UNUSED,
-    INIT,
-    RUNNING,
-    READY,
-    WAIT,
-    TERMINATE
+    TASK_UNUSED,
+    TASK_INIT,
+    TASK_RUNNING,
+    TASK_READY,
+    TASK_WAIT,
+    TASK_TERMINATE
 } TASKSTATE;
 
 struct registers
@@ -49,7 +49,7 @@ struct task
     TASKSTATE state;
     struct task* next;
     struct task* prev;
-    struct task* thead; //threads head
+    struct task* th_next; //threads next
     void* t_stack;
     void* k_stack;
     uint64_t k_context;
@@ -67,7 +67,7 @@ struct tasks_manager
     struct task* current;
     struct task_wrapper ready_list;
     struct task_wrapper wait_list;
-    struct task_wrapper terminal_list;
+    struct task_wrapper terminated_list;
 };
 
 extern struct tasks_manager tasks_manager;
@@ -84,6 +84,7 @@ void task_list_add_one(struct task_wrapper* list, struct task* task);
 void task_list_remove_one(struct task_wrapper* list, struct task* task);
 void task_schedule();
 void tasks_run();
+struct task* task_list_pop_head(struct task_wrapper* list);
 void task_ready_list_append_one(struct task* task);
 void yield();
 struct task* task_list_current();
@@ -91,6 +92,8 @@ struct task* task_list_next();
 void task_sleep_until(int wait);
 void task_wake_up(int wait);
 void task_active(struct task* task);
+void task_free(struct task* task);
+void task_sleep(int wait);
 
 extern void set_user_registers();
 

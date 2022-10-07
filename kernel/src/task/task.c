@@ -29,6 +29,13 @@ void task_list_set_current(struct task* task)
     tasks_manager.current = task;
 }
 
+struct task* task_list_pop_head(struct task_wrapper* list)
+{
+    struct task* task_head = list->next;
+    task_list_remove_one(list, task_head);
+    return task_head;
+}
+
 bool is_list_empty(struct task_wrapper* list)
 {
     return (list->next == NULL);
@@ -36,7 +43,7 @@ bool is_list_empty(struct task_wrapper* list)
 
 void task_ready_list_append_one(struct task* task)
 {
-    task->state = READY;
+    task->state = TASK_READY;
     task_list_add_one(&tasks_manager.ready_list, task);
 }
 
@@ -106,6 +113,11 @@ static void task_initialize_stack(struct task* task, struct process* process)
     task->registers->rflags = 0x202; // enable interrupt
 }
 
+void* task_stack_bottom(void* stack, size_t size)
+{
+    return (((char*)stack) - size);
+}
+
 int task_initialize(struct task* task, struct process* process)
 {
     int res = 0;
@@ -141,16 +153,16 @@ int task_initialize(struct task* task, struct process* process)
     task->t_stack = (void*)(((char*)task_stack) + process->program_info.stack_size);
 
     task_initialize_stack(task, process);
-    task->state = WAIT;
+    task->state = TASK_WAIT;
     task->process = process;
     if (process->primary)
     {
         struct task* tptr = process->primary;
-        if (tptr->thead)
+        if (tptr->th_next)
         {
-            task->thead = tptr->thead;
+            task->th_next = tptr->th_next;
         }
-        tptr->thead = task; // link treads
+        tptr->th_next = task; // link treads
     }
     task_list_add_one(&tasks_manager.wait_list, task); //push to wait list
 
@@ -172,7 +184,7 @@ struct task* create_task(struct process* process)
         res = -ENOMEM;
         goto out;
     }
-    task->state = INIT;
+    task->state = TASK_INIT;
     res = task_initialize(task, process);
 out:
     if (res < 0)
@@ -209,9 +221,7 @@ void task_switch(struct task* next)
 
 struct task* task_remove_ready_list_head()
 {
-    struct task* task_head = tasks_manager.ready_list.next;
-    task_list_remove_one(&tasks_manager.ready_list, task_head);
-    return task_head;
+    return task_list_pop_head(&tasks_manager.ready_list);
 }
 
 void task_schedule()
@@ -221,7 +231,7 @@ void task_schedule()
         assert(0);
     }
     struct task* task_head = task_remove_ready_list_head();
-    task_head->state = RUNNING;
+    task_head->state = TASK_RUNNING;
     task_switch(task_head);
 }
 
@@ -232,7 +242,7 @@ void tasks_run()
         return;
     }
     struct task* task_head = task_remove_ready_list_head();
-    task_head->state = RUNNING;
+    task_head->state = TASK_RUNNING;
     task_launch(task_head);
 }
 
@@ -253,14 +263,20 @@ void task_sleep_until(int wait)
     current->wait = wait;
     task_list_remove_one(&tasks_manager.ready_list, current);
 
-    current->state = WAIT;
+    current->state = TASK_WAIT;
     task_list_add_one(&tasks_manager.wait_list, current);
     task_schedule();
+}
+
+void task_sleep(int wait)
+{
+    task_sleep_until(get_current_ticks() + wait);
 }
 
 void task_active(struct task* task)
 {
     task_list_remove_one(&tasks_manager.wait_list, task);
+    task->state = TASK_READY;
     task_ready_list_append_one(task);
 }
 
@@ -273,10 +289,31 @@ void task_wake_up(int wait)
         next = task->next;
         if (task->wait <= wait)
         {
-            task->state = READY;
             task_list_remove_one(&tasks_manager.wait_list, task);
+            task->state = TASK_READY;
             task_ready_list_append_one(task);
         }
         task = next;
     }
+}
+
+void task_free(struct task* task)
+{
+    free_paging(task->page_chunk);
+    kfree(task_stack_bottom(task->t_stack, task->process->program_info.stack_size));
+    kfree(task_stack_bottom(task->k_stack, 4 * PAGE_SIZE_4K));
+    if (task->process->primary == task)
+    {
+        // free other related tasks
+        struct task* next = task->th_next;
+        while (next)
+        {
+            task_list_remove_one(&tasks_manager.terminated_list, next);
+            free_paging(next->page_chunk);
+            kfree(task_stack_bottom(next->t_stack, next->process->program_info.stack_size));
+            kfree(task_stack_bottom(next->k_stack, 4 * PAGE_SIZE_4K));
+            next = next->th_next;
+        }
+    }
+    kfree(task);
 }

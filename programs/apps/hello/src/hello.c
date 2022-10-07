@@ -7,7 +7,10 @@ int main(int argc, char** argv)
     {
         sleep(1);
         printf("process1 hello, %d\n", i);
+        if (i > 10)
+            break;
         i++;
     }
+    exit(0);
     return 0;
 }

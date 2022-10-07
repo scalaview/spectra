@@ -12,7 +12,7 @@ ASM_FLAGS = -f elf64 -g -F dwarf
 STD_LIB_DIR = ../../stdlib/
 STD_LIB_BIN = ../../stdlib/bin/stdlib.elf
 APP_BIN = ./bin/hello.bin
-APP_ELF_FILES =	./bin/start.elf
+APP_ELF_FILES =	./bin/hello.elf
 PROJECT_BUILD_PATH = ../../../build/apps
 
 FILES =	$(STD_LIB_BIN) \

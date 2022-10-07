@@ -101,15 +101,15 @@ static int process_initialize_program(const char* fullpath, struct process* proc
     }
     struct program_info* program_info = &process->program_info;
     program_info->stack_size = 4 * PAGE_SIZE_4K; //16K
-    process->ring_lev = ring_level;
 
     if (ring_level == RING0) // kernel land
     {
-        program_info->virtual_base_address = (void*)RANG_0_VMA;
+        program_info->virtual_base_address = (void*)RANG_3_VMA;
         program_info->virtual_end_address = (void*)align_up(((uint64_t)program_info->virtual_base_address) + program_info->size);
         program_info->code_segement = KERNEL_CODE_SEGMENT;
         program_info->data_segement = KERNEL_DATA_SEGMENT;
         program_info->flags = 0x202;
+        process->ring_lev = ring_level;
     }
     else if (ring_level == RING3) // userland
     {
@@ -118,6 +118,7 @@ static int process_initialize_program(const char* fullpath, struct process* proc
         program_info->code_segement = USER_CODE_SEGMENT | 3;
         program_info->data_segement = USER_DATA_SEGMENT | 3;
         program_info->flags = 0x202;
+        process->ring_lev = ring_level;
     }
 out:
     return res;
@@ -207,7 +208,6 @@ out:
 int create_kernel_process(const char* fullpath, struct process** process)
 {
     return process_initialize(fullpath, process, RING0);
-
 }
 
 int create_user_process(const char* fullpath, struct process** process)
@@ -332,6 +332,11 @@ int process_waitpid(int pid)
     return pid;
 }
 
+void process_debug()
+{
+    return;
+}
+
 int process_wait(int pid)
 {
     if (is_list_empty(&tasks_manager.terminated_list))
@@ -344,6 +349,8 @@ int process_wait(int pid)
         return process_waitpid(pid);
     }
     int32_t res = 0;
+    process_debug();
+
     while (1)
     {
         struct task* task = tasks_manager.terminated_list.next;
@@ -361,7 +368,8 @@ int process_wait(int pid)
         }
         task_sleep(1);
     }
-
+    printk("terminate %d\n", res);
+    process_debug();
 out:
     return res;
 }
@@ -441,15 +449,23 @@ out:
     return new_process->id;
 }
 
-int process_execve(const char* pathname, char* const argv[],
-    char* const envp[])
+int process_execve(const char* pathname, const char* argv, const char* envp, RING_LEV ring_lev)
 {
-    struct process* process = 0;
-    if (process_initialize(pathname, &process, 1) < 0)
+    struct process* current = get_current_process();
+    int res = 0;
+    if (ring_lev < current->ring_lev)
     {
-        printk("init process fail!");
-        assert(0);
+        res = -EINVARG;
+        goto out;
+    }
+    struct process* process = 0;
+    res = process_initialize(pathname, &process, ring_lev);
+    if (res < 0)
+    {
+        goto out;
     }
     process_launch(process->id);
-    return 0;
+    task_sleep(1);
+out:
+    return res;
 }

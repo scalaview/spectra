@@ -108,7 +108,14 @@ static void task_initialize_stack(struct task* task, struct process* process)
     *(uint64_t*)(task->k_context + 6 * 8) = (uint64_t)restore_registers;
     task->registers->cs = process->program_info.code_segement;
     task->registers->ss = process->program_info.data_segement;
-    task->registers->rsp = (uint64_t)process->program_info.virtual_base_address;
+    if (process->ring_lev == RING0)
+    {
+        task->registers->rsp = (uint64_t)task->k_stack;
+    }
+    else
+    {
+        task->registers->rsp = (uint64_t)process->program_info.virtual_base_address;
+    }
     task->registers->rip = (uint64_t)process->program_info.virtual_base_address;
     task->registers->rflags = process->program_info.flags; // enable interrupt
 }
@@ -143,11 +150,19 @@ int task_initialize(struct task* task, struct process* process)
         res = -ENOMEM;
         goto out;
     }
+    uint8_t page_flag = PAGING_IS_WRITEABLE | PAGING_PRESENT | PAGING_ACCESS_FROM_ALL;
+    // if (process->ring_lev == RING0)
+    // {
+    //     page_flag = PAGING_IS_WRITEABLE | PAGING_PRESENT;
+    // }
     // initialize task memory space.
-    paging_initialize_pml4_table(&task->page_chunk, (uint64_t)process->program_info.virtual_base_address, (uint64_t)process->program_info.virtual_end_address, vir2phy(process->program_info.ptr), PAGE_SIZE_4K, PAGING_IS_WRITEABLE | PAGING_PRESENT | PAGING_ACCESS_FROM_ALL);
+    paging_initialize_pml4_table(&task->page_chunk, (uint64_t)process->program_info.virtual_base_address, (uint64_t)process->program_info.virtual_end_address, vir2phy(process->program_info.ptr), PAGE_SIZE_4K, page_flag);
 
-    // initialize 16KB stack size
-    paging_initialize_pml4_table(&task->page_chunk, (uint64_t)process->program_info.virtual_base_address - process->program_info.stack_size, (uint64_t)process->program_info.virtual_base_address, vir2phy(task_stack), PAGE_SIZE_4K, PAGING_IS_WRITEABLE | PAGING_PRESENT | PAGING_ACCESS_FROM_ALL);
+    if (process->ring_lev == RING3)
+    {
+        // initialize 16KB stack size
+        paging_initialize_pml4_table(&task->page_chunk, (uint64_t)process->program_info.virtual_base_address - process->program_info.stack_size, (uint64_t)process->program_info.virtual_base_address, vir2phy(task_stack), PAGE_SIZE_4K, page_flag);
+    }
 
     task->k_stack = (void*)(((char*)kernel_stack) + 4 * PAGE_SIZE_4K);
     task->t_stack = (void*)(((char*)task_stack) + process->program_info.stack_size);
@@ -205,7 +220,7 @@ void task_launch(struct task* task)
     task_list_set_current(task);
     set_tss_rsp0((uint64_t)task->k_stack);
     switch_vm(task->page_chunk);
-    set_user_registers();
+    // set_user_registers();
     task_start(task->registers);
 }
 
@@ -215,7 +230,7 @@ void task_switch(struct task* next)
     task_list_set_current(next);
     set_tss_rsp0((uint64_t)next->k_stack);
     switch_vm(next->page_chunk);
-    set_user_registers();
+    // set_user_registers();
     task_context_switch(&current->k_context, next->k_context);
 }
 

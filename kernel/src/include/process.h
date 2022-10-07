@@ -45,5 +45,7 @@ void process_exit();
 int process_wait(int pid);
 int process_clone(struct process* src, struct process** dest);
 int process_fork();
+int process_execve(const char* pathname, const char* argv, const char* envp, RING_LEV ring_lev);
+
 
 #endif

@@ -80,15 +80,15 @@ static int process_load_binary_program(const char* fullpath, struct process* pro
 
 out:
     fclose(fd);
+    kfree(stat);
     if (res < 0)
     {
-        kfree(stat);
         kfree(code_ptr);
     }
     return res;
 }
 
-static int process_initialize_program(const char* fullpath, struct process* process, RING_LEV ring_level)
+static int process_initialize_binary_program(const char* fullpath, struct process* process, RING_LEV ring_level)
 {
     int res = 0;
     if (fullpath)
@@ -104,16 +104,17 @@ static int process_initialize_program(const char* fullpath, struct process* proc
 
     if (ring_level == RING0) // kernel land
     {
-        program_info->virtual_base_address = (void*)RANG_3_VMA;
+        program_info->virtual_base_address = (void*)RING_0_VMA;
         program_info->virtual_end_address = (void*)align_up(((uint64_t)program_info->virtual_base_address) + program_info->size);
         program_info->code_segement = KERNEL_CODE_SEGMENT;
         program_info->data_segement = KERNEL_DATA_SEGMENT;
         program_info->flags = 0x202;
         process->ring_lev = ring_level;
+
     }
     else if (ring_level == RING3) // userland
     {
-        program_info->virtual_base_address = (void*)RANG_3_VMA;
+        program_info->virtual_base_address = (void*)RING_3_VMA;
         program_info->virtual_end_address = (void*)align_up(((uint64_t)program_info->virtual_base_address) + program_info->size);
         program_info->code_segement = USER_CODE_SEGMENT | 3;
         program_info->data_segement = USER_DATA_SEGMENT | 3;
@@ -122,6 +123,11 @@ static int process_initialize_program(const char* fullpath, struct process* proc
     }
 out:
     return res;
+}
+
+static int process_initialize_program(const char* fullpath, struct process* process, RING_LEV ring_level)
+{
+    return process_initialize_binary_program(fullpath, process, ring_level);
 }
 
 int process_initialize_task(struct process* process, struct task** out_task)
@@ -258,11 +264,13 @@ void process_free(struct process* process)
         task_free(child->primary);
         prev = child;
         child = prev->children;
+        kfree(prev->program_info.ptr);
         kfree(prev);
     }
     task_list_remove_one(&tasks_manager.terminated_list, process->primary);
     task_free(process->primary);
     process_table[process->id] = 0;
+    kfree(process->program_info.ptr);
     kfree(process);
 }
 
@@ -332,11 +340,6 @@ int process_waitpid(int pid)
     return pid;
 }
 
-void process_debug()
-{
-    return;
-}
-
 int process_wait(int pid)
 {
     if (is_list_empty(&tasks_manager.terminated_list))
@@ -349,8 +352,6 @@ int process_wait(int pid)
         return process_waitpid(pid);
     }
     int32_t res = 0;
-    process_debug();
-
     while (1)
     {
         struct task* task = tasks_manager.terminated_list.next;
@@ -368,8 +369,6 @@ int process_wait(int pid)
         }
         task_sleep(1);
     }
-    printk("terminate %d\n", res);
-    process_debug();
 out:
     return res;
 }

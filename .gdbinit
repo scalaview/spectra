@@ -14,4 +14,3 @@ target remote | qemu-system-x86_64 -hda ./bin/os.bin -S -gdb stdio
 # b sys_execve
 # b execve
 # b process_wait
-b process_exit

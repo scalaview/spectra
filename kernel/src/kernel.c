@@ -17,7 +17,6 @@ extern struct pml4_table* kernel_chunk;
 
 void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
 {
-
     terminal_screen_initialize();
     idt_initialize();
 
@@ -82,26 +81,6 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
         assert(0);
     }
     process_launch(init->id);
-
-    // struct process* process = 0;
-    // if (create_user_process("0:/usr/bin/start.bin", &process) < 0)
-    // {
-    //     printk("init process fail!");
-    //     assert(0);
-    // }
-    // process_launch(process->id);
-
-    // struct process* process1 = 0;
-    // if (create_user_process("0:/usr/bin/hello.bin", &process1) < 0)
-    // {
-    //     printk("init process fail!");
-    //     assert(0);
-    // }
-    // process_launch(process1->id);
-    // struct task* task = 0;
-    // process_initialize_task(process1, &task);
-    // task_active(task);
-
     tasks_run();
     assert(0);
 }

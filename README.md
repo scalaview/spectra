@@ -10,6 +10,6 @@ TODO
 
 - [✔] Ext2 Read/Stat/Close/Seek
 
-- [ ] Process
+- [✔] Process
 
-- [ ] Multitasking
+- [✔] Multitasking

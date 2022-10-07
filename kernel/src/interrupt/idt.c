@@ -86,7 +86,7 @@ void idt_set(int interrupt_no, void* address, uint8_t attribute)
 void idt_handle_exception(int interrupt, struct interrupt_frame* frame)
 {
     printk("%s: %d, error_code: %d", exception_messages[interrupt], interrupt, frame->error_code);
-    while (1);
+    // while (1);
 }
 
 void interrupt_handler(int interrupt, struct interrupt_frame* frame)

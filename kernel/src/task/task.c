@@ -106,11 +106,11 @@ static void task_initialize_stack(struct task* task, struct process* process)
     task->k_context = (uint64_t)task->registers - 7 * 8;
     // set return address at restore_registers function
     *(uint64_t*)(task->k_context + 6 * 8) = (uint64_t)restore_registers;
-    task->registers->cs = USER_CODE_SEGMENT | 3;
-    task->registers->ss = USER_DATA_SEGMENT | 3;
-    task->registers->rsp = RANG_3_STACK_PTR;
-    task->registers->rip = RANG_3_VMA;
-    task->registers->rflags = 0x202; // enable interrupt
+    task->registers->cs = process->program_info.code_segement;
+    task->registers->ss = process->program_info.data_segement;
+    task->registers->rsp = (uint64_t)process->program_info.virtual_base_address;
+    task->registers->rip = (uint64_t)process->program_info.virtual_base_address;
+    task->registers->rflags = process->program_info.flags; // enable interrupt
 }
 
 void* task_stack_bottom(void* stack, size_t size)

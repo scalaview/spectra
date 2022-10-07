@@ -17,6 +17,11 @@
 #define OS_MAX_FILESYSTEMS      16
 #define OS_MAX_FILE_DESCRIPTORS 512
 
+#define RANG_0_VMA              0xffff700000000000
+#define RANG_0_VM_MAX           (RANG_0_VMA + (2 * PAGE_SIZE_2M))
+#define KERNEL_DATA_SEGMENT     0x10
+#define KERNEL_CODE_SEGMENT     0x08
+
 #define RANG_3_VMA              0x400000
 #define RANG_3_VM_MAX           (RANG_3_VMA + (2 * PAGE_SIZE_2M))
 #define RANG_3_STACK_SIZE       PAGE_SIZE_4K * 4

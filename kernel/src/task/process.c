@@ -76,9 +76,7 @@ static int process_load_binary_program(const char* fullpath, struct process* pro
     }
     process->program_info.ptr = code_ptr;
     process->program_info.size = stat->filesize;
-    process->program_info.stack_size = 4 * PAGE_SIZE_4K; //16K
-    process->program_info.virtual_base_address = (void*)RANG_3_VMA;
-    process->program_info.virtual_end_address = (void*)align_up(((uint64_t)process->program_info.virtual_base_address) + process->program_info.size);
+
 
 out:
     fclose(fd);
@@ -90,9 +88,39 @@ out:
     return res;
 }
 
-static int process_initialize_program(const char* fullpath, struct process* process)
+static int process_initialize_program(const char* fullpath, struct process* process, RING_LEV ring_level)
 {
-    return process_load_binary_program(fullpath, process);
+    int res = 0;
+    if (fullpath)
+    {
+        res = process_load_binary_program(fullpath, process);
+        if (res < 0)
+        {
+            goto out;
+        }
+    }
+    struct program_info* program_info = &process->program_info;
+    program_info->stack_size = 4 * PAGE_SIZE_4K; //16K
+    process->ring_lev = ring_level;
+
+    if (ring_level == RING0) // kernel land
+    {
+        program_info->virtual_base_address = (void*)RANG_0_VMA;
+        program_info->virtual_end_address = (void*)align_up(((uint64_t)program_info->virtual_base_address) + program_info->size);
+        program_info->code_segement = KERNEL_CODE_SEGMENT;
+        program_info->data_segement = KERNEL_DATA_SEGMENT;
+        program_info->flags = 0x202;
+    }
+    else if (ring_level == RING3) // userland
+    {
+        program_info->virtual_base_address = (void*)RANG_3_VMA;
+        program_info->virtual_end_address = (void*)align_up(((uint64_t)program_info->virtual_base_address) + program_info->size);
+        program_info->code_segement = USER_CODE_SEGMENT | 3;
+        program_info->data_segement = USER_DATA_SEGMENT | 3;
+        program_info->flags = 0x202;
+    }
+out:
+    return res;
 }
 
 int process_initialize_task(struct process* process, struct task** out_task)
@@ -118,7 +146,7 @@ out:
     return res;
 }
 
-int process_load(const int process_id, const char* fullpath, struct process* process)
+int process_load(const int process_id, const char* fullpath, struct process* process, RING_LEV ring_level)
 {
     int res = 0;
     if (get_process(process_id) != 0)
@@ -126,13 +154,11 @@ int process_load(const int process_id, const char* fullpath, struct process* pro
         res = -EISTAKEN;
         goto out;
     }
-    if (fullpath)
+
+    res = process_initialize_program(fullpath, process, ring_level);
+    if (res < 0)
     {
-        res = process_initialize_program(fullpath, process);
-        if (res)
-        {
-            goto out;
-        }
+        goto out;
     }
     struct task* task = 0;
     res = process_initialize_task(process, &task);
@@ -146,7 +172,7 @@ out:
     return res;
 }
 
-int process_initialize(const char* fullpath, struct process** process)
+int process_initialize(const char* fullpath, struct process** process, RING_LEV ring_level)
 {
     int res = 0;
     struct process* new_process;
@@ -165,7 +191,7 @@ int process_initialize(const char* fullpath, struct process** process)
         goto out;
     }
 
-    res = process_load(process_id, fullpath, new_process);
+    res = process_load(process_id, fullpath, new_process, ring_level);
     if (!res)
     {
         *process = new_process;
@@ -176,6 +202,17 @@ out:
         kfree(new_process);
     }
     return res;
+}
+
+int create_kernel_process(const char* fullpath, struct process** process)
+{
+    return process_initialize(fullpath, process, RING0);
+
+}
+
+int create_user_process(const char* fullpath, struct process** process)
+{
+    return process_initialize(fullpath, process, RING3);
 }
 
 int process_launch(uint32_t pid)
@@ -343,6 +380,9 @@ int copy_program(struct program_info* dest, struct program_info* src)
     dest->virtual_base_address = src->virtual_base_address;
     dest->virtual_end_address = src->virtual_end_address;
     dest->stack_size = src->stack_size;
+    dest->code_segement = src->code_segement;
+    dest->data_segement = src->code_segement;
+    dest->flags = src->flags;
 out:
     return res;
 }
@@ -364,7 +404,7 @@ int process_clone(struct process* src, struct process** dest)
         goto out;
     }
 
-    res = process_load(get_unused_process_index(), NULL, process);
+    res = process_load(get_unused_process_index(), NULL, process, src->ring_lev);
     if (res < 0)
     {
         goto out;
@@ -401,3 +441,15 @@ out:
     return new_process->id;
 }
 
+int process_execve(const char* pathname, char* const argv[],
+    char* const envp[])
+{
+    struct process* process = 0;
+    if (process_initialize(pathname, &process, 1) < 0)
+    {
+        printk("init process fail!");
+        assert(0);
+    }
+    process_launch(process->id);
+    return 0;
+}

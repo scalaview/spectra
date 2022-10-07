@@ -76,7 +76,7 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
     kfree(ptr);
 
     struct process* init = 0;
-    if (process_initialize("0:/usr/bin/init.bin", &init) < 0)
+    if (create_user_process("0:/usr/bin/init.bin", &init) < 0)
     {
         printk("init process fail!");
         assert(0);
@@ -84,7 +84,7 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
     process_launch(init->id);
 
     struct process* process = 0;
-    if (process_initialize("0:/usr/bin/start.bin", &process) < 0)
+    if (create_user_process("0:/usr/bin/start.bin", &process) < 0)
     {
         printk("init process fail!");
         assert(0);
@@ -92,7 +92,7 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
     process_launch(process->id);
 
     struct process* process1 = 0;
-    if (process_initialize("0:/usr/bin/hello.bin", &process1) < 0)
+    if (create_user_process("0:/usr/bin/hello.bin", &process1) < 0)
     {
         printk("init process fail!");
         assert(0);

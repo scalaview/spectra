@@ -19,7 +19,7 @@ struct process* get_current_process()
 
 int get_unused_process_index()
 {
-    for (int i = 0; i < OS_MAX_PROCESSES; i++)
+    for (int i = INIT_PROCESS_ID; i < OS_MAX_PROCESSES; i++)
     {
         if (process_table[i] == 0)
         {
@@ -201,6 +201,12 @@ int process_initialize(const char* fullpath, struct process** process, RING_LEV 
     res = process_load(process_id, fullpath, new_process, ring_level);
     if (!res)
     {
+        struct task* current = tasks_manager.current;
+        if (current)
+        {
+            // create by execve system call
+            new_process->parent_id = current->process->id;
+        }
         *process = new_process;
     }
 out:

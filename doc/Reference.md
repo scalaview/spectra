@@ -69,3 +69,9 @@
 [Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table)
 
 [GDT Tutorial](https://wiki.osdev.org/GDT_Tutorial)
+
+## multitask
+[PIT](https://wiki.osdev.org/Programmable_Interval_Timer)
+
+[Brendan%27s_Multi-tasking_Tutorial](https://wiki.osdev.org/Brendan%27s_Multi-tasking_Tutorial)
+

@@ -44,14 +44,16 @@ struct registers
 struct task
 {
     struct pml4_table* page_chunk;
-    struct registers registers;
+    struct registers* registers;
     struct process* process;
     TASKSTATE state;
     struct task* next;
     struct task* prev;
     struct task* thead; //threads head
-    void* tstack;
-    void* kstack;
+    void* t_stack;
+    void* k_stack;
+    uint64_t k_context;
+    int64_t wait;
 };
 
 struct task_wrapper
@@ -69,20 +71,26 @@ struct tasks_manager
 };
 
 extern struct tasks_manager tasks_manager;
+extern void restore_registers();
+extern void task_context_switch(uint64_t* current, uint64_t next);
 
 struct task* create_task(struct process* process);
-void task_switch(struct registers* registers);
+void task_switch(struct task* task);
+void task_start(void* stack_ptr);
 void task_launch(struct task* task);
-void task_save_current_state(struct interrupt_frame* frame);
 void task_list_set_current(struct task* task);
 bool is_list_empty(struct task_wrapper* list);
 void task_list_add_one(struct task_wrapper* list, struct task* task);
 void task_list_remove_one(struct task_wrapper* list, struct task* task);
-void task_run_schedule();
+void task_schedule();
+void tasks_run();
 void task_ready_list_append_one(struct task* task);
-void task_run_next();
+void yield();
 struct task* task_list_current();
 struct task* task_list_next();
+void task_sleep_until(int wait);
+void task_wake_up(int wait);
+void task_active(struct task* task);
 
 extern void set_user_registers();
 

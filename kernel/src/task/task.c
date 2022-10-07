@@ -6,6 +6,7 @@
 #include "process.h"
 #include "assert.h"
 #include "tss.h"
+#include "printk.h"
 
 struct tasks_manager tasks_manager = {
     .current = NULL
@@ -23,6 +24,8 @@ struct task* task_list_next()
 
 void task_list_set_current(struct task* task)
 {
+    task->prev = NULL;
+    task->next = NULL;
     tasks_manager.current = task;
 }
 
@@ -39,6 +42,8 @@ void task_ready_list_append_one(struct task* task)
 
 void task_list_add_one(struct task_wrapper* list, struct task* task)
 {
+    assert(!task->prev);
+    assert(!task->next);
     if (!list->next)
     {
         list->next = task;
@@ -53,80 +58,52 @@ void task_list_add_one(struct task_wrapper* list, struct task* task)
 
 void task_list_remove_one(struct task_wrapper* list, struct task* task)
 {
-    int res = 0;
     struct task* current = list->next;
-    if (current == task)
-    {
-        list->next = current->next;
-        if (list->tail == current)
-        {
-            list->tail = current->prev;
-        }
-        else
-        {
-            current->next->prev = NULL;
-        }
-        res = SUCCESS;
-        goto out;
-    }
-
-    if (list->tail == task)
-    {
-        list->tail = task->prev;
-        res = SUCCESS;
-        goto out;
-    }
-
     while (current)
     {
-        if (current->next == task)
+        if (current == task)
         {
-            current->next = task->next;
-            task->prev = current;
-            res = SUCCESS;
+            struct task* prev = task->prev;
+            struct task* next = task->next;
+            if (!prev)
+            {
+                assert(list->next == task);
+                list->next = next;
+            }
+            else
+            {
+                prev->next = next;
+            }
+            if (!next)
+            {
+                assert(list->tail == task);
+                list->tail = prev;
+            }
+            else
+            {
+                next->prev = prev;
+            }
+            task->prev = NULL;
+            task->next = NULL;
             break;
         }
         current = current->next;
     }
-
-out:
-    if (res)
-    {
-        task->prev = NULL;
-        task->next = NULL;
-    }
 }
 
-static void task_save_state(struct task* task, struct interrupt_frame* frame)
+static void task_initialize_stack(struct task* task, struct process* process)
 {
-    task->registers.rax = frame->rax;
-    task->registers.rbx = frame->rbx;
-    task->registers.rcx = frame->rcx;
-    task->registers.rdx = frame->rdx;
-    task->registers.rsi = frame->rsi;
-    task->registers.rdi = frame->rdi;
-    task->registers.rbp = frame->rbp;
-    task->registers.r8 = frame->r8;
-    task->registers.r9 = frame->r9;
-    task->registers.r10 = frame->r10;
-    task->registers.r11 = frame->r11;
-    task->registers.r12 = frame->r12;
-    task->registers.r13 = frame->r13;
-    task->registers.r14 = frame->r14;
-    task->registers.r15 = frame->r15;
+    task->registers = (struct registers*)((uint64_t)task->k_stack - sizeof(struct registers));
 
-    task->registers.rip = frame->rip;
-    task->registers.cs = frame->cs;
-    task->registers.rflags = frame->rflags;
-    task->registers.rsp = frame->rsp;
-    task->registers.ss = frame->ss;
-}
-
-void task_save_current_state(struct interrupt_frame* frame)
-{
-    struct task* task = task_list_current();
-    assert(task);
-    task_save_state(task, frame);
+    // adjust task_context_switch function
+    task->k_context = (uint64_t)task->registers - 7 * 8;
+    // set return address at restore_registers function
+    *(uint64_t*)(task->k_context + 6 * 8) = (uint64_t)restore_registers;
+    task->registers->cs = USER_CODE_SEGMENT | 3;
+    task->registers->ss = USER_DATA_SEGMENT | 3;
+    task->registers->rsp = RANG_3_STACK_PTR;
+    task->registers->rip = RANG_3_VMA;
+    task->registers->rflags = 0x202; // enable interrupt
 }
 
 int task_initialize(struct task* task, struct process* process)
@@ -160,13 +137,10 @@ int task_initialize(struct task* task, struct process* process)
     // initialize 16KB stack size
     paging_initialize_pml4_table(&task->page_chunk, (uint64_t)process->program_info.virtual_base_address - process->program_info.stack_size, (uint64_t)process->program_info.virtual_base_address, vir2phy(task_stack), PAGE_SIZE_4K, PAGING_IS_WRITEABLE | PAGING_PRESENT | PAGING_ACCESS_FROM_ALL);
 
-    task->kstack = (void*)(((char*)kernel_stack) + 4 * PAGE_SIZE_4K);
-    task->tstack = (void*)(((char*)task_stack) + process->program_info.stack_size);
-    task->registers.cs = USER_CODE_SEGMENT | 3;
-    task->registers.ss = USER_DATA_SEGMENT | 3;
-    task->registers.rsp = RANG_3_STACK_PTR;
-    task->registers.rip = RANG_3_VMA;
-    task->registers.rflags = 0x202; // enable interrupt
+    task->k_stack = (void*)(((char*)kernel_stack) + 4 * PAGE_SIZE_4K);
+    task->t_stack = (void*)(((char*)task_stack) + process->program_info.stack_size);
+
+    task_initialize_stack(task, process);
     task->state = WAIT;
     task->process = process;
     if (process->primary)
@@ -217,20 +191,47 @@ void switch_vm(struct pml4_table* pml4_table)
 void task_launch(struct task* task)
 {
     task_list_set_current(task);
-    set_tss_rsp0((uint64_t)task->kstack);
+    set_tss_rsp0((uint64_t)task->k_stack);
     switch_vm(task->page_chunk);
     set_user_registers();
-    task_switch(&task->registers);
+    task_start(task->registers);
 }
 
-void task_run_schedule()
+void task_switch(struct task* next)
+{
+    struct task* current = tasks_manager.current;
+    task_list_set_current(next);
+    set_tss_rsp0((uint64_t)next->k_stack);
+    switch_vm(next->page_chunk);
+    set_user_registers();
+    task_context_switch(&current->k_context, next->k_context);
+}
+
+struct task* task_remove_ready_list_head()
+{
+    struct task* task_head = tasks_manager.ready_list.next;
+    task_list_remove_one(&tasks_manager.ready_list, task_head);
+    return task_head;
+}
+
+void task_schedule()
+{
+    if (is_list_empty(&tasks_manager.ready_list))
+    {
+        assert(0);
+    }
+    struct task* task_head = task_remove_ready_list_head();
+    task_head->state = RUNNING;
+    task_switch(task_head);
+}
+
+void tasks_run()
 {
     if (is_list_empty(&tasks_manager.ready_list))
     {
         return;
     }
-    struct task* task_head = tasks_manager.ready_list.next;
-    task_list_remove_one(&tasks_manager.ready_list, task_head);
+    struct task* task_head = task_remove_ready_list_head();
     task_head->state = RUNNING;
     task_launch(task_head);
 }
@@ -243,16 +244,39 @@ void yield()
     }
     struct task* current = tasks_manager.current;
     task_ready_list_append_one(current);
-    task_run_schedule();
+    task_schedule();
 }
 
-
-
-void task_run_next()
+void task_sleep_until(int wait)
 {
-    if (is_list_empty(&tasks_manager.ready_list))
+    struct task* current = tasks_manager.current;
+    current->wait = wait;
+    task_list_remove_one(&tasks_manager.ready_list, current);
+
+    current->state = WAIT;
+    task_list_add_one(&tasks_manager.wait_list, current);
+    task_schedule();
+}
+
+void task_active(struct task* task)
+{
+    task_list_remove_one(&tasks_manager.wait_list, task);
+    task_ready_list_append_one(task);
+}
+
+void task_wake_up(int wait)
+{
+    struct task* task = tasks_manager.wait_list.next;
+    struct task* next = 0;
+    while (task)
     {
-        return;
+        next = task->next;
+        if (task->wait <= wait)
+        {
+            task->state = READY;
+            task_list_remove_one(&tasks_manager.wait_list, task);
+            task_ready_list_append_one(task);
+        }
+        task = next;
     }
-    yield();
 }

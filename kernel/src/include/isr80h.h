@@ -4,7 +4,8 @@
 
 enum SystemCommands
 {
-    SYSTEM_COMMAND1_PRINT,
+    SYSTEM_COMMAND0_PRINT,
+    SYSTEM_COMMAND1_SLEEP,
 };
 
 void isr80h_register_commands();

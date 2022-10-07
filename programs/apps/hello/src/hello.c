@@ -5,8 +5,8 @@ int main(int argc, char** argv)
     int i = 0;
     while (1)
     {
-        if (i % 10000000 == 0)
-            printf("process starts, %d\n", i);
+        sleep(1);
+        printf("process1 hello, %d\n", i);
         i++;
     }
     return 0;

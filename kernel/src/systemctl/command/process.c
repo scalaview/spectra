@@ -36,3 +36,8 @@ void* isr80h_command3_wait(struct interrupt_frame* frame)
     int32_t pid = argv[0];
     return (void*)((int64_t)process_wait(pid));
 }
+
+void* isr80h_command4_fork(struct interrupt_frame* frame)
+{
+    return (void*)((int64_t)process_fork());
+}

@@ -31,5 +31,7 @@ int process_launch(uint32_t pid);
 int process_initialize_task(struct process* process, struct task** out_task);
 void process_exit();
 int process_wait(int pid);
+int process_clone(struct process* src, struct process** dest);
+int process_fork();
 
 #endif

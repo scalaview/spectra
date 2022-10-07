@@ -31,3 +31,18 @@ sys_wait:
 
     add rsp, 24
     ret
+
+global fork
+fork:
+    xor rax, rax
+    push rdx
+    push rsi
+    push rdi
+
+    mov rdi, 4  ; command
+    mov rsi, 0  ; argc
+    mov rdx, rsp ; argv
+    int 0x80
+
+    add rsp, 24
+    ret

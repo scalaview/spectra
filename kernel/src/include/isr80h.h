@@ -8,6 +8,8 @@ enum SystemCommands
     SYSTEM_COMMAND1_SLEEP,
     SYSTEM_COMMAND2_EXIT,
     SYSTEM_COMMAND3_WAIT,
+    SYSTEM_COMMAND4_FORK,
+
 };
 
 void isr80h_register_commands();

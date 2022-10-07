@@ -53,7 +53,7 @@ struct task
     void* t_stack;
     void* k_stack;
     uint64_t k_context;
-    uint64_t wait;
+    int64_t wait;
 };
 
 struct task_wrapper

@@ -91,11 +91,6 @@ void task_list_remove_one(struct task_wrapper* list, struct task* task)
     }
 }
 
-static void* task_kernel_stack_position(void* stack)
-{
-    return (void*)(((uint64_t)stack) - sizeof(struct registers));
-}
-
 static void task_initialize_stack(struct task* task, struct process* process)
 {
     task->registers = (struct registers*)((uint64_t)task->k_stack - sizeof(struct registers));
@@ -199,7 +194,7 @@ void task_launch(struct task* task)
     set_tss_rsp0((uint64_t)task->k_stack);
     switch_vm(task->page_chunk);
     set_user_registers();
-    task_start(task_kernel_stack_position(task->k_stack));
+    task_start(task->registers);
 }
 
 void task_switch(struct task* next)
@@ -250,15 +245,6 @@ void yield()
     struct task* current = tasks_manager.current;
     task_ready_list_append_one(current);
     task_schedule();
-}
-
-void task_run_next()
-{
-    if (is_list_empty(&tasks_manager.ready_list))
-    {
-        return;
-    }
-    yield();
 }
 
 void task_sleep_until(int wait)

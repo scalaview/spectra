@@ -9,7 +9,7 @@ void* isr80h_command1_sleep(struct interrupt_frame* frame)
     int64_t* argv = (int64_t*)frame->rdx;
     if (argc < 1)
     {
-        printk("missing params in print");
+        printk("missing params in sleep");
         return 0;
     }
     uint64_t current = get_current_ticks();
@@ -30,7 +30,7 @@ void* isr80h_command3_wait(struct interrupt_frame* frame)
     int64_t* argv = (int64_t*)frame->rdx;
     if (argc < 1)
     {
-        printk("missing params in print");
+        printk("missing params in wait");
         return 0;
     }
     int32_t pid = argv[0];
@@ -40,4 +40,20 @@ void* isr80h_command3_wait(struct interrupt_frame* frame)
 void* isr80h_command4_fork(struct interrupt_frame* frame)
 {
     return (void*)((int64_t)process_fork());
+}
+
+void* isr80h_command5_execve(struct interrupt_frame* frame)
+{
+    int64_t argc = frame->rsi;
+    int64_t* argv = (int64_t*)frame->rdx;
+    if (argc < 4)
+    {
+        printk("missing params in execve");
+        return 0;
+    }
+    const char* pathname = (char*)argv[0];
+    const char* cargv = (char*)argv[1];
+    const char* envp = (char*)argv[2];
+    RING_LEV ring_lev = argv[3];
+    return (void*)((int64_t)process_execve(pathname, cargv, envp, ring_lev));
 }

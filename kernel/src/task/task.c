@@ -106,15 +106,21 @@ static void task_initialize_stack(struct task* task, struct process* process)
     task->k_context = (uint64_t)task->registers - 7 * 8;
     // set return address at restore_registers function
     *(uint64_t*)(task->k_context + 6 * 8) = (uint64_t)restore_registers;
-    task->registers->cs = USER_CODE_SEGMENT | 3;
-    task->registers->ss = USER_DATA_SEGMENT | 3;
-    task->registers->rsp = RANG_3_STACK_PTR;
-    task->registers->rip = RANG_3_VMA;
-    task->registers->rflags = 0x202; // enable interrupt
+    task->registers->cs = process->program_info.code_segement;
+    task->registers->ss = process->program_info.data_segement;
+    task->registers->rip = (uint64_t)process->program_info.virtual_base_address;
+    task->registers->rflags = process->program_info.flags; // enable interrupt
+    task->registers->rsp = (uint64_t)process->program_info.virtual_base_address;
+    if (process->ring_lev == RING0)
+    {
+        task->registers->rsp = (uint64_t)task->k_stack;
+    }
 }
 
 void* task_stack_bottom(void* stack, size_t size)
 {
+    if (!stack)
+        return 0;
     return (((char*)stack) - size);
 }
 
@@ -130,12 +136,6 @@ int task_initialize(struct task* task, struct process* process)
         res = -ENOMEM;
         goto out;
     }
-    task_stack = kzalloc(process->program_info.stack_size);
-    if (!task_stack)
-    {
-        res = -ENOMEM;
-        goto out;
-    }
     // map kernel page
     task->page_chunk = kernel_paging_initialize();
     if (!task->page_chunk)
@@ -143,14 +143,36 @@ int task_initialize(struct task* task, struct process* process)
         res = -ENOMEM;
         goto out;
     }
+    uint8_t page_flag = PAGING_IS_WRITEABLE | PAGING_PRESENT | PAGING_ACCESS_FROM_ALL;
+    if (process->ring_lev == RING0)
+    {
+        page_flag = PAGING_IS_WRITEABLE | PAGING_PRESENT;
+    }
     // initialize task memory space.
-    paging_initialize_pml4_table(&task->page_chunk, (uint64_t)process->program_info.virtual_base_address, (uint64_t)process->program_info.virtual_end_address, vir2phy(process->program_info.ptr), PAGE_SIZE_4K, PAGING_IS_WRITEABLE | PAGING_PRESENT | PAGING_ACCESS_FROM_ALL);
+    res = paging_initialize_pml4_table(&task->page_chunk, (uint64_t)process->program_info.virtual_base_address, (uint64_t)process->program_info.virtual_end_address, vir2phy(process->program_info.ptr), PAGE_SIZE_4K, page_flag);
+    if (res < 0)
+    {
+        goto out;
+    }
 
-    // initialize 16KB stack size
-    paging_initialize_pml4_table(&task->page_chunk, (uint64_t)process->program_info.virtual_base_address - process->program_info.stack_size, (uint64_t)process->program_info.virtual_base_address, vir2phy(task_stack), PAGE_SIZE_4K, PAGING_IS_WRITEABLE | PAGING_PRESENT | PAGING_ACCESS_FROM_ALL);
+    if (process->ring_lev == RING3)
+    {
+        task_stack = kzalloc(process->program_info.stack_size);
+        if (!task_stack)
+        {
+            res = -ENOMEM;
+            goto out;
+        }
+        // map 16KB userlan stack into page
+        res = paging_initialize_pml4_table(&task->page_chunk, (uint64_t)process->program_info.virtual_base_address - process->program_info.stack_size, (uint64_t)process->program_info.virtual_base_address, vir2phy(task_stack), PAGE_SIZE_4K, page_flag);
+        if (res < 0)
+        {
+            goto out;
+        }
+        task->t_stack = (void*)(((char*)task_stack) + process->program_info.stack_size);
+    }
 
     task->k_stack = (void*)(((char*)kernel_stack) + 4 * PAGE_SIZE_4K);
-    task->t_stack = (void*)(((char*)task_stack) + process->program_info.stack_size);
 
     task_initialize_stack(task, process);
     task->state = TASK_WAIT;
@@ -205,7 +227,7 @@ void task_launch(struct task* task)
     task_list_set_current(task);
     set_tss_rsp0((uint64_t)task->k_stack);
     switch_vm(task->page_chunk);
-    set_user_registers();
+    // set_user_registers();
     task_start(task->registers);
 }
 
@@ -215,7 +237,7 @@ void task_switch(struct task* next)
     task_list_set_current(next);
     set_tss_rsp0((uint64_t)next->k_stack);
     switch_vm(next->page_chunk);
-    set_user_registers();
+    // set_user_registers();
     task_context_switch(&current->k_context, next->k_context);
 }
 

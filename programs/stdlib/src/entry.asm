@@ -2,9 +2,9 @@
 section .text
 global startup
 extern main_entry
-extern sys_wait
+extern exit
 
 startup:
     call main_entry
-    call sys_wait
+    call exit
     jmp $

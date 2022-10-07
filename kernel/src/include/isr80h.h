@@ -9,7 +9,7 @@ enum SystemCommands
     SYSTEM_COMMAND2_EXIT,
     SYSTEM_COMMAND3_WAIT,
     SYSTEM_COMMAND4_FORK,
-
+    SYSTEM_COMMAND5_EXECVE,
 };
 
 void isr80h_register_commands();

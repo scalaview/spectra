@@ -5,5 +5,6 @@
 
 extern void exit(int status);
 int wait(int pid);
+extern int fork();
 
 #endif

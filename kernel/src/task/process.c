@@ -118,26 +118,21 @@ out:
     return res;
 }
 
-int process_load(const int process_id, const char* fullpath, struct process** process_ptr)
+int process_load(const int process_id, const char* fullpath, struct process* process)
 {
     int res = 0;
-    struct process* process;
     if (get_process(process_id) != 0)
     {
         res = -EISTAKEN;
         goto out;
     }
-    process = kzalloc(sizeof(struct process));
-
-    if (!process)
+    if (fullpath)
     {
-        res = -ENOMEM;
-        goto out;
-    }
-    res = process_initialize_program(fullpath, process);
-    if (res)
-    {
-        goto out;
+        res = process_initialize_program(fullpath, process);
+        if (res)
+        {
+            goto out;
+        }
     }
     struct task* task = 0;
     res = process_initialize_task(process, &task);
@@ -146,20 +141,15 @@ int process_load(const int process_id, const char* fullpath, struct process** pr
         goto out;
     }
     process->id = process_id;
-    process->parent_id = 0;
-    *process_ptr = process;
     process_table[process_id] = process;
 out:
-    if (res < 0)
-    {
-        kfree(process);
-    }
     return res;
 }
 
 int process_initialize(const char* fullpath, struct process** process)
 {
     int res = 0;
+    struct process* new_process;
     int process_id = get_unused_process_index();
     if (process_id < 0)
     {
@@ -167,8 +157,24 @@ int process_initialize(const char* fullpath, struct process** process)
         goto out;
     }
 
-    res = process_load(process_id, fullpath, process);
+    new_process = kzalloc(sizeof(struct process));
+
+    if (!new_process)
+    {
+        res = -ENOMEM;
+        goto out;
+    }
+
+    res = process_load(process_id, fullpath, new_process);
+    if (!res)
+    {
+        *process = new_process;
+    }
 out:
+    if (res < 0)
+    {
+        kfree(new_process);
+    }
     return res;
 }
 
@@ -321,5 +327,77 @@ int process_wait(int pid)
 
 out:
     return res;
+}
+
+int copy_program(struct program_info* dest, struct program_info* src)
+{
+    int res = 0;
+    dest->ptr = kzalloc(src->size);
+    if (!dest->ptr)
+    {
+        res = -ENOMEM;
+        goto out;
+    }
+    memcpy(dest->ptr, src->ptr, src->size);
+    dest->size = src->size;
+    dest->virtual_base_address = src->virtual_base_address;
+    dest->virtual_end_address = src->virtual_end_address;
+    dest->stack_size = src->stack_size;
+out:
+    return res;
+}
+
+int process_clone(struct process* src, struct process** dest)
+{
+    int res = 0;
+    struct process* process = kzalloc(sizeof(struct process));
+    if (!process)
+    {
+        res = -ENOMEM;
+        goto out;
+    }
+
+    process->parent_id = src->id;
+    res = copy_program(&process->program_info, &src->program_info);
+    if (res < 0)
+    {
+        goto out;
+    }
+
+    res = process_load(get_unused_process_index(), NULL, process);
+    if (res < 0)
+    {
+        goto out;
+    }
+    *dest = process;
+
+out:
+    if (res < 0)
+    {
+        kfree(process);
+    }
+    return res;
+}
+
+
+int process_fork()
+{
+    struct process* current = get_current_process();
+    struct process* new_process = 0;
+    int res = process_clone(current, &new_process);
+    if (res < 0)
+    {
+        goto out;
+    }
+    res = process_launch(new_process->id);
+out:
+    if (res < 0)
+    {
+        kfree(new_process);
+        return 0;
+    }
+
+    task_schedule();
+    return new_process->id;
 }
 

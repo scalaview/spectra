@@ -13,7 +13,8 @@ target remote | qemu-system-x86_64 -hda ./bin/os.bin -S -gdb stdio
 # b isr80h_wrapper
 # b isr80h_handler
 # b printf
-# b process_launch
+b process_fork
+b isr80h_command4_fork
 # b sys_print
 # b main
 # b task_sleep

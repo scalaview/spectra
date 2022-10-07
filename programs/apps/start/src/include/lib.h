@@ -3,5 +3,6 @@
 
 int printf(const char* format, ...);
 int sleep(int seconds);
+int fork();
 
 #endif

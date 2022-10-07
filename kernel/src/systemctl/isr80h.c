@@ -9,4 +9,6 @@ void isr80h_register_commands()
     isr80h_register_command(SYSTEM_COMMAND1_SLEEP, isr80h_command1_sleep);
     isr80h_register_command(SYSTEM_COMMAND2_EXIT, isr80h_command2_exit);
     isr80h_register_command(SYSTEM_COMMAND3_WAIT, isr80h_command3_wait);
+    isr80h_register_command(SYSTEM_COMMAND4_FORK, isr80h_command4_fork);
+
 }

@@ -6,6 +6,7 @@
 #include "io.h"
 #include "task.h"
 #include "status.h"
+#include "process.h"
 
 struct idt_desc64 idt_descriptors64[TOTAL_INTERRUPTS];
 struct idtr_desc64 idtr_descriptor64;
@@ -86,6 +87,7 @@ void idt_set(int interrupt_no, void* address, uint8_t attribute)
 void idt_handle_exception(int interrupt, struct interrupt_frame* frame)
 {
     printk("%s: %d, error_code: %d", exception_messages[interrupt], interrupt, frame->error_code);
+    if (frame->cs & RING3) process_exit();
     // while (1);
 }
 

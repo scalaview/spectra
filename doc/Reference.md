@@ -26,6 +26,7 @@
 
 [Entering Long Mode](https://os.phil-opp.com/entering-longmode/)
 
+[CPU Registers](https://wiki.osdev.org/CPU_Registers_x86-64#RFLAGS_Register)
 
 ## Paging
 [Paging](https://wiki.osdev.org/Paging)
@@ -74,4 +75,5 @@
 [PIT](https://wiki.osdev.org/Programmable_Interval_Timer)
 
 [Brendan%27s_Multi-tasking_Tutorial](https://wiki.osdev.org/Brendan%27s_Multi-tasking_Tutorial)
+
 

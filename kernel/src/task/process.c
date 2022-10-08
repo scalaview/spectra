@@ -422,6 +422,13 @@ int process_clone(struct process* src, struct process** dest)
     {
         goto out;
     }
+    /**
+     * setup the task IP to correct position
+     * and copy all the source task stack to the fork one
+     */
+     // TODO clone all threads
+    res = task_clone(src->primary, process->primary); // only clone the primary one
+    if (res < 0) goto out;
     *dest = process;
 
 out:
@@ -450,7 +457,6 @@ out:
         return 0;
     }
 
-    task_schedule();
     return new_process->id;
 }
 
@@ -470,7 +476,6 @@ int process_execve(const char* pathname, const char* argv, const char* envp, RIN
         goto out;
     }
     process_launch(process->id);
-    task_sleep(1);
 out:
     return res;
 }

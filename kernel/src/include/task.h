@@ -94,6 +94,7 @@ void task_wake_up(int wait);
 void task_active(struct task* task);
 void task_free(struct task* task);
 void task_sleep(int wait);
+int task_clone(struct task* src, struct task* dest);
 
 extern void set_user_registers();
 

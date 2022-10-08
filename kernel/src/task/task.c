@@ -339,3 +339,16 @@ void task_free(struct task* task)
     }
     kfree(task);
 }
+
+int task_clone(struct task* src, struct task* dest)
+{
+    if (!src || !dest) return -EINVARG;
+
+    void* src_stack = task_stack_bottom(src->t_stack, src->process->program_info.stack_size);
+
+    void* dest_stack = task_stack_bottom(dest->t_stack, dest->process->program_info.stack_size);
+
+    memcpy(dest_stack, src_stack, src->process->program_info.stack_size);
+    memcpy(dest->registers, src->registers, sizeof(struct registers));
+    return 0;
+}

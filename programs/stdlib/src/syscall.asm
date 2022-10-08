@@ -62,7 +62,7 @@ fork:
 
     mov rdi, 4  ; command
     mov rsi, 0  ; argc
-    mov rdx, 0 ; argv
+    mov rdx, 0  ; argv
     int 0x80
 
     ret

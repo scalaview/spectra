@@ -10,6 +10,8 @@ TODO
 
 - [✔] Ext2 Read/Stat/Close/Seek
 
-- [✔] Process
-
-- [✔] Multitasking
+- [✔] Process/Multitasking
+    - [✔] execve/fork
+    - [✔] exit
+    - [✔] wait/waitpid
+    - [✔] schedule

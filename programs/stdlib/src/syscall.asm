@@ -83,3 +83,29 @@ sys_execve:
 
     add rsp, 32
     ret
+
+global malloc
+malloc:
+    xor rax, rax
+    push rdi
+
+    mov rdi, 6  ; command
+    mov rsi, 1  ; argc
+    mov rdx, rsp ; argv
+    int 0x80
+
+    add rsp, 8
+    ret
+
+global free
+free:
+    xor rax, rax
+    push rdi
+
+    mov rdi, 7  ; command
+    mov rsi, 1  ; argc
+    mov rdx, rsp ; argv
+    int 0x80
+
+    add rsp, 8
+    ret

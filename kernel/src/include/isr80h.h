@@ -10,6 +10,8 @@ enum SystemCommands
     SYSTEM_COMMAND3_WAIT,
     SYSTEM_COMMAND4_FORK,
     SYSTEM_COMMAND5_EXECVE,
+    SYSTEM_COMMAND6_MALLOC,
+    SYSTEM_COMMAND7_FREE,
 };
 
 void isr80h_register_commands();

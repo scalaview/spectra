@@ -1,5 +1,6 @@
 add-symbol-file ./kernel/bin/kernel.elf
 add-symbol-file ./programs/apps/init/bin/init.elf
+add-symbol-file ./programs/apps/hello/bin/hello.elf
 target remote | qemu-system-x86_64 -hda ./bin/os.bin -S -gdb stdio
 # break *0x200000
 # break *0x100020
@@ -12,5 +13,5 @@ target remote | qemu-system-x86_64 -hda ./bin/os.bin -S -gdb stdio
 # b task_switch
 # b isr80h_wrapper
 # b sys_execve
-b isr80h_command4_fork
-b task_clone
+b __process_malloc_free
+b task_malloc

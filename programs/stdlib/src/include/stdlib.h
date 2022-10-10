@@ -10,4 +10,6 @@ int wait(int pid);
 extern int fork();
 
 int execve(const char* pathname, const char* argv, const char* envp);
+extern void* malloc(size_t size);
+extern void free(void* ptr);
 #endif

@@ -31,5 +31,6 @@
 
 
 #define OS_MAX_ISR80H_COMMANDS  1024
+#define PROCESS_ALLOCATIONS     512
 
 #endif

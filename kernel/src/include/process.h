@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include "config.h"
+
 #define OS_MAX_PROCESSES        16
 #define INIT_PROCESS_ID         0
 
@@ -27,6 +29,19 @@ struct program_info
     uint64_t flags;
 };
 
+struct allocation
+{
+    struct allocation* next;
+    void* tptr;
+    void* kptr;
+};
+
+struct allocation_wrapper
+{
+    struct allocation* next;
+    struct allocation* tail;
+};
+
 struct process
 {
     uint16_t id;
@@ -35,6 +50,8 @@ struct process
     struct task* primary;
     struct program_info program_info;
     struct process* children;
+    struct allocation_wrapper allocations[PROCESS_ALLOCATIONS];
+    uint64_t end_address;
 };
 
 int create_kernel_process(const char* fullpath, struct process** process);
@@ -46,6 +63,7 @@ int process_wait(int pid);
 int process_clone(struct process* src, struct process** dest);
 int process_fork();
 int process_execve(const char* pathname, const char* argv, const char* envp, RING_LEV ring_lev);
-
+void* process_malloc(size_t size);
+void process_malloc_free(void* task_address);
 
 #endif

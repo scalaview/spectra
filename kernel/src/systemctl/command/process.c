@@ -57,3 +57,30 @@ void* isr80h_command5_execve(struct interrupt_frame* frame)
     RING_LEV ring_lev = argv[3];
     return (void*)((int64_t)process_execve(pathname, cargv, envp, ring_lev));
 }
+
+void* isr80h_command6_malloc(struct interrupt_frame* frame)
+{
+    int64_t argc = frame->rsi;
+    int64_t* argv = (int64_t*)frame->rdx;
+    if (argc < 1)
+    {
+        printk("missing params in malloc");
+        return 0;
+    }
+    size_t size = (size_t)argv[0];
+    return process_malloc(size);
+}
+
+void* isr80h_command7_free(struct interrupt_frame* frame)
+{
+    int64_t argc = frame->rsi;
+    int64_t* argv = (int64_t*)frame->rdx;
+    if (argc < 1)
+    {
+        printk("missing params in free");
+        return 0;
+    }
+    void* ptr = (void*)argv[0];
+    process_malloc_free(ptr);
+    return 0;
+}

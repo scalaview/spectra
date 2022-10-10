@@ -233,7 +233,7 @@ void task_launch(struct task* task)
 
 void task_switch(struct task* next)
 {
-    struct task* current = tasks_manager.current;
+    struct task* current = task_list_current();
     task_list_set_current(next);
     set_tss_rsp0((uint64_t)next->k_stack);
     switch_vm(next->page_chunk);
@@ -274,14 +274,14 @@ void yield()
     {
         return;
     }
-    struct task* current = tasks_manager.current;
+    struct task* current = task_list_current();
     task_ready_list_append_one(current);
     task_schedule();
 }
 
 void task_sleep_until(int wait)
 {
-    struct task* current = tasks_manager.current;
+    struct task* current = task_list_current();
     current->wait = wait;
     task_list_remove_one(&tasks_manager.ready_list, current);
 
@@ -351,4 +351,61 @@ int task_clone(struct task* src, struct task* dest)
     memcpy(dest_stack, src_stack, src->process->program_info.stack_size);
     memcpy(dest->registers, src->registers, sizeof(struct registers));
     return 0;
+}
+
+void* task_malloc(struct task* task, size_t size)
+{
+    if (size <= 0) return 0;
+    size_t aligned_size = align_up(size);
+    void* kptr = kzalloc(aligned_size);
+    if (!kptr) return 0;
+    struct allocation* allocation = 0;
+    int res = 0;
+    struct process* process = task->process;
+    uint64_t task_address = process->end_address;
+    int64_t diff = ((uint64_t)task_address - (uint64_t)(process->program_info.virtual_end_address));
+    if (diff < 0)
+    {
+        res = -EINVARG;
+        goto out;
+    }
+    uint8_t page_flag = PAGING_IS_WRITEABLE | PAGING_PRESENT | PAGING_ACCESS_FROM_ALL;
+    if (process->ring_lev == RING0)
+    {
+        page_flag = PAGING_IS_WRITEABLE | PAGING_PRESENT;
+    }
+    res = paging_initialize_pml4_table(&task->page_chunk, task_address, task_address + aligned_size, vir2phy(kptr), PAGE_SIZE_4K, page_flag);
+    if (res < 0) goto out;
+
+    allocation = kzalloc(sizeof(struct allocation));
+    if (!allocation)
+    {
+        res = -ENOMEM;
+        goto out;
+    }
+
+    int64_t index = (diff / PAGE_SIZE_4K) % PROCESS_ALLOCATIONS;
+    struct allocation_wrapper* allocation_wrapper = &process->allocations[index];
+    if (!allocation_wrapper->next)
+    {
+        allocation_wrapper->next = allocation;
+    }
+    else
+    {
+        allocation_wrapper->tail->next = allocation;
+    }
+    allocation_wrapper->tail = allocation;
+    allocation->kptr = kptr;
+    allocation->tptr = (void*)task_address;
+    process->end_address += aligned_size;
+
+out:
+    if (res < 0)
+    {
+        kfree(kptr);
+        kfree(allocation);
+        return 0;
+    }
+
+    return (void*)task_address;
 }

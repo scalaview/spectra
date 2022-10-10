@@ -13,8 +13,8 @@ static struct process* process_table[OS_MAX_PROCESSES];
 
 struct process* get_current_process()
 {
-    assert(tasks_manager.current);
-    return tasks_manager.current->process;
+    assert(task_list_current());
+    return task_list_current()->process;
 }
 
 int get_unused_process_index()
@@ -77,7 +77,6 @@ static int process_load_binary_program(const char* fullpath, struct process* pro
     process->program_info.ptr = code_ptr;
     process->program_info.size = stat->filesize;
 
-
 out:
     fclose(fd);
     kfree(stat);
@@ -100,17 +99,12 @@ static int process_initialize_binary_program(const char* fullpath, struct proces
         }
     }
     struct program_info* program_info = &process->program_info;
-    program_info->stack_size = 4 * PAGE_SIZE_4K; //16K
-
     if (ring_level == RING0) // kernel land
     {
         program_info->virtual_base_address = (void*)RING_0_VMA;
         program_info->virtual_end_address = (void*)align_up(((uint64_t)program_info->virtual_base_address) + program_info->size);
         program_info->code_segement = KERNEL_CODE_SEGMENT;
         program_info->data_segement = KERNEL_DATA_SEGMENT;
-        program_info->flags = 0x202;
-        process->ring_lev = ring_level;
-
     }
     else if (ring_level == RING3) // userland
     {
@@ -118,9 +112,11 @@ static int process_initialize_binary_program(const char* fullpath, struct proces
         program_info->virtual_end_address = (void*)align_up(((uint64_t)program_info->virtual_base_address) + program_info->size);
         program_info->code_segement = USER_CODE_SEGMENT | 3;
         program_info->data_segement = USER_DATA_SEGMENT | 3;
-        program_info->flags = 0x202;
-        process->ring_lev = ring_level;
     }
+    program_info->stack_size = 4 * PAGE_SIZE_4K; //16K
+    process->end_address = (uint64_t)program_info->virtual_end_address;
+    program_info->flags = 0x202;
+    process->ring_lev = ring_level;
 out:
     return res;
 }
@@ -201,7 +197,7 @@ int process_initialize(const char* fullpath, struct process** process, RING_LEV 
     res = process_load(process_id, fullpath, new_process, ring_level);
     if (!res)
     {
-        struct task* current = tasks_manager.current;
+        struct task* current = task_list_current();
         if (current)
         {
             // create by execve system call
@@ -258,7 +254,7 @@ void process_wake_up(int id)
     }
 }
 
-void process_free(struct process* process)
+static void __process_free(struct process* process)
 {
 
     struct process* child = process->children;
@@ -282,7 +278,7 @@ void process_free(struct process* process)
 
 void process_exit()
 {
-    struct task* cur_task = tasks_manager.current;
+    struct task* cur_task = task_list_current();
     struct process* master_process = get_process(cur_task->process->parent_id);
     if (!master_process)
         return;
@@ -342,7 +338,7 @@ int process_waitpid(int pid)
         }
     }
     // wait for all task terminated
-    process_free(process);
+    __process_free(process);
     return pid;
 }
 
@@ -368,7 +364,7 @@ int process_wait(int pid)
             {
                 assert(task->state == TASK_TERMINATE);
                 res = task->process->id;
-                process_free(task->process);
+                __process_free(task->process);
                 goto out;
             }
             task = task->next;
@@ -478,4 +474,51 @@ int process_execve(const char* pathname, const char* argv, const char* envp, RIN
     process_launch(process->id);
 out:
     return res;
+}
+
+void* process_malloc(size_t size)
+{
+    return task_malloc(task_list_current(), size);
+}
+
+static void __process_malloc_free(struct process* process, void* task_address)
+{
+    int64_t diff = ((uint64_t)task_address - (uint64_t)(process->program_info.virtual_end_address));
+    if (diff < 0) return;
+    int64_t index = (diff / PAGE_SIZE_4K) % PROCESS_ALLOCATIONS;
+    struct allocation_wrapper* allocation_wrapper = &process->allocations[index];
+
+    struct allocation* prev = allocation_wrapper->next;
+    struct allocation* next = prev;
+
+    while (next)
+    {
+        if (next->tptr == task_address)
+        {
+            if (allocation_wrapper->next == next)
+            {
+                allocation_wrapper->next = next->next;
+            }
+            if (allocation_wrapper->tail == next)
+            {
+                allocation_wrapper->tail = prev == next ? NULL : prev;
+            }
+            prev->next = next->next;
+            break;
+        }
+        prev = next;
+        next = next->next;
+    }
+
+    if (next)
+    {
+        kfree(next->kptr);
+        kfree(next);
+    }
+    return;
+}
+
+void process_malloc_free(void* task_address)
+{
+    __process_malloc_free(get_current_process(), task_address);
 }

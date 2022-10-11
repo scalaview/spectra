@@ -5,6 +5,7 @@
 #include <stddef.h>
 
 #include "config.h"
+#include "task/mmu.h"
 
 #define OS_MAX_PROCESSES        16
 #define INIT_PROCESS_ID         0
@@ -54,6 +55,7 @@ struct process
     struct process* children;
     struct allocation_wrapper allocations[PROCESS_ALLOCATIONS];
     uint64_t end_address;
+    struct process_mmu mmu;
 };
 
 int create_kernel_process(const char* fullpath, struct process** process);
@@ -62,7 +64,6 @@ int process_launch(uint32_t pid);
 int process_initialize_task(struct process* process, struct task** out_task);
 void process_exit();
 int process_wait(int pid);
-int process_clone(struct process* src, struct process** dest);
 int process_fork();
 int process_execve(const char* pathname, const char* argv, const char* envp, RING_LEV ring_lev);
 void* process_malloc(size_t size);

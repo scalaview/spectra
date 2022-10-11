@@ -8,6 +8,8 @@
 #include "file.h"
 #include "printk.h"
 #include "assert.h"
+#include "task/none.h"
+#include "string.h"
 
 static struct process* process_table[OS_MAX_PROCESSES];
 
@@ -175,6 +177,14 @@ out:
     return res;
 }
 
+static int __setup_process_mmu(struct process* process, int index)
+{
+    memcpy(process->mmu.name, "none", 4);
+    process->mmu.malloc = &none_malloc;
+    process->mmu.free = &none_free;
+    return 0;
+}
+
 int process_initialize(const char* fullpath, struct process** process, RING_LEV ring_level)
 {
     int res = 0;
@@ -193,6 +203,8 @@ int process_initialize(const char* fullpath, struct process** process, RING_LEV 
         res = -ENOMEM;
         goto out;
     }
+    res = __setup_process_mmu(new_process, 0);
+    if (res < 0) goto out;
 
     res = process_load(process_id, fullpath, new_process, ring_level);
     if (!res)
@@ -479,7 +491,14 @@ out:
     return res;
 }
 
-int process_clone(struct process* src, struct process** dest)
+static void process_clone_mmu(struct process* src, struct process* dest)
+{
+    memcpy(dest->mmu.name, src->mmu.name, strlen(src->mmu.name));
+    dest->mmu.malloc = src->mmu.malloc;
+    dest->mmu.free = src->mmu.free;
+}
+
+static int process_clone(struct process* src, struct process** dest)
 {
     int res = 0;
     struct process* process = kzalloc(sizeof(struct process));
@@ -490,6 +509,7 @@ int process_clone(struct process* src, struct process** dest)
     }
 
     process->parent_id = src->id;
+    process_clone_mmu(src, process);
     res = __clone_program(&process->program_info, &src->program_info);
     if (res < 0)  goto out;
     res = process_load(get_unused_process_index(), NULL, process, src->ring_lev);
@@ -559,12 +579,15 @@ out:
 
 void* process_malloc(size_t size)
 {
-    struct allocation* allocation = task_malloc(task_list_current(), size);
+    struct process* process = get_current_process();
+    if (!process) return 0;
+
+    struct allocation* allocation = process->mmu.malloc(task_list_current(), size);
     if (allocation) return allocation->tptr;
     return 0;
 }
 
-static void __process_malloc_free(struct process* process, void* task_address)
+void __process_allocation_free(struct process* process, void* task_address)
 {
     int64_t diff = ((uint64_t)task_address - (uint64_t)(process->program_info.virtual_end_address));
     if (diff < 0) return;
@@ -603,5 +626,8 @@ static void __process_malloc_free(struct process* process, void* task_address)
 
 void process_malloc_free(void* task_address)
 {
-    __process_malloc_free(get_current_process(), task_address);
+    struct process* process = get_current_process();
+    if (!process) return;
+
+    process->mmu.free(process, task_address);
 }

@@ -36,6 +36,7 @@
         "isr80h.h": "c",
         "lib.h": "c",
         "unistd.h": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "mmu.h": "c"
     }
 }

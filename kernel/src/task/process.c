@@ -559,7 +559,9 @@ out:
 
 void* process_malloc(size_t size)
 {
-    return task_malloc(task_list_current(), size);
+    struct allocation* allocation = task_malloc(task_list_current(), size);
+    if (allocation) return allocation->tptr;
+    return 0;
 }
 
 static void __process_malloc_free(struct process* process, void* task_address)

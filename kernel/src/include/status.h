@@ -17,6 +17,7 @@
 /* TASK ERROR */
 #define EISTAKEN                1000
 #define ENOTASK                 1001
+#define EMALLOC                 1002
 /* TASK ERROR */
 
 #endif

@@ -120,7 +120,7 @@ static void task_initialize_stack(struct task* task, struct process* process)
     task->registers->ss = process->program_info.data_segement;
     task->registers->rip = (uint64_t)process->program_info.virtual_base_address;
     task->registers->rflags = process->program_info.flags; // enable interrupt
-    task->registers->rsp = (uint64_t)process->program_info.virtual_base_address;
+    task->registers->rsp = (uint64_t)task->t_stack.stack_top;
     if (process->ring_lev == RING0)
     {
         task->registers->rsp = (uint64_t)task->k_stack;
@@ -131,13 +131,70 @@ void* task_stack_bottom(void* stack, size_t size)
 {
     if (!stack)
         return 0;
-    return (((char*)stack) - size);
+    return (void*)(((uint64_t)stack) - size);
+}
+
+static struct allocation* __task_malloc(struct task* task, struct process* process, size_t size)
+{
+    if (size <= 0) return 0;
+    size_t aligned_size = align_up(size);
+    void* kptr = kzalloc(aligned_size);
+    if (!kptr) return 0;
+    struct allocation* allocation = 0;
+    int res = 0;
+    uint64_t task_address = process->end_address;
+    int64_t diff = ((uint64_t)task_address - (uint64_t)(process->program_info.virtual_end_address));
+    if (diff < 0)
+    {
+        res = -EINVARG;
+        goto out;
+    }
+    res = paging_initialize_pml4_table(&process->page_chunk, task_address, task_address + aligned_size, vir2phy(kptr), PAGE_SIZE_4K, page_flags_by_ring(process->ring_lev));
+    if (res < 0) goto out;
+
+    allocation = kzalloc(sizeof(struct allocation));
+    if (!allocation)
+    {
+        res = -ENOMEM;
+        goto out;
+    }
+
+    int64_t index = (diff / PAGE_SIZE_4K) % PROCESS_ALLOCATIONS;
+    struct allocation_wrapper* allocation_wrapper = &process->allocations[index];
+    if (!allocation_wrapper->next)
+    {
+        allocation_wrapper->next = allocation;
+    }
+    else
+    {
+        allocation_wrapper->tail->next = allocation;
+    }
+    allocation_wrapper->tail = allocation;
+    allocation->kptr = kptr;
+    allocation->tptr = (void*)task_address;
+    allocation->size = aligned_size;
+    process->end_address += aligned_size;
+
+out:
+    if (res < 0)
+    {
+        kfree(kptr);
+        kfree(allocation);
+        return 0;
+    }
+
+    return allocation;
+}
+
+struct allocation* task_malloc(struct task* task, size_t size)
+{
+    return __task_malloc(task, task->process, size);
 }
 
 int task_initialize(struct task* task, struct process* process)
 {
     int res = 0;
-    void* task_stack;
+    struct allocation* task_stack_allocation;
     void* kernel_stack;
     memset(task, 0, sizeof(struct task));
     kernel_stack = kzalloc(4 * PAGE_SIZE_4K);
@@ -163,22 +220,18 @@ int task_initialize(struct task* task, struct process* process)
 
     if (process->ring_lev == RING3)
     {
-        task_stack = kzalloc(process->program_info.stack_size);
-        if (!task_stack)
+        task_stack_allocation = __task_malloc(task, process, process->program_info.stack_size);
+        if (!task_stack_allocation)
         {
-            res = -ENOMEM;
+            res = -EMALLOC;
             goto out;
         }
-        // map 16KB userlan stack into page
-        res = paging_initialize_pml4_table(&process->page_chunk, (uint64_t)process->program_info.virtual_base_address - process->program_info.stack_size, (uint64_t)process->program_info.virtual_base_address, vir2phy(task_stack), PAGE_SIZE_4K, page_flags_by_ring(process->ring_lev));
-        if (res < 0)
-        {
-            goto out;
-        }
-        task->t_stack = (void*)(((char*)task_stack) + process->program_info.stack_size);
+        task->t_stack.heap_address = task_stack_allocation->kptr;
+        task->t_stack.stack_bottom = task_stack_allocation->tptr;
+        task->t_stack.stack_top = (void*)(((uint64_t)task_stack_allocation->tptr) + process->program_info.stack_size);
     }
 
-    task->k_stack = (void*)(((char*)kernel_stack) + 4 * PAGE_SIZE_4K);
+    task->k_stack = (void*)(((uint64_t)kernel_stack) + 4 * PAGE_SIZE_4K);
 
     task_initialize_stack(task, process);
     task->state = TASK_WAIT;
@@ -199,7 +252,7 @@ out:
     if (res < 0)
     {
         kfree(kernel_stack);
-        kfree(task_stack);
+        process_malloc_free(task_stack_allocation->tptr);
         kfree(process->page_chunk);
     }
     return res;
@@ -329,7 +382,7 @@ void task_wake_up(int wait)
 
 void task_free(struct task* task)
 {
-    kfree(task_stack_bottom(task->t_stack, task->process->program_info.stack_size));
+    process_malloc_free(task->t_stack.stack_bottom);
     kfree(task_stack_bottom(task->k_stack, 4 * PAGE_SIZE_4K));
     if (task->process->primary == task)
     {
@@ -339,7 +392,7 @@ void task_free(struct task* task)
         while (next)
         {
             task_list_remove_one(&tasks_manager.terminated_list, next);
-            kfree(task_stack_bottom(next->t_stack, next->process->program_info.stack_size));
+            process_malloc_free(next->t_stack.stack_bottom);
             kfree(task_stack_bottom(next->k_stack, 4 * PAGE_SIZE_4K));
             next = next->th_next;
         }
@@ -350,65 +403,10 @@ void task_free(struct task* task)
 int task_clone(struct task* src, struct task* dest)
 {
     if (!src || !dest) return -EINVARG;
-
-    void* src_stack = task_stack_bottom(src->t_stack, src->process->program_info.stack_size);
-
-    void* dest_stack = task_stack_bottom(dest->t_stack, dest->process->program_info.stack_size);
-
-    memcpy(dest_stack, src_stack, src->process->program_info.stack_size);
+    if (src->t_stack.heap_address)
+    {
+        memcpy(dest->t_stack.heap_address, src->t_stack.heap_address, src->process->program_info.stack_size);
+    }
     memcpy(dest->registers, src->registers, sizeof(struct registers));
     return 0;
-}
-
-void* task_malloc(struct task* task, size_t size)
-{
-    if (size <= 0) return 0;
-    size_t aligned_size = align_up(size);
-    void* kptr = kzalloc(aligned_size);
-    if (!kptr) return 0;
-    struct allocation* allocation = 0;
-    int res = 0;
-    struct process* process = task->process;
-    uint64_t task_address = process->end_address;
-    int64_t diff = ((uint64_t)task_address - (uint64_t)(process->program_info.virtual_end_address));
-    if (diff < 0)
-    {
-        res = -EINVARG;
-        goto out;
-    }
-    res = paging_initialize_pml4_table(&task->process->page_chunk, task_address, task_address + aligned_size, vir2phy(kptr), PAGE_SIZE_4K, page_flags_by_ring(process->ring_lev));
-    if (res < 0) goto out;
-
-    allocation = kzalloc(sizeof(struct allocation));
-    if (!allocation)
-    {
-        res = -ENOMEM;
-        goto out;
-    }
-
-    int64_t index = (diff / PAGE_SIZE_4K) % PROCESS_ALLOCATIONS;
-    struct allocation_wrapper* allocation_wrapper = &process->allocations[index];
-    if (!allocation_wrapper->next)
-    {
-        allocation_wrapper->next = allocation;
-    }
-    else
-    {
-        allocation_wrapper->tail->next = allocation;
-    }
-    allocation_wrapper->tail = allocation;
-    allocation->kptr = kptr;
-    allocation->tptr = (void*)task_address;
-    allocation->size = aligned_size;
-    process->end_address += aligned_size;
-
-out:
-    if (res < 0)
-    {
-        kfree(kptr);
-        kfree(allocation);
-        return 0;
-    }
-
-    return (void*)task_address;
 }

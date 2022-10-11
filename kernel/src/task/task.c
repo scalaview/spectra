@@ -397,6 +397,7 @@ void* task_malloc(struct task* task, size_t size)
     allocation_wrapper->tail = allocation;
     allocation->kptr = kptr;
     allocation->tptr = (void*)task_address;
+    allocation->size = aligned_size;
     process->end_address += aligned_size;
 
 out:

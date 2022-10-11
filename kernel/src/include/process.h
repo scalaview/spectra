@@ -34,6 +34,7 @@ struct allocation
     struct allocation* next;
     void* tptr;
     void* kptr;
+    size_t size;
 };
 
 struct allocation_wrapper

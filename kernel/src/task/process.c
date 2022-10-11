@@ -396,8 +396,61 @@ int process_wait(int pid)
 out:
     return res;
 }
+static int __clone_process_allocations(struct process* dest, struct process* src)
+{
+    int res = 0;
+    struct allocation_wrapper* src_wrapper = src->allocations;
+    struct allocation_wrapper* dest_wrapper = dest->allocations;
 
-int copy_program(struct program_info* dest, struct program_info* src)
+    struct allocation* dest_prev = 0;
+    struct allocation* new_alloc = 0;
+
+    for (int i = 0; i < PROCESS_ALLOCATIONS; i++)
+    {
+        struct allocation* src_prev = src_wrapper[i].next;
+        struct allocation* src_next = src_prev;
+
+        dest_prev = 0;
+        new_alloc = 0;
+
+        while (src_next)
+        {
+            new_alloc = kzalloc(sizeof(struct allocation));
+            if (!new_alloc)
+            {
+                res = -ENOMEM;
+                goto out;
+            }
+            new_alloc->kptr = kzalloc(src_next->size);
+            if (!new_alloc->kptr)
+            {
+                res = -ENOMEM;
+                goto out;
+            }
+            if (src_prev == src_next) // is the first one
+            {
+                dest_wrapper[i].next = new_alloc;
+            }
+            src_prev = src_next;
+            src_next = src_prev->next;
+            memcpy(new_alloc->kptr, src_prev->kptr, src_prev->size);
+            new_alloc->tptr = src_prev->tptr;
+            new_alloc->size = src_prev->size;
+            if (dest_prev) dest_prev->next = new_alloc;
+            dest_prev = new_alloc;
+        }
+        dest_wrapper[i].tail = dest_prev;
+    }
+out:
+    if (res < 0)
+    {
+        kfree(new_alloc);
+        __allocations_free(dest);
+    }
+    return res;
+}
+
+static int __clone_program(struct program_info* dest, struct program_info* src)
 {
     int res = 0;
     dest->ptr = kzalloc(src->size);
@@ -429,11 +482,11 @@ int process_clone(struct process* src, struct process** dest)
     }
 
     process->parent_id = src->id;
-    res = copy_program(&process->program_info, &src->program_info);
-    if (res < 0)
-    {
-        goto out;
-    }
+    res = __clone_program(&process->program_info, &src->program_info);
+    if (res < 0)  goto out;
+
+    res = __clone_process_allocations(process, src);
+    if (res < 0) goto out;
 
     res = process_load(get_unused_process_index(), NULL, process, src->ring_lev);
     if (res < 0)

@@ -254,6 +254,26 @@ void process_wake_up(int id)
     }
 }
 
+static void __allocations_free(struct process* process)
+{
+    if (process->end_address <= (uint64_t)process->program_info.virtual_end_address) return;
+
+    struct allocation_wrapper* allocation_wrapper = process->allocations;
+    for (int i = 0; i < PROCESS_ALLOCATIONS; i++)
+    {
+        struct allocation* next = allocation_wrapper[i].next;
+        if (!next) continue;
+        struct allocation* prev = next;
+        while (next)
+        {
+            prev = next;
+            next = next->next;
+            kfree(prev);
+        }
+        kfree(next);
+    }
+}
+
 static void __process_free(struct process* process)
 {
 
@@ -267,12 +287,14 @@ static void __process_free(struct process* process)
         prev = child;
         child = prev->children;
         kfree(prev->program_info.ptr);
+        __allocations_free(prev);
         kfree(prev);
     }
     task_list_remove_one(&tasks_manager.terminated_list, process->primary);
     task_free(process->primary);
     process_table[process->id] = 0;
     kfree(process->program_info.ptr);
+    __allocations_free(process);
     kfree(process);
 }
 

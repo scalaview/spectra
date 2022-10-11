@@ -42,6 +42,13 @@ struct registers
     uint64_t ss;
 } __attribute__((packed));
 
+struct stack_allocation
+{
+    void* stack_bottom;
+    void* stack_top;
+    void* heap_address;
+};
+
 struct task
 {
     struct registers* registers;
@@ -51,7 +58,7 @@ struct task
     struct task* prev;
     //TODO support thread task
     struct task* th_next; //threads next
-    void* t_stack;
+    struct stack_allocation t_stack;
     void* k_stack;
     uint64_t k_context;
     int64_t wait;
@@ -96,7 +103,7 @@ void task_active(struct task* task);
 void task_free(struct task* task);
 void task_sleep(int wait);
 int task_clone(struct task* src, struct task* dest);
-void* task_malloc(struct task* task, size_t size);
+struct allocation* task_malloc(struct task* task, size_t size);
 uint8_t page_flags_by_ring(RING_LEV ring);
 
 extern void set_user_registers();

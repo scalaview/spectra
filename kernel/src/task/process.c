@@ -244,6 +244,7 @@ void process_wake_up(int id)
     if (!process)
         return;
     struct task* task = process->primary;
+    //TODO support thread task
     while (task)
     {
         if (task->state == TASK_WAIT)
@@ -295,6 +296,7 @@ static void __process_free(struct process* process)
     process_table[process->id] = 0;
     kfree(process->program_info.ptr);
     __allocations_free(process);
+    kfree(process->page_chunk);
     kfree(process);
 }
 
@@ -307,6 +309,7 @@ void process_exit()
     struct process* cur_process = cur_task->process;
     while (cur_process) {
         struct task* task = cur_process->primary;
+        //TODO support thread task
         while (task)
         {
             if (task->state == TASK_READY)
@@ -345,6 +348,7 @@ int process_waitpid(int pid)
     {
         struct task* task = process->primary;
         res = 1;
+        //TODO support thread task
         while (task)
         {
             if (task->state != TASK_TERMINATE)
@@ -396,6 +400,7 @@ int process_wait(int pid)
 out:
     return res;
 }
+
 static int __clone_process_allocations(struct process* dest, struct process* src)
 {
     int res = 0;
@@ -427,6 +432,9 @@ static int __clone_process_allocations(struct process* dest, struct process* src
                 res = -ENOMEM;
                 goto out;
             }
+            res = paging_initialize_pml4_table(&dest->page_chunk, (uint64_t)src_next->tptr, ((uint64_t)src_next->tptr) + src_next->size, vir2phy(new_alloc->kptr), PAGE_SIZE_4K, page_flags_by_ring(dest->ring_lev));
+            if (res < 0) goto out;
+
             if (src_prev == src_next) // is the first one
             {
                 dest_wrapper[i].next = new_alloc;
@@ -484,15 +492,13 @@ int process_clone(struct process* src, struct process** dest)
     process->parent_id = src->id;
     res = __clone_program(&process->program_info, &src->program_info);
     if (res < 0)  goto out;
-
-    res = __clone_process_allocations(process, src);
-    if (res < 0) goto out;
-
     res = process_load(get_unused_process_index(), NULL, process, src->ring_lev);
     if (res < 0)
     {
         goto out;
     }
+    res = __clone_process_allocations(process, src);
+    if (res < 0) goto out;
     /**
      * setup the task IP to correct position
      * and copy all the source task stack to the fork one

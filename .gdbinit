@@ -12,6 +12,6 @@ target remote | qemu-system-x86_64 -hda ./bin/os.bin -S -gdb stdio
 # b task_initialize
 # b task_switch
 # b isr80h_wrapper
-# b sys_execve
-# b __process_malloc_free
-b __allocations_free
+b process_clone
+b task_initialize
+b __clone_process_allocations

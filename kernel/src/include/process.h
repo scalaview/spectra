@@ -48,6 +48,7 @@ struct process
     uint16_t id;
     uint16_t parent_id;
     RING_LEV ring_lev;
+    struct pml4_table* page_chunk;
     struct task* primary;
     struct program_info program_info;
     struct process* children;

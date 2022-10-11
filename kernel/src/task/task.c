@@ -98,6 +98,16 @@ void task_list_remove_one(struct task_wrapper* list, struct task* task)
     }
 }
 
+uint8_t page_flags_by_ring(RING_LEV ring)
+{
+    uint8_t page_flag = PAGING_IS_WRITEABLE | PAGING_PRESENT | PAGING_ACCESS_FROM_ALL;
+    if (ring == RING0)
+    {
+        page_flag = PAGING_IS_WRITEABLE | PAGING_PRESENT;
+    }
+    return page_flag;
+}
+
 static void task_initialize_stack(struct task* task, struct process* process)
 {
     task->registers = (struct registers*)((uint64_t)task->k_stack - sizeof(struct registers));
@@ -137,19 +147,15 @@ int task_initialize(struct task* task, struct process* process)
         goto out;
     }
     // map kernel page
-    task->page_chunk = kernel_paging_initialize();
-    if (!task->page_chunk)
+    if (!process->page_chunk) process->page_chunk = kernel_paging_initialize();
+    if (!process->page_chunk)
     {
         res = -ENOMEM;
         goto out;
     }
-    uint8_t page_flag = PAGING_IS_WRITEABLE | PAGING_PRESENT | PAGING_ACCESS_FROM_ALL;
-    if (process->ring_lev == RING0)
-    {
-        page_flag = PAGING_IS_WRITEABLE | PAGING_PRESENT;
-    }
+
     // initialize task memory space.
-    res = paging_initialize_pml4_table(&task->page_chunk, (uint64_t)process->program_info.virtual_base_address, (uint64_t)process->program_info.virtual_end_address, vir2phy(process->program_info.ptr), PAGE_SIZE_4K, page_flag);
+    res = paging_initialize_pml4_table(&process->page_chunk, (uint64_t)process->program_info.virtual_base_address, (uint64_t)process->program_info.virtual_end_address, vir2phy(process->program_info.ptr), PAGE_SIZE_4K, page_flags_by_ring(process->ring_lev));
     if (res < 0)
     {
         goto out;
@@ -164,7 +170,7 @@ int task_initialize(struct task* task, struct process* process)
             goto out;
         }
         // map 16KB userlan stack into page
-        res = paging_initialize_pml4_table(&task->page_chunk, (uint64_t)process->program_info.virtual_base_address - process->program_info.stack_size, (uint64_t)process->program_info.virtual_base_address, vir2phy(task_stack), PAGE_SIZE_4K, page_flag);
+        res = paging_initialize_pml4_table(&process->page_chunk, (uint64_t)process->program_info.virtual_base_address - process->program_info.stack_size, (uint64_t)process->program_info.virtual_base_address, vir2phy(task_stack), PAGE_SIZE_4K, page_flags_by_ring(process->ring_lev));
         if (res < 0)
         {
             goto out;
@@ -180,6 +186,7 @@ int task_initialize(struct task* task, struct process* process)
     if (process->primary)
     {
         struct task* tptr = process->primary;
+        //TODO support thread task
         if (tptr->th_next)
         {
             task->th_next = tptr->th_next;
@@ -193,6 +200,7 @@ out:
     {
         kfree(kernel_stack);
         kfree(task_stack);
+        kfree(process->page_chunk);
     }
     return res;
 }
@@ -226,7 +234,7 @@ void task_launch(struct task* task)
 {
     task_list_set_current(task);
     set_tss_rsp0((uint64_t)task->k_stack);
-    switch_vm(task->page_chunk);
+    switch_vm(task->process->page_chunk);
     // set_user_registers();
     task_start(task->registers);
 }
@@ -236,7 +244,7 @@ void task_switch(struct task* next)
     struct task* current = task_list_current();
     task_list_set_current(next);
     set_tss_rsp0((uint64_t)next->k_stack);
-    switch_vm(next->page_chunk);
+    switch_vm(next->process->page_chunk);
     // set_user_registers();
     task_context_switch(&current->k_context, next->k_context);
 }
@@ -321,17 +329,16 @@ void task_wake_up(int wait)
 
 void task_free(struct task* task)
 {
-    free_paging(task->page_chunk);
     kfree(task_stack_bottom(task->t_stack, task->process->program_info.stack_size));
     kfree(task_stack_bottom(task->k_stack, 4 * PAGE_SIZE_4K));
     if (task->process->primary == task)
     {
         // free other related tasks
         struct task* next = task->th_next;
+        //TODO support thread task
         while (next)
         {
             task_list_remove_one(&tasks_manager.terminated_list, next);
-            free_paging(next->page_chunk);
             kfree(task_stack_bottom(next->t_stack, next->process->program_info.stack_size));
             kfree(task_stack_bottom(next->k_stack, 4 * PAGE_SIZE_4K));
             next = next->th_next;
@@ -369,12 +376,7 @@ void* task_malloc(struct task* task, size_t size)
         res = -EINVARG;
         goto out;
     }
-    uint8_t page_flag = PAGING_IS_WRITEABLE | PAGING_PRESENT | PAGING_ACCESS_FROM_ALL;
-    if (process->ring_lev == RING0)
-    {
-        page_flag = PAGING_IS_WRITEABLE | PAGING_PRESENT;
-    }
-    res = paging_initialize_pml4_table(&task->page_chunk, task_address, task_address + aligned_size, vir2phy(kptr), PAGE_SIZE_4K, page_flag);
+    res = paging_initialize_pml4_table(&task->process->page_chunk, task_address, task_address + aligned_size, vir2phy(kptr), PAGE_SIZE_4K, page_flags_by_ring(process->ring_lev));
     if (res < 0) goto out;
 
     allocation = kzalloc(sizeof(struct allocation));

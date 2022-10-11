@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include "paging/paging.h"
 #include "idt.h"
+#include "process.h"
 
 typedef enum
 {
@@ -43,12 +44,12 @@ struct registers
 
 struct task
 {
-    struct pml4_table* page_chunk;
     struct registers* registers;
     struct process* process;
     TASKSTATE state;
     struct task* next;
     struct task* prev;
+    //TODO support thread task
     struct task* th_next; //threads next
     void* t_stack;
     void* k_stack;
@@ -96,6 +97,7 @@ void task_free(struct task* task);
 void task_sleep(int wait);
 int task_clone(struct task* src, struct task* dest);
 void* task_malloc(struct task* task, size_t size);
+uint8_t page_flags_by_ring(RING_LEV ring);
 
 extern void set_user_registers();
 

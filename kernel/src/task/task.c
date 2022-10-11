@@ -197,6 +197,7 @@ int task_initialize(struct task* task, struct process* process)
     struct allocation* task_stack_allocation;
     void* kernel_stack;
     memset(task, 0, sizeof(struct task));
+    task->process = process;
     kernel_stack = kzalloc(4 * PAGE_SIZE_4K);
     if (!kernel_stack)
     {
@@ -220,7 +221,7 @@ int task_initialize(struct task* task, struct process* process)
 
     if (process->ring_lev == RING3)
     {
-        task_stack_allocation = __task_malloc(task, process, process->program_info.stack_size);
+        task_stack_allocation = process->mmu.malloc(task, process->program_info.stack_size);
         if (!task_stack_allocation)
         {
             res = -EMALLOC;
@@ -235,7 +236,6 @@ int task_initialize(struct task* task, struct process* process)
 
     task_initialize_stack(task, process);
     task->state = TASK_WAIT;
-    task->process = process;
     if (process->primary)
     {
         struct task* tptr = process->primary;
@@ -252,8 +252,9 @@ out:
     if (res < 0)
     {
         kfree(kernel_stack);
-        process_malloc_free(task_stack_allocation->tptr);
+        if (!task_stack_allocation) process->mmu.free(process, task_stack_allocation->tptr);
         kfree(process->page_chunk);
+        task->process = 0;
     }
     return res;
 }
@@ -382,7 +383,7 @@ void task_wake_up(int wait)
 
 void task_free(struct task* task)
 {
-    process_malloc_free(task->t_stack.stack_bottom);
+    task->process->mmu.free(task->process, task->t_stack.stack_bottom);
     kfree(task_stack_bottom(task->k_stack, 4 * PAGE_SIZE_4K));
     if (task->process->primary == task)
     {
@@ -392,7 +393,7 @@ void task_free(struct task* task)
         while (next)
         {
             task_list_remove_one(&tasks_manager.terminated_list, next);
-            process_malloc_free(next->t_stack.stack_bottom);
+            task->process->mmu.free(task->process, next->t_stack.stack_bottom);
             kfree(task_stack_bottom(next->k_stack, 4 * PAGE_SIZE_4K));
             next = next->th_next;
         }

@@ -557,8 +557,12 @@ out:
     return new_process->id;
 }
 
-int process_execve(const char* pathname, const char* argv, const char* envp, RING_LEV ring_lev)
+int process_execve(const char* pathname, const char* argv[], const char* envp[], RING_LEV ring_lev)
 {
+    struct command_argument* root_argv = parser_argument_array((const void**)argv);
+    struct command_argument* root_envp = parser_argument_array((const void**)envp);
+    if (root_argv || root_envp);
+
     struct process* current = get_current_process();
     int res = 0;
     if (ring_lev < current->ring_lev)
@@ -572,8 +576,13 @@ int process_execve(const char* pathname, const char* argv, const char* envp, RIN
     {
         goto out;
     }
+    if (root_argv) process_inject_arguments(process, root_argv);
+    if (root_envp) process_inject_arguments(process, root_envp);
+
     process_launch(process->id);
 out:
+    command_argument_free(root_argv);
+    command_argument_free(root_envp);
     return res;
 }
 
@@ -630,4 +639,72 @@ void process_malloc_free(void* task_address)
     if (!process) return;
 
     process->mmu.free(process, task_address);
+}
+
+static int process_count_command_arguments(struct command_argument* root_argument)
+{
+    struct command_argument* current = root_argument;
+    int i = 0;
+    while (current)
+    {
+        i++;
+        current = current->next;
+    }
+    return i;
+}
+
+int process_inject_arguments(struct process* process, struct command_argument* root_argument)
+{
+    int res = 0;
+    struct command_argument* current = root_argument;
+    int i = 0;
+    char** argv = 0;
+    int argc = process_count_command_arguments(root_argument);
+    if (argc == 0)
+    {
+        res = -EIO;
+        goto out;
+    }
+
+    struct allocation* argv_allocation = process->mmu.malloc(process->primary, sizeof(const char*) * argc);
+    argv = argv_allocation->kptr;
+    if (!argv)
+    {
+        res = -ENOMEM;
+        goto out;
+    }
+
+    while (current)
+    {
+        struct allocation* arg_allocation = process->mmu.malloc(process->primary, sizeof(current->argument));
+        char* argument_str = (char*)arg_allocation->kptr;
+        if (!argument_str)
+        {
+            res = -ENOMEM;
+            goto out;
+        }
+        strncpy(argument_str, current->argument, sizeof(current->argument));
+        argv[i] = arg_allocation->tptr;
+        current = current->next;
+        i++;
+    }
+
+    process->arguments.argc = argc;
+    process->arguments.argv = (char**)argv_allocation->tptr;
+
+    task_apply_arguments_to_registers(process->primary);
+
+out:
+    if (res < 0)
+    {
+        if (argv)
+        {
+            for (int i = 0; i < argc;i++)
+            {
+                if (!argv[i]) break;
+                process->mmu.free(process, argv[i]);
+            }
+        }
+    }
+    return res;
 }

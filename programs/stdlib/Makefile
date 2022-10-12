@@ -13,7 +13,6 @@ STD_OBJ = ./bin/stdlib.elf
 PROJECT_BUILD_PATH = ../../build/lib
 
 FILES =	./build/entry.asm.o \
-		./build/entry.o \
 		./build/memory.o \
 		./build/stdio.o \
 		./build/string.o \

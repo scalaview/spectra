@@ -12,7 +12,15 @@ int main(int argc, char** argv)
     printf("*str: %s\n", str);
     *str = 'C';
     printf("*str: %s\n", str);
-
+    if (argc > 0)
+    {
+        printf("recieve argv:\n");
+        for (int j = 0;j < argc;j++)
+        {
+            sleep(2);
+            printf("recieve argv%d: %s\n", j, argv[j]);
+        }
+    }
     while (1)
     {
         if (i % 100000000 == 0)

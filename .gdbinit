@@ -4,14 +4,4 @@ add-symbol-file ./programs/apps/hello/bin/hello.elf
 target remote | qemu-system-x86_64 -hda ./bin/os.bin -S -gdb stdio
 # break *0x200000
 # break *0x100020
-# break *0x100042
-# b kernel_main
-# b isr80h_command5_execve
-# b process_execve
-# b task_launch
-# b task_initialize
-# b task_switch
-# b isr80h_wrapper
-# b process_clone
-b task.c:224
-b task.c:225
+b main

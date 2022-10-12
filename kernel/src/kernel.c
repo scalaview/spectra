@@ -12,6 +12,7 @@
 #include "process.h"
 #include "task.h"
 #include "isr80h.h"
+#include "string.h"
 
 extern struct pml4_table* kernel_chunk;
 

@@ -52,8 +52,8 @@ void* isr80h_command5_execve(struct interrupt_frame* frame)
         return 0;
     }
     const char* pathname = (char*)argv[0];
-    const char* cargv = (char*)argv[1];
-    const char* envp = (char*)argv[2];
+    const char** cargv = (const char**)argv[1];
+    const char** envp = (const char**)argv[2];
     RING_LEV ring_lev = argv[3];
     return (void*)((int64_t)process_execve(pathname, cargv, envp, ring_lev));
 }

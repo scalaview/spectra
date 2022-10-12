@@ -1,10 +1,10 @@
 [BITS 64]
 section .text
 global startup
-extern main_entry
+extern main
 extern exit
 
 startup:
-    call main_entry
+    call main
     call exit
     jmp $

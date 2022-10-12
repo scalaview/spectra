@@ -37,6 +37,7 @@
         "lib.h": "c",
         "unistd.h": "c",
         "stdlib.h": "c",
-        "mmu.h": "c"
+        "mmu.h": "c",
+        "command_argument.h": "c"
     }
 }

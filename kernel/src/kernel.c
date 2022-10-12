@@ -81,10 +81,6 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
         printk("init process fail!");
         assert(0);
     }
-    struct command_argument argument;
-    strcpy(argument.argument, "Testing!");
-    argument.next = 0x00;
-    process_inject_arguments(init, &argument);
     process_launch(init->id);
     tasks_run();
     assert(0);

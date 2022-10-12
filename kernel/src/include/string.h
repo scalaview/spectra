@@ -11,5 +11,6 @@ bool isdigit(char c);
 int strnlen(const char* ptr, int max);
 int to_numeric(char c);
 char* strcpy(char* dest, const char* src);
+char* strncpy(char* dest, const char* src, int count);
 
 #endif

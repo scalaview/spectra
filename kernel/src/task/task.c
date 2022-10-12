@@ -411,3 +411,9 @@ int task_clone(struct task* src, struct task* dest)
     memcpy(dest->registers, src->registers, sizeof(struct registers));
     return 0;
 }
+
+void task_apply_arguments_to_registers(struct task* task)
+{
+    task->registers->rdi = (uint64_t)task->process->arguments.argc;
+    task->registers->rsi = (uint64_t)task->process->arguments.argv;
+}

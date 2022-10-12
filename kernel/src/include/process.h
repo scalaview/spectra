@@ -6,6 +6,7 @@
 
 #include "config.h"
 #include "task/mmu.h"
+#include "command_argument.h"
 
 #define OS_MAX_PROCESSES        16
 #define INIT_PROCESS_ID         0
@@ -44,6 +45,12 @@ struct allocation_wrapper
     struct allocation* tail;
 };
 
+struct process_arguments
+{
+    int argc;
+    char** argv;
+};
+
 struct process
 {
     uint16_t id;
@@ -56,6 +63,7 @@ struct process
     struct allocation_wrapper allocations[PROCESS_ALLOCATIONS];
     uint64_t end_address;
     struct process_mmu mmu;
+    struct process_arguments arguments;
 };
 
 int create_kernel_process(const char* fullpath, struct process** process);
@@ -65,8 +73,9 @@ int process_initialize_task(struct process* process, struct task** out_task);
 void process_exit();
 int process_wait(int pid);
 int process_fork();
-int process_execve(const char* pathname, const char* argv, const char* envp, RING_LEV ring_lev);
+int process_execve(const char* pathname, const char* argv[], const char* envp[], RING_LEV ring_lev);
 void* process_malloc(size_t size);
 void process_malloc_free(void* task_address);
+int process_inject_arguments(struct process* process, struct command_argument* root_argument);
 
 #endif

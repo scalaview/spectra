@@ -8,5 +8,5 @@ struct command_argument
 };
 
 struct command_argument* parser_argument_array(const void* argv[]);
-
+void command_argument_free(struct command_argument* root);
 #endif

@@ -581,6 +581,8 @@ int process_execve(const char* pathname, const char* argv[], const char* envp[],
 
     process_launch(process->id);
 out:
+    command_argument_free(root_argv);
+    command_argument_free(root_envp);
     return res;
 }
 

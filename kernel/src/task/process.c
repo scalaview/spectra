@@ -21,7 +21,7 @@ struct process* get_current_process()
 
 int get_unused_process_index()
 {
-    for (int i = INIT_PROCESS_ID; i < OS_MAX_PROCESSES; i++)
+    for (int i = IDLE_PROCESS_ID; i < OS_MAX_PROCESSES; i++)
     {
         if (process_table[i] == 0)
         {
@@ -183,6 +183,26 @@ static int __setup_process_mmu(struct process* process, int index)
     process->mmu.malloc = &none_malloc;
     process->mmu.free = &none_free;
     return 0;
+}
+
+void init_idle_process()
+{
+    struct process* idle_process;
+    struct task* task;
+    int process_id = get_unused_process_index();
+    assert(process_id == IDLE_PROCESS_ID);
+    idle_process = kzalloc(sizeof(struct process));
+    assert(idle_process);
+
+    task = kzalloc(sizeof(struct task));
+    assert(task);
+    task->state = TASK_RUNNING;
+    task->process = idle_process;
+    idle_process->primary = task;
+    extern struct pml4_table* kernel_chunk;
+    idle_process->page_chunk = kernel_chunk;
+    task_list_set_current(task);
+    process_table[process_id] = idle_process;
 }
 
 int process_initialize(const char* fullpath, struct process** process, RING_LEV ring_level)
@@ -384,6 +404,7 @@ int process_wait(int pid)
 {
     if (is_list_empty(&tasks_manager.terminated_list))
     {
+        task_sleep(1);
         return 0;
     }
     if (pid)

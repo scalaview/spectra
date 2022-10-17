@@ -19,6 +19,7 @@ _start:
     lgdt [rax]
 
     call set_kernel_registers
+    xor ax, ax
     mov ss, ax
     mov rbp, STACK_V
     mov rsp, rbp
@@ -26,4 +27,8 @@ _start:
     call init_pic
 
     call kernel_main
+
+idle:
+    sti
     hlt
+    jmp idle

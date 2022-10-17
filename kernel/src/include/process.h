@@ -9,7 +9,7 @@
 #include "command_argument.h"
 
 #define OS_MAX_PROCESSES        16
-#define INIT_PROCESS_ID         0
+#define IDLE_PROCESS_ID         0
 
 typedef enum
 {
@@ -77,5 +77,7 @@ int process_execve(const char* pathname, const char* argv[], const char* envp[],
 void* process_malloc(size_t size);
 void process_malloc_free(void* task_address);
 int process_inject_arguments(struct process* process, struct command_argument* root_argument);
+struct process* get_process(int process_id);
+void init_idle_process();
 
 #endif

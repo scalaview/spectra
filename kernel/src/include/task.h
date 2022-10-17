@@ -91,7 +91,6 @@ bool is_list_empty(struct task_wrapper* list);
 void task_list_add_one(struct task_wrapper* list, struct task* task);
 void task_list_remove_one(struct task_wrapper* list, struct task* task);
 void task_schedule();
-void tasks_run();
 struct task* task_list_pop_head(struct task_wrapper* list);
 void task_ready_list_append_one(struct task* task);
 void yield();

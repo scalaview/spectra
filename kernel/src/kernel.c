@@ -75,6 +75,7 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
     printk("%x\n", vir2phy(ptr));
     kfree(ptr);
 
+    init_idle_process();
     struct process* init = 0;
     if (create_kernel_process("0:/usr/bin/init.bin", &init) < 0)
     {
@@ -82,6 +83,4 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
         assert(0);
     }
     process_launch(init->id);
-    tasks_run();
-    assert(0);
 }

@@ -43,6 +43,8 @@ bool is_list_empty(struct task_wrapper* list)
 
 void task_ready_list_append_one(struct task* task)
 {
+    if (task->process->id == IDLE_PROCESS_ID) return;
+
     task->state = TASK_READY;
     task_list_add_one(&tasks_manager.ready_list, task);
 }
@@ -312,30 +314,19 @@ void task_schedule()
 {
     if (is_list_empty(&tasks_manager.ready_list))
     {
-        assert(0);
+        struct process* idle_process = get_process(IDLE_PROCESS_ID);
+        assert(idle_process);
+        struct task* task = idle_process->primary;
+        task_switch(task);
+        return;
     }
     struct task* task_head = task_remove_ready_list_head();
     task_head->state = TASK_RUNNING;
     task_switch(task_head);
 }
 
-void tasks_run()
-{
-    if (is_list_empty(&tasks_manager.ready_list))
-    {
-        return;
-    }
-    struct task* task_head = task_remove_ready_list_head();
-    task_head->state = TASK_RUNNING;
-    task_launch(task_head);
-}
-
 void yield()
 {
-    if (is_list_empty(&tasks_manager.ready_list))
-    {
-        return;
-    }
     struct task* current = task_list_current();
     task_ready_list_append_one(current);
     task_schedule();

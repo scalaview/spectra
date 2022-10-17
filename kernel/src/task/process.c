@@ -404,6 +404,7 @@ int process_wait(int pid)
 {
     if (is_list_empty(&tasks_manager.terminated_list))
     {
+        task_sleep(1);
         return 0;
     }
     if (pid)

@@ -109,3 +109,14 @@ free:
 
     add rsp, 8
     ret
+
+global keyboard_getkey
+keyboard_getkey:
+    xor rax, rax
+
+    mov rdi, 8  ; command
+    mov rsi, 0  ; argc
+    mov rdx, 0  ; argv
+    int 0x80
+
+    ret

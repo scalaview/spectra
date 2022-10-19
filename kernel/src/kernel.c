@@ -13,6 +13,7 @@
 #include "task.h"
 #include "isr80h.h"
 #include "string.h"
+#include "drivers/keyboard/keyboard.h"
 
 extern struct pml4_table* kernel_chunk;
 
@@ -45,6 +46,7 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
     // enable_interrupts();
 
     isr80h_register_commands();
+    keyboard_initialize();
 
     struct pml4_table* pm4 = 0;
     paging_initialize_pml4_table(&pm4, KERNEL_VMA, KERNEL_VM_MAX, KERNEL_PHY_BASE, PAGE_SIZE_2M, PAGING_IS_WRITEABLE | PAGING_PRESENT);

@@ -378,7 +378,7 @@ void task_wake_up(int wait)
     while (task)
     {
         next = task->next;
-        if (wait > 0 && task->wait <= wait)
+        if (wait > 0 && task->wait > 0 && task->wait <= wait)
         {
             __task_wait_list_move_to_ready(task);
         }

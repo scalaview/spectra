@@ -40,8 +40,18 @@ void screen_write_char(struct terminal_screen* terminal_screen, char c, char col
     }
     if (c == BACKSPCE_ASCI) // The backspace
     {
-        // TODO
+        if (terminal_screen->column == 0 && terminal_screen->row == 0) return;
+
+        if (terminal_screen->column == 0)
+        {
+            terminal_screen->row--;
+            terminal_screen->column = VGA_WIDTH;
+        }
+        terminal_screen->column--;
+        screen_put_char(terminal_screen, 0, 0);
+
         return;
+
     }
     screen_put_char(terminal_screen, c, color);
     terminal_screen->column++;

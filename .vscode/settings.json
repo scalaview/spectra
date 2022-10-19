@@ -38,6 +38,7 @@
         "unistd.h": "c",
         "stdlib.h": "c",
         "mmu.h": "c",
-        "command_argument.h": "c"
+        "command_argument.h": "c",
+        "keyboard.h": "c"
     }
 }

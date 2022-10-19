@@ -7,6 +7,7 @@
 #include "config.h"
 #include "task/mmu.h"
 #include "command_argument.h"
+#include "drivers/keyboard/keyboard.h"
 
 #define OS_MAX_PROCESSES        16
 #define IDLE_PROCESS_ID         0

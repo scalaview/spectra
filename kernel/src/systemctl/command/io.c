@@ -1,5 +1,6 @@
 #include "systemctl/io.h"
 #include "printk.h"
+#include "drivers/keyboard/keyboard.h"
 
 void* isr80h_command0_print(struct interrupt_frame* frame)
 {
@@ -13,4 +14,11 @@ void* isr80h_command0_print(struct interrupt_frame* frame)
     print_to_screen((char*)argv[0], (int)argv[1], (char)argv[2]);
 
     return (void*)argv[1];
+}
+
+
+void* isr80h_command8_readkey(struct interrupt_frame* frame)
+{
+    char c = keyboard_pop();
+    return (void*)((int64_t)c);
 }

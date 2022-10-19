@@ -100,6 +100,14 @@ void task_list_remove_one(struct task_wrapper* list, struct task* task)
     }
 }
 
+static void __task_wait_list_move_to_ready(struct task* task)
+{
+
+    task_list_remove_one(&tasks_manager.wait_list, task);
+    task->state = TASK_READY;
+    task_ready_list_append_one(task);
+}
+
 uint8_t page_flags_by_ring(RING_LEV ring)
 {
     uint8_t page_flag = PAGING_IS_WRITEABLE | PAGING_PRESENT | PAGING_ACCESS_FROM_ALL;
@@ -346,7 +354,14 @@ void task_sleep_until(int wait)
 
 void task_sleep(int wait)
 {
-    task_sleep_until(get_current_ticks() + wait);
+    if (wait > 0)
+    {
+        task_sleep_until(get_current_ticks() + wait);
+    }
+    else
+    {
+        task_sleep_until(wait);
+    }
 }
 
 void task_active(struct task* task)
@@ -363,11 +378,13 @@ void task_wake_up(int wait)
     while (task)
     {
         next = task->next;
-        if (task->wait <= wait)
+        if (wait > 0 && task->wait > 0 && task->wait <= wait)
         {
-            task_list_remove_one(&tasks_manager.wait_list, task);
-            task->state = TASK_READY;
-            task_ready_list_append_one(task);
+            __task_wait_list_move_to_ready(task);
+        }
+        else if (task->wait == wait)
+        {
+            __task_wait_list_move_to_ready(task);
         }
         task = next;
     }

@@ -77,3 +77,6 @@
 [Brendan%27s_Multi-tasking_Tutorial](https://wiki.osdev.org/Brendan%27s_Multi-tasking_Tutorial)
 
 
+## Keyboard
+
+[PS2 Keyboard](https://wiki.osdev.org/PS/2_Keyboard)

@@ -12,6 +12,7 @@ enum SystemCommands
     SYSTEM_COMMAND5_EXECVE,
     SYSTEM_COMMAND6_MALLOC,
     SYSTEM_COMMAND7_FREE,
+    SYSTEM_COMMAND8_READKEY,
 };
 
 void isr80h_register_commands();

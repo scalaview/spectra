@@ -15,3 +15,6 @@ TODO
     - [✔] exit
     - [✔] wait/waitpid
     - [✔] schedule
+    - [✔] sleep/wake_up
+
+- [✔] PS2 Keyboard

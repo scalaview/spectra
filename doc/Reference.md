@@ -80,3 +80,15 @@
 ## Keyboard
 
 [PS2 Keyboard](https://wiki.osdev.org/PS/2_Keyboard)
+
+## Font
+[VGA Fonts](https://wiki.osdev.org/VGA_Fonts)
+
+[PC Screen Font](https://wiki.osdev.org/PC_Screen_Font)
+
+[solarize psf](https://github.com/talamus/solarize-12x29-psf)
+
+[Scalable_Screen_Font](https://wiki.osdev.org/Scalable_Screen_Font)
+
+[VESA](https://wiki.osdev.org/VESA)
+

@@ -92,3 +92,6 @@
 
 [VESA](https://wiki.osdev.org/VESA)
 
+
+## VGA
+[VGA Hardware](https://wiki.osdev.org/VGA_Hardware)

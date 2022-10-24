@@ -95,3 +95,6 @@
 
 ## VGA
 [VGA Hardware](https://wiki.osdev.org/VGA_Hardware)
+
+[Drawing In Protected Mode](https://wiki.osdev.org/Drawing_In_Protected_Mode)
+

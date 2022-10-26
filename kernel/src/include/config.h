@@ -18,7 +18,7 @@
 #define OS_MAX_FILESYSTEMS      16
 #define OS_MAX_FILE_DESCRIPTORS 512
 
-#define RING_0_VMA              KERNEL_VM_MAX + 256 * PAGE_SIZE_2M
+#define RING_0_VMA              0xffff800060000000
 #define RING_0_VM_MAX           (RING_0_VMA + (2 * PAGE_SIZE_2M))
 #define KERNEL_DATA_SEGMENT     0x10
 #define KERNEL_CODE_SEGMENT     0x08

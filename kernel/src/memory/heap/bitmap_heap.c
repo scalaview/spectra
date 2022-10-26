@@ -132,7 +132,7 @@ out:
 
 void* bitmap_heap_malloc(struct bitmap_heap* heap, size_t size)
 {
-    size_t aligned_size = align_up(size);
+    size_t aligned_size = align_up_4k(size);
     size_t total_blocks = aligned_size / OS_BITMAP_BLOCK_SIZE;
     return bitmap_heap_malloc_blocks(heap, total_blocks);
 }

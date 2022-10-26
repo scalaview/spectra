@@ -104,14 +104,14 @@ static int process_initialize_binary_program(const char* fullpath, struct proces
     if (ring_level == RING0) // kernel land
     {
         program_info->virtual_base_address = (void*)RING_0_VMA;
-        program_info->virtual_end_address = (void*)align_up(((uint64_t)program_info->virtual_base_address) + program_info->size);
+        program_info->virtual_end_address = (void*)align_up_4k(((uint64_t)program_info->virtual_base_address) + program_info->size);
         program_info->code_segement = KERNEL_CODE_SEGMENT;
         program_info->data_segement = KERNEL_DATA_SEGMENT;
     }
     else if (ring_level == RING3) // userland
     {
         program_info->virtual_base_address = (void*)RING_3_VMA;
-        program_info->virtual_end_address = (void*)align_up(((uint64_t)program_info->virtual_base_address) + program_info->size);
+        program_info->virtual_end_address = (void*)align_up_4k(((uint64_t)program_info->virtual_base_address) + program_info->size);
         program_info->code_segement = USER_CODE_SEGMENT | 3;
         program_info->data_segement = USER_DATA_SEGMENT | 3;
     }

@@ -3,7 +3,6 @@
 #include "kmemory.h"
 #include "config.h"
 #include "printk.h"
-#include "multiboot.h"
 #include "assert.h"
 
 extern void* kernel_end;
@@ -17,18 +16,6 @@ void* memset(void* ptr, int c, size_t size)
         ch_ptr[i] = (char)c;
     }
     return ptr;
-}
-
-void* memcpy(void* dest, void* src, int len)
-{
-    char* d = dest;
-    char* s = src;
-
-    while (len--)
-    {
-        *d++ = *s++;
-    }
-    return dest;
 }
 
 void init_memory_map(struct multiboot_tag_mmap* tag)

@@ -147,7 +147,7 @@ void* task_stack_bottom(void* stack, size_t size)
 static struct allocation* __task_malloc(struct task* task, struct process* process, size_t size)
 {
     if (size <= 0) return 0;
-    size_t aligned_size = align_up(size);
+    size_t aligned_size = align_up_4k(size);
     void* kptr = kzalloc(aligned_size);
     if (!kptr) return 0;
     struct allocation* allocation = 0;

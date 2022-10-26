@@ -4,7 +4,7 @@
 #include "kmemory.h"
 #include "heap/kheap.h"
 #include "paging/paging.h"
-#include "multiboot.h"
+#include "multiboot/multiboot.h"
 #include "path.h"
 #include "file.h"
 #include "disk.h"
@@ -14,6 +14,7 @@
 #include "isr80h.h"
 #include "string.h"
 #include "drivers/keyboard/keyboard.h"
+#include "drivers/vga/vesa.h"
 
 extern struct pml4_table* kernel_chunk;
 
@@ -32,6 +33,7 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
 
     kernel_chunk = kernel_paging_initialize();
     assert(kernel_chunk);
+    kernel_init_vesa();
     p = kzalloc(1);
     printk("after kernel paging remap %x\n", vir2phy(p));
     kfree(p);
@@ -47,6 +49,8 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
 
     isr80h_register_commands();
     keyboard_initialize();
+
+    test_draw();
 
     struct pml4_table* pm4 = 0;
     paging_initialize_pml4_table(&pm4, KERNEL_VMA, KERNEL_VM_MAX, KERNEL_PHY_BASE, PAGE_SIZE_2M, PAGING_IS_WRITEABLE | PAGING_PRESENT);

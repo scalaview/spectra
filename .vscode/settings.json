@@ -42,6 +42,7 @@
         "keyboard.h": "c",
         "vesa.h": "c",
         "multiboot_info.h": "c",
-        "stb_image.h": "c"
+        "stb_image.h": "c",
+        "serial.h": "c"
     }
 }

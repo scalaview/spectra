@@ -38,7 +38,7 @@ void screen_write_char(struct terminal_screen* terminal_screen, char c, char col
         increase_row(terminal_screen);
         return;
     }
-    if (c == BACKSPCE_ASCI) // The backspace
+    if (c == BACKSPACE_ASCI) // The backspace
     {
         if (terminal_screen->column == 0 && terminal_screen->row == 0) return;
 

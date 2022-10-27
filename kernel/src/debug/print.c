@@ -10,6 +10,11 @@ void _debug_putchars(const char* buffer, int size, char color)
 {
     for (int i = 0; i < size; i++)
     {
+        if (buffer[i] == BACKSPACE_ASCI) // The backspace
+        {
+            outportb(SERIAL_COM1, buffer[i]);
+            outportb(SERIAL_COM1, ' ');
+        }
         outportb(SERIAL_COM1, buffer[i]);
     }
 }

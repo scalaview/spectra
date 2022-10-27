@@ -34,8 +34,7 @@ struct tga_content {
     uint32_t pixels[];
 };
 
-// KERNEL_VGA_BASE
-#define vga_phy2vir(p) ((uint64_t)(p) + KERNEL_VGA_BASE)
+#define vga_phy2vir(p) KERNEL_VGA_BASE
 
 void kernel_init_vesa();
 int map_vesa_paging(struct pml4_table* pml4_table);

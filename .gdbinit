@@ -4,6 +4,5 @@ add-symbol-file ./programs/apps/hello/bin/hello.elf
 target remote | qemu-system-x86_64 -hda ./bin/os.bin -S -gdb stdio
 # break *0x200000
 # break *0x100020
-# b kernel_main
-b kernel_main
+b map_vesa_paging
 # b paging.c:59

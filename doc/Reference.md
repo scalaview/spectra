@@ -98,3 +98,18 @@
 
 [Drawing In Protected Mode](https://wiki.osdev.org/Drawing_In_Protected_Mode)
 
+[GUI](https://wiki.osdev.org/GUI)
+
+[Double Buffering](https://wiki.osdev.org/Double_Buffering)
+
+[VESA Tutorial](https://wiki.osdev.org/User:Omarrx024/VESA_Tutorial)
+
+[VESA Video Modes](https://wiki.osdev.org/VESA_Video_Modes)
+
+[vbe20](http://www.phatcode.net/res/221/files/vbe20.pdf)
+
+[Loading Icons](https://wiki.osdev.org/Loading_Icons)
+
+[Multiboot2 Graphics OS with GRUB2](https://forum.osdev.org/viewtopic.php?f=1&t=39370)
+
+[OSDevVid2](http://www.brokenthorn.com/Resources/OSDevVid2.html)

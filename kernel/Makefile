@@ -27,9 +27,11 @@ KFILES =./build/boot/multiboot_header.asm.o \
 		./build/memory/heap/kheap.o \
 		./build/printk/printk.o \
 		./build/debug/assert.o \
+		./build/debug/print.o \
 		./build/interrupt/idt.asm.o \
 		./build/interrupt/idt.o \
 		./build/io/io.asm.o \
+		./build/io/serial.o \
 		./build/memory/paging/paging.asm.o \
 		./build/memory/paging/paging.o \
 		./build/disk/disk.o \

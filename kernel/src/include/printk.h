@@ -16,6 +16,8 @@ struct terminal_screen {
     uint16_t column;
 }__attribute__((packed));
 
+typedef void (*serial_output_fn)(const char* buffer, int size, char color);
+
 // https://en.wikipedia.org/wiki/Printk
 int printk(const char* format, ...);
 void terminal_screen_initialize();

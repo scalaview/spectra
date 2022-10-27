@@ -2,7 +2,7 @@
 
 #include "kmemory.h"
 #include "config.h"
-#include "printk.h"
+#include "debug.h"
 #include "assert.h"
 
 extern void* kernel_end;
@@ -61,10 +61,10 @@ void get_memory_info()
         {
             total_mem += memory_map->length;
         }
-        printk("%x, %dKB [%x, %x], type: %d\n", memory_map->base_address, memory_map->length / 1024, begin, end - 1, (uint64_t)memory_map->type);
+        debug_printf("%x, %dKB [%x, %x], type: %d\n", memory_map->base_address, memory_map->length / 1024, begin, end - 1, (uint64_t)memory_map->type);
     }
-    printk("Block size: %d, Total memory is %dByte, %dMB\n", block_size, total_mem, total_mem / 1024 / 1024);
-    printk("Kernel end: %x\n", vir2phy((uint64_t)&kernel_end));
+    debug_printf("Block size: %d, Total memory is %dByte, %dMB\n", block_size, total_mem, total_mem / 1024 / 1024);
+    debug_printf("Kernel end: %x\n", vir2phy((uint64_t)&kernel_end));
 
 }
 

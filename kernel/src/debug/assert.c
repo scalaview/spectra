@@ -1,10 +1,10 @@
 #include "assert.h"
-#include "printk.h"
+#include "debug.h"
 
 extern void halt();
 
 void assert_error(const char* file, const uint64_t line)
 {
-    printk("\nASSERT ERROR: %s:%d", file, line);
+    debug_printf("\nASSERT ERROR: %s:%d", file, line);
     halt();
 }

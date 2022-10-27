@@ -2,7 +2,7 @@
 #include "config.h"
 #include "kmemory.h"
 #include "assert.h"
-#include "printk.h"
+#include "debug.h"
 #include "io.h"
 #include "task.h"
 #include "status.h"
@@ -86,7 +86,7 @@ void idt_set(int interrupt_no, void* address, uint8_t attribute)
 
 void idt_handle_exception(int interrupt, struct interrupt_frame* frame)
 {
-    printk("%s: %d, error_code: %d", exception_messages[interrupt], interrupt, frame->error_code);
+    debug_printf("%s: %d, error_code: %d", exception_messages[interrupt], interrupt, frame->error_code);
     if (frame->cs & RING3) process_exit();
     // while (1);
 }
@@ -148,12 +148,12 @@ void isr80h_register_command(int command_id, ISR80H_COMMAND command)
 {
     if (command_id < 0 || command_id >= OS_MAX_ISR80H_COMMANDS)
     {
-        printk("The command is out of range\n");
+        debug_printf("The command is out of range\n");
         assert(0);
     }
     if (isr80h_commands[command_id])
     {
-        printk("The command already exists\n");
+        debug_printf("The command already exists\n");
         assert(0);
     }
     assert(!isr80h_commands[command_id]);

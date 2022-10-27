@@ -1,5 +1,5 @@
 #include "systemctl/process.h"
-#include "printk.h"
+#include "debug.h"
 #include "task.h"
 #include "process.h"
 
@@ -9,7 +9,7 @@ void* isr80h_command1_sleep(struct interrupt_frame* frame)
     int64_t* argv = (int64_t*)frame->rdx;
     if (argc < 1)
     {
-        printk("missing params in sleep");
+        debug_printf("missing params in sleep");
         return 0;
     }
     uint64_t current = get_current_ticks();
@@ -30,7 +30,7 @@ void* isr80h_command3_wait(struct interrupt_frame* frame)
     int64_t* argv = (int64_t*)frame->rdx;
     if (argc < 1)
     {
-        printk("missing params in wait");
+        debug_printf("missing params in wait");
         return 0;
     }
     int32_t pid = argv[0];
@@ -48,7 +48,7 @@ void* isr80h_command5_execve(struct interrupt_frame* frame)
     int64_t* argv = (int64_t*)frame->rdx;
     if (argc < 4)
     {
-        printk("missing params in execve");
+        debug_printf("missing params in execve");
         return 0;
     }
     const char* pathname = (char*)argv[0];
@@ -64,7 +64,7 @@ void* isr80h_command6_malloc(struct interrupt_frame* frame)
     int64_t* argv = (int64_t*)frame->rdx;
     if (argc < 1)
     {
-        printk("missing params in malloc");
+        debug_printf("missing params in malloc");
         return 0;
     }
     size_t size = (size_t)argv[0];
@@ -77,7 +77,7 @@ void* isr80h_command7_free(struct interrupt_frame* frame)
     int64_t* argv = (int64_t*)frame->rdx;
     if (argc < 1)
     {
-        printk("missing params in free");
+        debug_printf("missing params in free");
         return 0;
     }
     void* ptr = (void*)argv[0];

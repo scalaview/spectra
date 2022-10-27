@@ -112,7 +112,7 @@ int hex_to_string(char* buffer, int position, int64_t i)
     return size;
 }
 
-int read_string(char* buffer, int position, const char* str)
+int read_string(char* buffer, int position, const char* str, serial_output_fn fn)
 {
     size_t len = strlen(str);
     for (int i = 0; i < len;i++)
@@ -121,7 +121,7 @@ int read_string(char* buffer, int position, const char* str)
         if (str[i] == '\n' || position >= BUFFER_SIZE)
         {
             // Flush to screen
-            print_to_screen(buffer, position, 0xf);
+            fn(buffer, position, 0xf);
             position = 0;
         }
 
@@ -137,15 +137,13 @@ void terminal_screen_initialize()
     terminal_screen.row = 0;
 }
 
-int printk(const char* format, ...)
+int _printk(const char* format, va_list args, serial_output_fn fn)
 {
-    va_list args;
-    char buffer[1024];
+    char buffer[BUFFER_SIZE];
     int buffer_size = 0;
     int64_t interger = 0;
     char* string = 0;
     const char* p = 0;
-    va_start(args, format);
     memset(buffer, 0, sizeof(buffer));
 
     for (p = format; *p; p++)
@@ -153,7 +151,7 @@ int printk(const char* format, ...)
         if (*p != '%')
         {
             buffer[buffer_size++] = *p;
-            assert(buffer_size < 1024);
+            assert(buffer_size < BUFFER_SIZE);
             continue;
         }
         switch (*++p)
@@ -168,16 +166,24 @@ int printk(const char* format, ...)
             break;
         case 's':
             string = va_arg(args, char*);
-            buffer_size = read_string(buffer, buffer_size, string);
+            buffer_size = read_string(buffer, buffer_size, string, fn);
             break;
         default:
             buffer[buffer_size++] = '%';
             p--;
             break;
         }
-        assert(buffer_size < 1024);
+        assert(buffer_size < BUFFER_SIZE);
     }
-    print_to_screen(buffer, buffer_size, 0xf);
+    fn(buffer, buffer_size, 0xf);
+    return buffer_size;
+}
+
+int printk(const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    int buffer_size = _printk(format, args, print_to_screen);
     va_end(args);
     return buffer_size;
 }

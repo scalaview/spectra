@@ -16,6 +16,7 @@
 #include "string.h"
 #include "drivers/keyboard/keyboard.h"
 #include "drivers/vga/vesa.h"
+#include "drivers/mouse/mouse.h"
 
 extern struct pml4_table* kernel_chunk;
 
@@ -50,7 +51,7 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
 
     isr80h_register_commands();
     keyboard_initialize();
-
+    mouse_initialize();
     test_draw();
 
     debug_printf("hello word!");

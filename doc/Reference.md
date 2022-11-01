@@ -113,3 +113,10 @@
 [Multiboot2 Graphics OS with GRUB2](https://forum.osdev.org/viewtopic.php?f=1&t=39370)
 
 [OSDevVid2](http://www.brokenthorn.com/Resources/OSDevVid2.html)
+
+## PS2 Mouse
+[Mouse Input](https://wiki.osdev.org/Mouse_Input)
+
+[PS/2_Mouse](https://wiki.osdev.org/PS/2_Mouse)
+
+[Free PS/2 mouse code](https://forum.osdev.org/viewtopic.php?f=1&t=10247)

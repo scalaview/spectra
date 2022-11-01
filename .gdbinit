@@ -4,5 +4,5 @@ add-symbol-file ./programs/apps/hello/bin/hello.elf
 target remote | qemu-system-x86_64 -hda ./bin/os.bin -S -gdb stdio
 # break *0x200000
 # break *0x100020
-b __outportb
+b isr80h_handler
 # b paging.c:59

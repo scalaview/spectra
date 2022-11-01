@@ -55,6 +55,14 @@ const char* exception_messages[] = {
     "Reserved" // 31
 };
 
+void acknowledge_pic(uint8_t irq)
+{
+    if (irq > 0x27) {
+        outb(PIC2_COMMAND, 0x20);
+    }
+    outb(PIC1_COMMAND, 0x20);
+}
+
 
 uint64_t get_current_ticks()
 {
@@ -98,13 +106,13 @@ void interrupt_handler(int interrupt, struct interrupt_frame* frame)
         interrupt_callbacks[interrupt](interrupt, frame);
     }
     /* Acknowledge master PIC. */
-    outb(0x20, 0x20);
+    acknowledge_pic(interrupt);
 }
 
 void timer_handler(int interrupt, struct interrupt_frame* frame)
 {
     task_wake_up(++current_ticks);
-    outb(0x20, 0x20);
+    acknowledge_pic(interrupt);
     if (task_list_next() != task_list_current())
     {
         yield();
@@ -125,11 +133,11 @@ void idt_initialize()
 
     idt_set(0x80, isr80h_wrapper, 0xEE);
 
-    for (int i = 0; i < 0x20; i++)
+    for (int i = 0; i < IRQ_BASE; i++)
     {
         idt_register_interrupt_callback(i, idt_handle_exception);
     }
-    idt_register_interrupt_callback(0x20, timer_handler);
+    idt_register_interrupt_callback(ISR_TIMER, timer_handler);
     load_idt(&idtr_descriptor64);
 }
 

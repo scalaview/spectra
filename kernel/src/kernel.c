@@ -30,17 +30,17 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
     kernel_heap_initialize();
     // get_memory_info();
     void* p = kzalloc(1);
-    debug_printf("before kernel paging remap %x\n", vir2phy(p));
+    debug_printf("before kernel paging remap %x\n", p);
     kfree(p);
 
     kernel_chunk = kernel_paging_initialize();
     assert(kernel_chunk);
     kernel_init_vesa();
     p = kzalloc(1);
-    debug_printf("after kernel paging remap %x\n", vir2phy(p));
+    debug_printf("after kernel paging remap %x\n", p);
     kfree(p);
 
-    debug_printf("kernel_chunk %x\n", vir2phy(kernel_chunk));
+    debug_printf("kernel_chunk %x\n", kernel_chunk);
 
     // disable to access low address
     setup_paging_directory(vir2phy(kernel_chunk->entries));
@@ -51,8 +51,8 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
 
     isr80h_register_commands();
     keyboard_initialize();
-    mouse_initialize();
     test_draw();
+    mouse_initialize();
 
     debug_printf("hello word!");
 
@@ -67,7 +67,7 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
     struct path_root* ipath = path_parse("0:/boot/kernel.elf");
     debug_printf("%d", ipath->drive_no);
     void* ptr = kzalloc(100);
-    debug_printf("%x\n", vir2phy(ptr));
+    debug_printf("%x\n", ptr);
     kfree(ptr);
     FILE* fd = fopen("0:/data/ext2", "r");
     assert(fd->fdi);
@@ -82,7 +82,7 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
     kfree(fd);
     kfree(str);
     ptr = kzalloc(100);
-    debug_printf("%x\n", vir2phy(ptr));
+    debug_printf("%x\n", ptr);
     kfree(ptr);
 
     init_idle_process();

@@ -2,7 +2,7 @@
 #include "kmemory.h"
 #include "status.h"
 #include "assert.h"
-
+#include "debug.h"
 #include <stdbool.h>
 
 bool validate_aligment(void* ptr)

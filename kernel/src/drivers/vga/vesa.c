@@ -1,13 +1,17 @@
 #include "drivers/vga/vesa.h"
+#include "drivers/mouse/mouse.h"
 #include "multiboot/multiboot_info.h"
 #include "assert.h"
 #include "kmemory.h"
 #include "heap/kheap.h"
 #include "file.h"
 #include "assert.h"
+#include "debug.h"
 
 struct video_info_struct vesa_video_info;
 unsigned char* screen_buffer = 0;
+struct tga_content* background = 0;
+struct tga_content* cursor = 0;
 
 char font8x8_basic[128][8] = {
     { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},   // U+0000 (nul)
@@ -402,6 +406,7 @@ unsigned char vga_font[256][16] = {
 
 static void putpixel(unsigned char* screen, int x, int y, uint32_t color) {
     unsigned where = x * (vesa_video_info.bits / 8) + y * vesa_video_info.pitch;
+    // debug_printf("putpixel where: %x\n", where);
     screen[where] = color & 255;              // BLUE
     screen[where + 1] = (color >> 8) & 255;   // GREEN
     screen[where + 2] = (color >> 16) & 255;  // RED
@@ -425,7 +430,6 @@ void gfx_puts(int x, int y, uint32_t fgcolor, uint32_t bgcolor, const char* c) {
         x += 8;
     }
 }
-
 
 void extract_multiboot_framebuffer_tag()
 {
@@ -469,7 +473,7 @@ void kernel_init_vesa()
 }
 
 /**
- * Parse TGA format into pixels. Returns NULL or error, otherwise the returned data looks like
+ * Parse TGA format into pixels. Returns NULL or error, otherwise the returned background looks like
  *   ret[0] = width of the image
  *   ret[1] = height of the image
  *   ret[2..] = 32 bit ARGB pixels (blue channel in the least significant byte, alpha channel in the most)
@@ -561,40 +565,93 @@ unsigned int* tga_parse(unsigned char* ptr, int size)
 }
 
 void draw_icon(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t pixels[]) {
-    for (int l = 0, j = 0; l < h; l++) {
-        for (int i = 0; i < w; i++, j++) {
-            putpixel(screen_buffer, x + i, y + l, pixels[j]);
+    for (int l = 0; l < h && (y + l) < 768; l++) {
+        for (int i = 0; i < w && (x + i) < 1024; i++) {
+            int64_t position = l * w + i;
+            putpixel(screen_buffer, x + i, y + l, pixels[position]);
         }
     }
 }
 
+void draw_transparent_icon(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t pixels[]) {
+    for (int l = 0; l < h && (y + l) < 768; l++) {
+        for (int i = 0; i < w && (x + i) < 1024; i++) {
+            int64_t position = l * w + i;
+            if ((pixels[position] << 16) ^ 0xffff0000) putpixel(screen_buffer, x + i, y + l, pixels[position]);
+        }
+    }
+}
+
+void draw_cursor()
+{
+    if (!cursor)
+    {
+        FILE* fd = fopen("0:/data/cursor_16.tga", "r");
+        assert(fd->fdi);
+        struct file_stat* stat = kzalloc(sizeof(struct file_stat));
+        fstat(fd->fdi, stat);
+        unsigned char* pngptr = kzalloc(stat->filesize);
+        assert(pngptr);
+        fread(pngptr, stat->filesize, 1, fd);
+        fclose(fd);
+        kfree(stat);
+
+        struct tga_header* tga_header = (struct tga_header*)pngptr;
+        if (tga_header);
+        cursor = (struct tga_content*)tga_parse(pngptr, stat->filesize);
+    }
+    draw_transparent_icon(mouse_x, mouse_y, cursor->width, cursor->height, cursor->pixels);
+}
+
 void draw_background()
 {
-    FILE* fd = fopen("0:/data/background.tga", "r");
-    assert(fd->fdi);
-    struct file_stat* stat = kzalloc(sizeof(struct file_stat));
-    fstat(fd->fdi, stat);
-    unsigned char* pngptr = kzalloc(stat->filesize);
-    assert(pngptr);
-    fread(pngptr, stat->filesize, 1, fd);
-    fclose(fd);
+    if (!background)
+    {
+        FILE* fd = fopen("0:/data/background.tga", "r");
+        assert(fd->fdi);
+        struct file_stat* stat = kzalloc(sizeof(struct file_stat));
+        fstat(fd->fdi, stat);
+        unsigned char* pngptr = kzalloc(stat->filesize);
+        assert(pngptr);
+        fread(pngptr, stat->filesize, 1, fd);
+        fclose(fd);
+        kfree(stat);
 
-    struct tga_header* tga_header = (struct tga_header*)pngptr;
-    if (tga_header);
-    struct tga_content* data = (struct tga_content*)tga_parse(pngptr, stat->filesize);
-    if (data);
-    memcpy(screen_buffer, data->pixels, vesa_video_info.width * vesa_video_info.height * 4);
-    // draw_icon(0, 0, data->width, data->height, data->pixels);
+        struct tga_header* tga_header = (struct tga_header*)pngptr;
+        if (tga_header);
+        background = (struct tga_content*)tga_parse(pngptr, stat->filesize);
+    }
+
+    memcpy(screen_buffer, background->pixels, vesa_video_info.width * vesa_video_info.height * 4);
+    int a = 1;
+    if (a);
+}
+
+void test_draw1()
+{
+    int64_t size = vesa_video_info.width * vesa_video_info.height * 4;
+
+    draw_background();
+    draw_cursor();
+
+    void* add = (void*)vga_phy2vir(vesa_video_info.linear_addr);
+
+    memcpy(add, screen_buffer, size);
 }
 
 void test_draw()
 {
     int64_t size = vesa_video_info.width * vesa_video_info.height * 4;
-    screen_buffer = kzalloc(size);
-    memset(screen_buffer, 0xff, size);
-
     char* c = "hello word!";
+    if (!screen_buffer)
+    {
+        screen_buffer = kzalloc(size);
+        memset(screen_buffer, 0xff, size);
+        c = "welcome!";
+    }
+
     draw_background();
+    draw_cursor();
     gfx_puts(100, 100, 0x0, 0xFFFFFF, c);
 
     void* add = (void*)vga_phy2vir(vesa_video_info.linear_addr);

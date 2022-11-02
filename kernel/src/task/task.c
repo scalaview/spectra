@@ -7,6 +7,7 @@
 #include "assert.h"
 #include "tss.h"
 #include "printk.h"
+#include "drivers/vga/vesa.h"
 
 struct tasks_manager tasks_manager = {
     .current = NULL
@@ -215,7 +216,11 @@ int task_initialize(struct task* task, struct process* process)
         goto out;
     }
     // map kernel page
-    if (!process->page_chunk) process->page_chunk = kernel_paging_initialize();
+    if (!process->page_chunk)
+    {
+        process->page_chunk = kernel_paging_initialize();
+        map_vesa_paging(process->page_chunk);
+    }
     if (!process->page_chunk)
     {
         res = -ENOMEM;

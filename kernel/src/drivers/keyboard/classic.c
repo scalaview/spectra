@@ -93,7 +93,6 @@ static char classic_keyboard_read()
 void classic_keyboard_interrupt_handler()
 {
     char ch = classic_keyboard_read();
-    acknowledge_pic(ISR_KEYBOARD_INTERRUPT);
 
     if (ch > 0)
     {

@@ -39,5 +39,5 @@ struct tga_content {
 void kernel_init_vesa();
 int map_vesa_paging(struct pml4_table* pml4_table);
 void test_draw();
-
+void test_draw1();
 #endif

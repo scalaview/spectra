@@ -7,6 +7,7 @@
 #include "task.h"
 #include "status.h"
 #include "process.h"
+#include "paging/paging.h"
 
 struct idt_desc64 idt_descriptors64[TOTAL_INTERRUPTS];
 struct idtr_desc64 idtr_descriptor64;
@@ -94,7 +95,14 @@ void idt_set(int interrupt_no, void* address, uint8_t attribute)
 
 void idt_handle_exception(int interrupt, struct interrupt_frame* frame)
 {
+
     debug_printf("%s: %d, error_code: %d", exception_messages[interrupt], interrupt, frame->error_code);
+    if (interrupt == 14) // page fault
+    {
+        void* address = read_cr2();
+        debug_printf(" occurred at %x", address);
+    }
+    debug_printf("\n");
     if (frame->cs & RING3) process_exit();
     // while (1);
 }

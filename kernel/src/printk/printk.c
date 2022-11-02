@@ -84,13 +84,14 @@ int decimal_to_string(char* buffer, int position, int64_t digits)
     return size;
 }
 
-int hex_to_string(char* buffer, int position, int64_t i)
+int hex_to_string(char* buffer, int position, int sg, int64_t i)
 {
     static char hex[16] = "0123456789ABCDEF";
     char text[21];
     memset(text, 0, sizeof(text));
     char negative = 1;
     int size = 0;
+    uint64_t u = i;
 
     if (i >= 0)
     {
@@ -99,15 +100,15 @@ int hex_to_string(char* buffer, int position, int64_t i)
     text[size++] = 'H';
 
     do {
-        text[size++] = hex[i % 16];
-        i /= 16;
-    } while (i != 0);
+        text[size++] = hex[u % 16];
+        u /= 16;
+    } while (u != 0);
 
-    if (negative)
+    if (sg && negative)
         text[size++] = '-';
 
-    for (int i = size - 1; i >= 0; i--) {
-        buffer[position++] = text[i];
+    for (int j = size - 1; j >= 0; j--) {
+        buffer[position++] = text[j];
     }
     return size;
 }
@@ -162,7 +163,7 @@ int _printk(const char* format, va_list args, serial_output_fn fn)
             break;
         case 'x':
             interger = va_arg(args, int64_t);
-            buffer_size += hex_to_string(buffer, buffer_size, interger);
+            buffer_size += hex_to_string(buffer, buffer_size, 0, interger);
             break;
         case 's':
             string = va_arg(args, char*);

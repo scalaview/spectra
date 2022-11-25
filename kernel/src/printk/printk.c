@@ -72,7 +72,7 @@ void print_to_screen(const char* buffer, int size, char color)
 
 int decimal_to_string(char* buffer, int position, int64_t digits)
 {
-    char text[20];
+    char text[STR_BUF_SIZE];
     char* c = itoa(digits, text);
     int size = 0;
 
@@ -84,36 +84,7 @@ int decimal_to_string(char* buffer, int position, int64_t digits)
     return size;
 }
 
-int hex_to_string(char* buffer, int position, int sg, int64_t i)
-{
-    static char hex[16] = "0123456789ABCDEF";
-    char text[21];
-    memset(text, 0, sizeof(text));
-    char negative = 1;
-    int size = 0;
-    uint64_t u = i;
-
-    if (i >= 0)
-    {
-        negative = 0;
-    }
-    text[size++] = 'H';
-
-    do {
-        text[size++] = hex[u % 16];
-        u /= 16;
-    } while (u != 0);
-
-    if (sg && negative)
-        text[size++] = '-';
-
-    for (int j = size - 1; j >= 0; j--) {
-        buffer[position++] = text[j];
-    }
-    return size;
-}
-
-int read_string(char* buffer, int position, const char* str, serial_output_fn fn)
+static int __read_string(char* buffer, int position, int* total, const char* str, serial_output_fn fn)
 {
     size_t len = strlen(str);
     for (int i = 0; i < len;i++)
@@ -123,11 +94,43 @@ int read_string(char* buffer, int position, const char* str, serial_output_fn fn
         {
             // Flush to screen
             fn(buffer, position, 0xf);
+            *total += position;
             position = 0;
         }
 
     }
+    *total += position;
     return position;
+}
+
+static int __hex_to_string(char* buffer, int position, int d, int sg, int64_t i, int letbase, serial_output_fn fn)
+{
+    char text[STR_BUF_SIZE];
+    char* ptr;
+    memset(text, 0, sizeof(text));
+    char negative = 0;
+    int t, total = 0;
+    uint64_t u = i;
+
+    if (sg && d == 10 && i < 0)
+    {
+        negative = 1;
+        u = -i;
+    }
+    ptr = text + STR_BUF_SIZE - 1;
+
+    while (u)
+    {
+        t = u % d;
+        if (t >= 10) t += letbase - '0' - 10;
+        *--ptr = t + '0';
+        u /= d;
+    }
+
+    if (negative) *--ptr = '-';
+
+    __read_string(buffer, position, &total, ptr, fn);
+    return total;
 }
 
 void terminal_screen_initialize()
@@ -141,7 +144,7 @@ void terminal_screen_initialize()
 int _printk(const char* format, va_list args, serial_output_fn fn)
 {
     char buffer[BUFFER_SIZE];
-    int buffer_size = 0;
+    int buffer_size = 0, total = 0;
     int64_t interger = 0;
     char* string = 0;
     const char* p = 0;
@@ -151,33 +154,45 @@ int _printk(const char* format, va_list args, serial_output_fn fn)
     {
         if (*p != '%')
         {
+            flush_buffer(fn, buffer, buffer_size, 0, 0xf);
             buffer[buffer_size++] = *p;
-            assert(buffer_size < BUFFER_SIZE);
             continue;
         }
         switch (*++p)
         {
         case 'd':
-            interger = va_arg(args, int64_t);
-            buffer_size += decimal_to_string(buffer, buffer_size, interger);
+            interger = va_arg(args, int);
+            flush_buffer(fn, buffer, buffer_size, STR_BUF_SIZE, 0xf);
+            buffer_size += __hex_to_string(buffer, buffer_size, 10, 1, interger, '0', fn);
+            break;
+        case 'u':
+            interger = va_arg(args, int);
+            flush_buffer(fn, buffer, buffer_size, STR_BUF_SIZE, 0xf);
+            buffer_size += __hex_to_string(buffer, buffer_size, 10, 0, interger, '0', fn);
             break;
         case 'x':
             interger = va_arg(args, int64_t);
-            buffer_size += hex_to_string(buffer, buffer_size, 0, interger);
+            flush_buffer(fn, buffer, buffer_size, STR_BUF_SIZE, 0xf);
+            buffer_size += __hex_to_string(buffer, buffer_size, 16, 0, interger, 'a', fn);
+            break;
+        case 'X':
+            interger = va_arg(args, int64_t);
+            flush_buffer(fn, buffer, buffer_size, STR_BUF_SIZE, 0xf);
+            buffer_size += __hex_to_string(buffer, buffer_size, 16, 0, interger, 'A', fn);
             break;
         case 's':
             string = va_arg(args, char*);
-            buffer_size = read_string(buffer, buffer_size, string, fn);
+            buffer_size = __read_string(buffer, buffer_size, &total, string, fn);
             break;
         default:
             buffer[buffer_size++] = '%';
             p--;
             break;
         }
-        assert(buffer_size < BUFFER_SIZE);
     }
     fn(buffer, buffer_size, 0xf);
-    return buffer_size;
+    total += buffer_size;
+    return total;
 }
 
 int printk(const char* format, ...)

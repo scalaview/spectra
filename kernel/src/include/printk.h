@@ -5,7 +5,15 @@
 #define VGA_HEIGHT 25
 #define VGA_ADDRESS  0xb8000
 #define BACKSPACE_ASCI  0x0008
-
+#define STR_BUF_SIZE    21
+#define flush_buffer(fn, buffer, buffer_size, pre_buf_size, col) do { \
+    if(buffer_size + pre_buf_size >= BUFFER_SIZE) \
+    {\
+        fn(buffer, buffer_size, col);\
+        total += buffer_size;\
+        buffer_size = 0;\
+    }\
+} while(0)
 #include <stdint.h>
 
 #define BUFFER_SIZE     1024

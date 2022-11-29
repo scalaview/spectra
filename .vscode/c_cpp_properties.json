@@ -5,6 +5,7 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/kernel/src/include/**",
+                "${workspaceFolder}/libc/src/include/**",
                 "${workspaceFolder}/programs/stdlib/src/include/**",
                 "${workspaceFolder}/programs/apps/start/src/include/**"
             ],

@@ -11,6 +11,7 @@ ASM_INCLUDES = $(addprefix -i, $(ASM_INC_DIR))
 ASM_FLAGS = -f elf64 -g -F dwarf
 LINK_FILE = ./src/linker.ld
 OS_BIN_FILES =	./bin/kernel.elf
+LIBC_BIN = ../libc/bin/libc.elf
 
 KFILES =./build/boot/multiboot_header.asm.o \
 		./build/boot/stage1.asm.o \
@@ -53,7 +54,8 @@ KFILES =./build/boot/multiboot_header.asm.o \
 		./build/drivers/keyboard/keyboard.o \
 		./build/drivers/keyboard/classic.o \
 		./build/drivers/vga/vesa.o \
-		./build/drivers/mouse/mouse.o
+		./build/drivers/mouse/mouse.o 
+KFILES  += $(LIBC_BIN)
 
 FLAGS = -mcmodel=large -std=gnu99 -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label $(INCLUDES) -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc -save-temps=obj
 

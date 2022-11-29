@@ -29,7 +29,7 @@ void vga_setfont(const struct vga_font* f)
 }
 
 static void putpixel(unsigned char* screen, int x, int y, uint32_t color) {
-    unsigned where = x * (vesa_video_info.bits / 8) + y * vesa_video_info.pitch;
+    unsigned where = x * vesa_video_info.pixelwidth + y * vesa_video_info.pitch;
     // debug_printf("putpixel where: %x\n", where);
     screen[where] = color & 255;              // BLUE
     screen[where + 1] = (color >> 8) & 255;   // GREEN
@@ -80,8 +80,11 @@ void extract_multiboot_framebuffer_tag()
             vesa_video_info.bits = tagfb->common.framebuffer_bpp;
             vesa_video_info.pitch = tagfb->common.framebuffer_pitch;
             vesa_video_info.type = tagfb->common.framebuffer_type;
+            vesa_video_info.pixelwidth = vesa_video_info.bits / 8;
+            vesa_video_info.pixelsize = vesa_video_info.width * vesa_video_info.height * vesa_video_info.pixelwidth;
+            vesa_video_info.vir_linear_addr = KERNEL_VGA_BASE;
             // Initialize screen buffer
-            vesa_video_info.buffer = (unsigned char*)kzalloc(vesa_video_info.width * vesa_video_info.height * 4);
+            vesa_video_info.buffer = (unsigned char*)kzalloc(vesa_video_info.pixelsize);
             if (!vesa_video_info.buffer) assert(0);
             return;
         }
@@ -91,7 +94,9 @@ void extract_multiboot_framebuffer_tag()
 
 int map_vesa_paging(struct pml4_table* pml4_table)
 {
-    return paging_initialize_pml4_table(&pml4_table, vga_phy2vir(vesa_video_info.linear_addr), align_up_2m(vga_phy2vir(vesa_video_info.linear_addr) + vesa_video_info.width * vesa_video_info.height * 4), vesa_video_info.linear_addr, PAGE_SIZE_2M, PAGING_IS_WRITEABLE | PAGING_PRESENT);
+    return paging_initialize_pml4_table(&pml4_table, vesa_video_info.vir_linear_addr,
+        align_up_2m(vesa_video_info.vir_linear_addr + vesa_video_info.pixelsize),
+        vesa_video_info.linear_addr, PAGE_SIZE_2M, PAGING_IS_WRITEABLE | PAGING_PRESENT);
 }
 
 void kernel_init_vesa()
@@ -160,7 +165,7 @@ void draw_background()
         background = tga_parse(pngptr, stat->filesize);
     }
 
-    memcpy(vesa_video_info.buffer, background->pixels, vesa_video_info.width * vesa_video_info.height * 4);
+    memcpy(vesa_video_info.buffer, background->pixels, vesa_video_info.pixelsize);
     int a = 1;
     if (a);
 }
@@ -172,7 +177,7 @@ void test_draw1()
     draw_background();
     draw_cursor();
 
-    void* add = (void*)vga_phy2vir(vesa_video_info.linear_addr);
+    void* add = (void*)vesa_video_info.vir_linear_addr;
     char* c = "hello word!";
 
     gfx_puts(100, 100, 0x0, 0xFFFFFF, c);
@@ -181,14 +186,14 @@ void test_draw1()
 
 void test_draw()
 {
-    int64_t size = vesa_video_info.width * vesa_video_info.height * 4;
+    int64_t size = vesa_video_info.width * vesa_video_info.height * vesa_video_info.pixelwidth;
     char* c = "hello word!";
 
     draw_background();
     draw_cursor();
     gfx_puts(100, 100, 0x0, 0xFFFFFF, c);
 
-    void* add = (void*)vga_phy2vir(vesa_video_info.linear_addr);
+    void* add = (void*)vesa_video_info.vir_linear_addr;
 
     memcpy(add, vesa_video_info.buffer, size);
 }

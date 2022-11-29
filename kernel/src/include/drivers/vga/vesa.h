@@ -7,12 +7,15 @@
 
 struct video_info_struct {
     uint64_t linear_addr;
+    uint64_t vir_linear_addr;
     unsigned char* buffer;
+    uint8_t pixelwidth;
     int width;
     int height;
     int bits;
     int pitch;
     uint8_t  type;
+    int pixelsize;
 };
 
 struct vga_font {
@@ -22,8 +25,6 @@ struct vga_font {
 };
 
 void vga_setfont(const struct vga_font* font);
-
-#define vga_phy2vir(p) KERNEL_VGA_BASE
 
 void kernel_init_vesa();
 int map_vesa_paging(struct pml4_table* pml4_table);

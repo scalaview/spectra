@@ -161,12 +161,12 @@ int _printk(const char* format, va_list args, serial_output_fn fn)
         switch (*++p)
         {
         case 'd':
-            interger = va_arg(args, int);
+            interger = va_arg(args, int32_t);
             flush_buffer(fn, buffer, buffer_size, STR_BUF_SIZE, 0xf);
             buffer_size += __hex_to_string(buffer, buffer_size, 10, 1, interger, '0', fn);
             break;
         case 'u':
-            interger = va_arg(args, int);
+            interger = va_arg(args, int64_t);
             flush_buffer(fn, buffer, buffer_size, STR_BUF_SIZE, 0xf);
             buffer_size += __hex_to_string(buffer, buffer_size, 10, 0, interger, '0', fn);
             break;

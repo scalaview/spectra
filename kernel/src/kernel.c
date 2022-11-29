@@ -35,7 +35,6 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
 
     kernel_chunk = kernel_paging_initialize();
     assert(kernel_chunk);
-    kernel_init_vesa();
     p = kzalloc(1);
     debug_printf("after kernel paging remap %x\n", p);
     kfree(p);
@@ -44,6 +43,8 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
 
     // disable to access low address
     setup_paging_directory(vir2phy(kernel_chunk->entries));
+
+    kernel_init_vesa();
 
     fs_initialize();
     disk_search_and_initialize();

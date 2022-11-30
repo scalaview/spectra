@@ -13,6 +13,7 @@ struct video_info_struct vesa_video_info;
 static struct vga_font font;
 
 struct tga_content* background = 0;
+static uint8_t* background_buffer = 0;
 struct tga_content* cursor = 0;
 
 static struct vga_font font8x8_basic = {
@@ -86,6 +87,7 @@ void extract_multiboot_framebuffer_tag()
             // Initialize screen buffer
             vesa_video_info.buffer = (unsigned char*)kzalloc(vesa_video_info.pixelsize);
             if (!vesa_video_info.buffer) assert(0);
+            background_buffer = (unsigned char*)kzalloc(vesa_video_info.pixelsize);
             return;
         }
     }
@@ -163,17 +165,14 @@ void draw_background()
         struct tga_header* tga_header = (struct tga_header*)pngptr;
         if (tga_header);
         background = tga_parse(pngptr, stat->filesize);
+        memcpy(background_buffer, background->pixels, vesa_video_info.pixelsize);
     }
-
-    memcpy(vesa_video_info.buffer, background->pixels, vesa_video_info.pixelsize);
-    int a = 1;
-    if (a);
+    memcpy(vesa_video_info.buffer, background_buffer, vesa_video_info.pixelsize);
 }
 
 void test_draw1()
 {
     int64_t size = vesa_video_info.width * vesa_video_info.height * 4;
-
     draw_background();
     draw_cursor();
 

@@ -6,7 +6,8 @@ target remote | qemu-system-x86_64 -hda ./bin/os.bin -S -gdb stdio -no-reboot -s
 # break *0x100020
 # b test_draw
 # b draw_cursor
-b map_vesa_paging
 # b draw_background
-b gfx_putchar
+b idt_handle_exception
+b task_schedule
+b task_switch
 # b paging.c:59

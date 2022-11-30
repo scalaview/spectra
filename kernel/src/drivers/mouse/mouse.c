@@ -94,7 +94,6 @@ void ps2_mouse_interrupt_handler()
         debug_printf("MOUSE_MIDDLE_CLICK ");
     }
     debug_printf("mouse_x: %d, mouse_y: %d\n", mouse_x, mouse_y);
-    test_draw1();
 }
 void mouse_initialize()
 {

@@ -44,6 +44,7 @@
         "multiboot_info.h": "c",
         "stb_image.h": "c",
         "serial.h": "c",
-        "mouse.h": "c"
+        "mouse.h": "c",
+        "font.h": "c"
     }
 }

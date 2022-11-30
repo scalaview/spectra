@@ -8,6 +8,7 @@
 #include "status.h"
 #include "process.h"
 #include "paging/paging.h"
+#include "drivers/vga/vesa.h"
 
 struct idt_desc64 idt_descriptors64[TOTAL_INTERRUPTS];
 struct idtr_desc64 idtr_descriptor64;
@@ -96,7 +97,7 @@ void idt_set(int interrupt_no, void* address, uint8_t attribute)
 void idt_handle_exception(int interrupt, struct interrupt_frame* frame)
 {
 
-    debug_printf("%s: %d, error_code: %d", exception_messages[interrupt], interrupt, frame->error_code);
+    debug_printf("%s: %d, error_code: %x", exception_messages[interrupt], interrupt, frame->error_code);
     if (interrupt == 14) // page fault
     {
         void* address = read_cr2();
@@ -120,6 +121,8 @@ void interrupt_handler(int interrupt, struct interrupt_frame* frame)
 void timer_handler(int interrupt, struct interrupt_frame* frame)
 {
     task_wake_up(++current_ticks);
+    test_draw1();
+
     acknowledge_pic(interrupt);
     if (task_list_next() != task_list_current())
     {

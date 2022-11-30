@@ -341,8 +341,8 @@ void task_schedule()
 void yield()
 {
     struct task* current = task_list_current();
-    if (current->process->id == IDLE_PROCESS_ID && is_list_empty(&tasks_manager.ready_list)) return;
-    task_ready_list_append_one(current);
+    if (is_list_empty(&tasks_manager.ready_list)) return;
+    if (current->process->id != IDLE_PROCESS_ID) task_ready_list_append_one(current);
     task_schedule();
 }
 

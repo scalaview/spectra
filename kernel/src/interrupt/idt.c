@@ -105,7 +105,7 @@ void idt_handle_exception(int interrupt, struct interrupt_frame* frame)
     }
     debug_printf("\n");
     if (frame->cs & RING3) process_exit();
-    while (1);
+    // while (1);
 }
 
 void interrupt_handler(int interrupt, struct interrupt_frame* frame)

@@ -68,6 +68,7 @@ struct pd_table
 } __attribute__((packed, aligned(ALIGN_SIZE)));
 
 extern void* load_paging_directory();
+extern void* read_cr2();
 extern void* setup_paging_directory(uint64_t pml4_table_phy_addr);
 int paging_initialize_pml4_table(struct pml4_table** pml4_table, uint64_t vir_base_addr, uint64_t vir_max_addr, uint64_t phy_addr, uint32_t page_size, uint8_t flags);
 struct pml4_table* paging_initialize(uint64_t vir_base_addr, uint64_t vir_max_addr, uint64_t phy_addr, uint32_t page_size, uint8_t flags);

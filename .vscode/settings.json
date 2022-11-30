@@ -39,6 +39,12 @@
         "stdlib.h": "c",
         "mmu.h": "c",
         "command_argument.h": "c",
-        "keyboard.h": "c"
+        "keyboard.h": "c",
+        "vesa.h": "c",
+        "multiboot_info.h": "c",
+        "stb_image.h": "c",
+        "serial.h": "c",
+        "mouse.h": "c",
+        "font.h": "c"
     }
 }

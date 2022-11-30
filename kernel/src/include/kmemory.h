@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 #include "config.h"
-#include "multiboot.h"
+#include "multiboot/multiboot_info.h"
 
 /**
 * 00h    QWORD   base address
@@ -25,23 +25,16 @@ struct mem_map
     struct e820map* map;
 } __attribute__((packed));
 
-struct multiboot_info
-{
-    multiboot_uint32_t size;
-    multiboot_uint32_t reserved;
-    struct multiboot_tag tags[];
-};
-
 #define phy2vir(p) ((uint64_t)(p) + KERNEL_VMA)
 #define vir2phy(p) (((uint64_t)(p) != 0) ? ((uint64_t)(p) - KERNEL_VMA) : (uint64_t)(p))
 
 void* memset(void* ptr, int c, size_t size);
-void* memcpy(void* dest, void* src, int len);
 int memcmp(void* s1, void* s2, int count);
 void get_memory_info();
 void init_memory_map(struct multiboot_tag_mmap* tag);
 struct mem_map* get_memory_map();
 // https://www.gnu.org/software/grub/manual/multiboot2/multiboot.html
 void unpack_multiboot();
+extern void memcpy(void* dest, void* src, size_t size);
 
 #endif

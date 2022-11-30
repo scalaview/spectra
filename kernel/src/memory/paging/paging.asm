@@ -21,3 +21,8 @@ setup_paging_directory:
     pop rbp
     ret
 
+global read_cr2
+read_cr2:
+    mov rax, cr2
+    ret
+

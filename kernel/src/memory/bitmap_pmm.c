@@ -14,7 +14,7 @@ static void init_bitmap_kheap()
 {
     struct mem_map* mem_map = get_memory_map();
     uint32_t block_size = mem_map->block_size;
-    uint64_t start_addr = align_up(&kernel_end), end_addr = align_up(&kernel_end);
+    uint64_t start_addr = align_up_4k(&kernel_end), end_addr = align_up_4k(&kernel_end);
     struct e820map* memory_map = mem_map->map;
     for (; memory_map < mem_map->map + block_size; memory_map++)
     {
@@ -22,7 +22,7 @@ static void init_bitmap_kheap()
         uint64_t end = begin + memory_map->length;
         if (memory_map->type == 1 && phy2vir(end) > start_addr)
         {
-            end_addr = phy2vir(align_down(end));
+            end_addr = phy2vir(align_down_4k(end));
             break;
         }
     }

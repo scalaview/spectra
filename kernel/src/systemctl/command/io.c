@@ -1,6 +1,8 @@
 #include "systemctl/io.h"
-#include "printk.h"
+#include "debug.h"
 #include "drivers/keyboard/keyboard.h"
+
+extern void _debug_putchars(const char* buffer, int size, char color);
 
 void* isr80h_command0_print(struct interrupt_frame* frame)
 {
@@ -8,10 +10,10 @@ void* isr80h_command0_print(struct interrupt_frame* frame)
     int64_t* argv = (int64_t*)frame->rdx;
     if (argc < 2)
     {
-        printk("missing params in print");
+        debug_printf("missing params in print");
         return 0;
     }
-    print_to_screen((char*)argv[0], (int)argv[1], (char)argv[2]);
+    _debug_putchars((char*)argv[0], (int)argv[1], (char)argv[2]);
 
     return (void*)argv[1];
 }

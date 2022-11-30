@@ -4,6 +4,7 @@
 #include "assert.h"
 #include "status.h"
 #include "config.h"
+#include "drivers/vga/vesa.h"
 
 struct pml4_table* kernel_chunk;
 

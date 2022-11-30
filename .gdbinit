@@ -1,9 +1,13 @@
 add-symbol-file ./kernel/bin/kernel.elf
 add-symbol-file ./programs/apps/init/bin/init.elf
 add-symbol-file ./programs/apps/hello/bin/hello.elf
-target remote | qemu-system-x86_64 -hda ./bin/os.bin -S -gdb stdio
+target remote | qemu-system-x86_64 -hda ./bin/os.bin -S -gdb stdio -no-reboot -show-cursor
 # break *0x200000
 # break *0x100020
-b classic_keyboard_interrupt_handler
-b keyboard_pop
-b keyboard.c:78
+# b test_draw
+# b draw_cursor
+# b draw_background
+b idt_handle_exception
+b task_schedule
+b task_switch
+# b paging.c:59

@@ -2,6 +2,7 @@
 #include "status.h"
 #include "heap/kheap.h"
 #include "config.h"
+#include "kmemory.h"
 
 struct disk_stream* create_disk_streamer(uint32_t disk_id)
 {
@@ -52,13 +53,23 @@ int disk_streamer_read(struct disk_stream* stream, void* out, int total)
             res = -EIO;
             goto out;
         }
-        for (int i = offset; i < (sector_size * IO_SECTOR_SIZE) && left > 0; i++)
+        if (!offset)
         {
-            *(char*)out++ = buffer[i];
-            left--;
+            size_t size = ((sector_size * IO_SECTOR_SIZE) > left) ? left : (sector_size * IO_SECTOR_SIZE);
+            memcpy(out, buffer, size);
+            left -= size;
+            out = (void*)((char*)out + size);
+        }
+        else
+        {
+            for (int i = offset; i < (sector_size * IO_SECTOR_SIZE) && left > 0; i++)
+            {
+                *(char*)out++ = buffer[i];
+                left--;
+            }
+            offset = 0;
         }
         sector += sector_size;
-        offset = 0;
         sector_size = STREAM_SECTOR_SIZE(left);
     }
 out:

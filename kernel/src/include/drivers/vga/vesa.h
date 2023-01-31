@@ -6,17 +6,26 @@
 #include "assets/img/tga.h"
 
 struct video_info_struct {
+    unsigned char* buffer;
+    uint32_t width;
+    uint32_t height;
+    uint8_t pixelwidth;
+    int pitch;
     uint64_t linear_addr;
     uint64_t vir_linear_addr;
-    unsigned char* buffer;
-    uint8_t pixelwidth;
-    int width;
-    int height;
     int bits;
-    int pitch;
     uint8_t  type;
     int pixelsize;
-};
+}__attribute__((packed));
+
+struct screen_buffer
+{
+    uint8_t* buffer;
+    uint32_t width;
+    uint32_t height;
+    uint8_t pixelwidth;
+    int pitch;
+}__attribute__((packed));
 
 struct vga_font {
     char* font;

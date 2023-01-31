@@ -28,31 +28,41 @@ void vga_setfont(const struct vga_font* f)
     font.width = f->width;
 }
 
-static void putpixel(unsigned char* screen, int x, int y, uint32_t color) {
-    unsigned where = x * vesa_video_info.pixelwidth + y * vesa_video_info.pitch;
+static void putpixel(unsigned char* screen, int x, int y, uint32_t color, struct screen_buffer* screen_buffer) {
+    unsigned where = x * screen_buffer->pixelwidth + y * screen_buffer->pitch;
     // debug_printf("putpixel where: %x\n", where);
+    uint8_t alpha = (color >> 24) & 255;  // ALPHA
+    if (!alpha)  return;
     screen[where] = color & 255;              // BLUE
     screen[where + 1] = (color >> 8) & 255;   // GREEN
     screen[where + 2] = (color >> 16) & 255;  // RED
 }
 
-void gfx_putchar(int x, int y, uint32_t fgcolor, uint32_t bgcolor, const char c) {
+void gfx_putchar(int x, int y, uint32_t fgcolor, uint32_t bgcolor, const char c, struct screen_buffer* screen_buffer) {
     uint8_t i, j;
     uint32_t t = (c & 127) * font.width;
     for (i = 0; i < font.width; i++) {
         for (j = 0; j < font.height; j++) {
-            if (x + i >= 0 && x + 1 < vesa_video_info.width &&
-                y + j >= 0 && y + 1 < vesa_video_info.height) {
-                putpixel(vesa_video_info.buffer, x + i, y + j, ((font.font[t + j] >> i) & 1) ? fgcolor : bgcolor);
+            if (x + i >= 0 && x + 1 < screen_buffer->width &&
+                y + j >= 0 && y + 1 < screen_buffer->height) {
+                putpixel(screen_buffer->buffer, x + i, y + j, ((font.font[t + j] >> i) & 1) ? fgcolor : bgcolor, screen_buffer);
             }
         }
     }
 }
 
-void gfx_puts(int x, int y, uint32_t fgcolor, uint32_t bgcolor, const char* c) {
+void gfx_puts(int x, int y, uint32_t fgcolor, uint32_t bgcolor, const char* c, struct screen_buffer* screen_buffer) {
     while (*c) {
-        gfx_putchar(x, y, fgcolor, bgcolor, *c++);
+        gfx_putchar(x, y, fgcolor, bgcolor, *c++, screen_buffer);
         x += 8;
+    }
+}
+
+void draw_rect(uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t color, struct screen_buffer* screen_buffer) {
+    for (int l = 0; l < height && (y + l) < screen_buffer->height; l++) {
+        for (int i = 0; i < width && (x + i) < screen_buffer->width; i++) {
+            putpixel(screen_buffer->buffer, x + i, y + l, color, screen_buffer);
+        }
     }
 }
 
@@ -106,20 +116,21 @@ void kernel_init_vesa()
     vga_setfont(&font8x8_basic);
 }
 
-void draw_icon(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t pixels[]) {
-    for (int l = 0; l < h && (y + l) < 768; l++) {
-        for (int i = 0; i < w && (x + i) < 1024; i++) {
+void draw_icon(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t pixels[], struct screen_buffer* screen_buffer) {
+    for (int l = 0; l < h && (y + l) < screen_buffer->height; l++) {
+        for (int i = 0; i < w && (x + i) < screen_buffer->width; i++) {
             int64_t position = l * w + i;
-            putpixel(vesa_video_info.buffer, x + i, y + l, pixels[position]);
+            putpixel(screen_buffer->buffer, x + i, y + l, pixels[position], screen_buffer);
         }
     }
 }
 
-void draw_transparent_icon(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t pixels[]) {
-    for (int l = 0; l < h && (y + l) < 768; l++) {
-        for (int i = 0; i < w && (x + i) < 1024; i++) {
+void draw_transparent_icon(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t pixels[], struct screen_buffer* screen_buffer) {
+    for (int l = 0; l < h && (y + l) < screen_buffer->height; l++) {
+        for (int i = 0; i < w && (x + i) < screen_buffer->width; i++) {
             int64_t position = l * w + i;
-            if ((pixels[position] << 16) ^ 0xffff0000) putpixel(vesa_video_info.buffer, x + i, y + l, pixels[position]);
+            // check alpha value 
+            if (pixels[position] ^ 0xff000000) putpixel(screen_buffer->buffer, x + i, y + l, pixels[position], screen_buffer);
         }
     }
 }
@@ -142,7 +153,7 @@ void draw_cursor()
         if (tga_header);
         cursor = tga_parse(pngptr, stat->filesize);
     }
-    draw_transparent_icon(mouse_x, mouse_y, cursor->width, cursor->height, cursor->pixels);
+    draw_transparent_icon(mouse_x, mouse_y, cursor->width, cursor->height, cursor->pixels, (struct screen_buffer*)&vesa_video_info);
 }
 
 void draw_background()
@@ -175,7 +186,7 @@ void test_draw1()
     char* c = "hello word!";
     draw_cursor();
 
-    gfx_puts(100, 100, 0x0, 0xFFFFFF, c);
+    gfx_puts(100, 100, 0x0, 0xFFFFFF, c, (struct screen_buffer*)&vesa_video_info);
     memcpy(add, vesa_video_info.buffer, size);
 }
 
@@ -186,7 +197,7 @@ void test_draw()
 
     draw_background();
     draw_cursor();
-    gfx_puts(100, 100, 0x0, 0xFFFFFF, c);
+    gfx_puts(100, 100, 0x0, 0xFFFFFF, c, (struct screen_buffer*)&vesa_video_info);
 
     void* add = (void*)vesa_video_info.vir_linear_addr;
 

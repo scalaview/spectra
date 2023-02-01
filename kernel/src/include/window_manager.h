@@ -22,6 +22,13 @@ struct window
     struct message_queue message_queue;
 };
 
+struct window_wrapper
+{
+    struct window* win;
+    struct window_wrapper* next;
+    struct window_wrapper* prev;
+};
+
 int create_window(int x, int y, uint32_t width, uint32_t height, uint32_t gcolor, struct window** out_win);
 
 #endif

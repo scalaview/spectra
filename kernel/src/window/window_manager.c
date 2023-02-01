@@ -4,21 +4,87 @@
 #include "status.h"
 #include "heap/kheap.h"
 #include "kmemory.h"
+#include "assert.h"
 #include "config.h"
 
-struct window* window_table[OS_MAX_WINDOW_LENGTH];
+struct window_wrapper* head = 0;
+struct window_wrapper* tail = 0;
+uint64_t __window_id = 0;
 
-
-static int __get_unused_window_table_index()
+static void __window_list_remove_one(struct window_wrapper* window_wrapper)
 {
-    for (int i = 0; i < OS_MAX_WINDOW_LENGTH; i++)
+    struct window_wrapper* current = head->next;
+    while (current)
     {
-        if (window_table[i] == 0)
+        if (current == window_wrapper)
         {
-            return i;
+            struct window_wrapper* prev = window_wrapper->prev;
+            struct window_wrapper* next = window_wrapper->next;
+            if (!prev)
+            {
+                assert(head == window_wrapper);
+                head = next;
+            }
+            else
+            {
+                prev->next = next;
+            }
+            if (!next)
+            {
+                assert(tail == window_wrapper);
+                tail = prev;
+            }
+            else
+            {
+                next->prev = prev;
+            }
+            window_wrapper->prev = NULL;
+            window_wrapper->next = NULL;
+            return;
         }
+        current = current->next;
     }
-    return -EISTAKEN;
+    assert(0);
+}
+static void __window_list_insert(struct window_wrapper* window_wrapper)
+{
+    if (window_wrapper->next || window_wrapper->prev) __window_list_remove_one(window_wrapper);
+
+    // sort window
+    if (!tail)
+    {
+        head = window_wrapper;
+        tail = head;
+    }
+    struct window_wrapper* current = tail;
+    while (current)
+    {
+        if (current->win->z <= window_wrapper->win->z)
+        {
+            window_wrapper->next = current->next;
+            window_wrapper->prev = current;
+            current->next = window_wrapper;
+            break;
+        }
+        current = tail->prev;
+    }
+    // reach head
+    if (!current)
+    {
+        window_wrapper->next = head;
+        head->prev = window_wrapper;
+        head = window_wrapper;
+    }
+}
+
+static int __append_window(struct window* win)
+{
+    struct window_wrapper* window_wrapper = (struct window_wrapper*)kzalloc(sizeof(struct window_wrapper));
+    if (!window_wrapper) return -ENOMEM;
+
+    window_wrapper->win = win;
+    __window_list_insert(window_wrapper);
+    return 0;
 }
 
 
@@ -27,7 +93,7 @@ int create_window(int x, int y, uint32_t width, uint32_t height, uint32_t gcolor
     int res = 0;
     struct screen_buffer* screen_buffer;
     struct window* win;
-    int win_id = __get_unused_window_table_index();
+    int win_id = __window_id++;
     if (win_id < 0)
     {
         res = win_id;
@@ -48,6 +114,7 @@ int create_window(int x, int y, uint32_t width, uint32_t height, uint32_t gcolor
     win->z = 0;
     win->id = win_id;
 
+    __append_window(win);
     screen_buffer = (struct screen_buffer*)kzalloc(sizeof(struct screen_buffer));
     if (!screen_buffer)
     {

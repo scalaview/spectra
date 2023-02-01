@@ -13,6 +13,7 @@ enum SystemCommands
     SYSTEM_COMMAND6_MALLOC,
     SYSTEM_COMMAND7_FREE,
     SYSTEM_COMMAND8_READKEY,
+    SYSTEM_COMMAND9_CREATE_WINDOW,
 };
 
 void isr80h_register_commands();

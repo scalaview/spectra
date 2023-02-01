@@ -49,13 +49,14 @@ KFILES =./build/boot/multiboot_header.asm.o \
 		./build/systemctl/isr80h.o \
 		./build/systemctl/command/io.o \
 		./build/systemctl/command/process.o \
+		./build/systemctl/command/windows.o \
 		./build/task/mmu/none.o \
 		./build/task/command_argument.o \
 		./build/drivers/keyboard/keyboard.o \
 		./build/drivers/keyboard/classic.o \
 		./build/drivers/vga/vesa.o \
 		./build/drivers/mouse/mouse.o \
-		./build/window/window.o
+		./build/window/window_manager.o
 
 KFILES  += $(LIBC_BIN)
 

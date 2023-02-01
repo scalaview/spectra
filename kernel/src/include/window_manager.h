@@ -10,7 +10,7 @@
 
 struct window
 {
-    uint32_t handle;
+    uint32_t id;
     int x;
     int y;
     int z;
@@ -21,5 +21,7 @@ struct window
     struct task* parent_task;
     struct message_queue message_queue;
 };
+
+int create_window(int x, int y, uint32_t width, uint32_t height, uint32_t gcolor, struct window** out_win);
 
 #endif

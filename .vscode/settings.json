@@ -45,6 +45,7 @@
         "stb_image.h": "c",
         "serial.h": "c",
         "mouse.h": "c",
-        "font.h": "c"
+        "font.h": "c",
+        "window_manager.h": "c"
     }
 }

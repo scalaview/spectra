@@ -124,7 +124,7 @@ void draw_background()
 {
     extern struct video_info_struct vesa_video_info;
     struct window* background = 0;
-    int res = create_window(0, 0, vesa_video_info.width, vesa_video_info.height, 0, &background);
+    int res = create_window_content(0, 0, vesa_video_info.width, vesa_video_info.height, 0, &background);
     assert(!res);
     read_background();
     assert(background_pic);

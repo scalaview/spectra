@@ -10,8 +10,6 @@ GRUB_CONF_PATH = $(KERNEL_PATH)/src/grub.cfg
 KERNEL_BIN	= $(KERNEL_PATH)/bin/kernel.elf
 APPS_PATH	= ./programs/apps
 LIB_PATH	= ./programs/stdlib
-LIBC_PATH	= ./libc
-
 APP_BIN_PATH = $(BUILD_DIR)/apps
 LIB_BUILD_PATH = $(BUILD_DIR)/lib
 
@@ -20,7 +18,7 @@ dir:
 	mkdir -p $(BUILD_DIR)/lib
 	mkdir -p $(BUILD_DIR)/apps
 
-all: dir libc.elf $(KERNEL_BIN) user_apps disk
+all: dir $(KERNEL_BIN) user_apps disk
 
 disk:
 ifneq ("$(wildcard $(DISK_ORIGIN_IMG))","")
@@ -48,10 +46,6 @@ $(KERNEL_BIN):
 	$(MAKE) -C $(KERNEL_PATH) clean
 	$(MAKE) -C $(KERNEL_PATH) all
 
-libc.elf:
-	@printf "\e[32;1mMaking libc\e[0m $@\n"
-	$(MAKE) -C $(LIBC_PATH) clean all install
-
 user_apps:
 	@printf "\e[32;1mMaking apps\e[0m $@\n"
 	$(MAKE) -C $(APPS_PATH) clean all install
@@ -59,7 +53,6 @@ user_apps:
 
 clean:
 	$(MAKE) -C $(KERNEL_PATH) clean
-	$(MAKE) -C $(LIBC_PATH) clean
 	$(MAKE) -C $(APPS_PATH) clean
 	$(MAKE) -C $(LIB_PATH) clean
 	rm -rf $(BIN_DIR)

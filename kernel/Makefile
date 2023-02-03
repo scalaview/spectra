@@ -5,13 +5,18 @@ ASM = nasm
 OBJ_DIR = ./build
 BIN_DIR = ./bin
 INC_DIR = ./src/include
+LIBC_DIR = ../libc
+LIBC_OBJ_DIR = $(LIBC_DIR)/build
+LIBC_INC_DIR = $(LIBC_DIR)/src/include
 INCLUDES = $(addprefix -I, $(INC_DIR))
+INCLUDES += $(addprefix -I, $(LIBC_INC_DIR))
 ASM_INC_DIR = ./src/asminc
 ASM_INCLUDES = $(addprefix -i, $(ASM_INC_DIR))
 ASM_FLAGS = -f elf64 -g -F dwarf
 LINK_FILE = ./src/linker.ld
 OS_BIN_FILES =	./bin/kernel.elf
-LIBC_BIN = ../libc/bin/libc.elf
+
+LIBC_FILES = $(LIBC_OBJ_DIR)/window/window.o
 
 KFILES =./build/boot/multiboot_header.asm.o \
 		./build/boot/stage1.asm.o \
@@ -58,7 +63,7 @@ KFILES =./build/boot/multiboot_header.asm.o \
 		./build/drivers/mouse/mouse.o \
 		./build/window/window_manager.o
 
-KFILES  += $(LIBC_BIN)
+KFILES  += $(LIBC_FILES)
 
 FLAGS = -mcmodel=large -std=gnu99 -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label $(INCLUDES) -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc -save-temps=obj
 
@@ -72,12 +77,17 @@ $(OS_BIN_FILES): $(KFILES)
 	@printf "\e[32;1mLinking\e[0m $@\n"
 	$(LD) -nostdlib -n -T $(LINK_FILE) ${KFILES} -o $@
 
-build/%.asm.o: src/%.asm
+$(OBJ_DIR)/%.asm.o: src/%.asm
 	@printf "\e[32;1mAssembling\e[0m $<\n"
 	@mkdir -p $(shell dirname $@)
 	@$(ASM) $(ASM_FLAGS) $(ASM_INCLUDES) $< -o $@
 
-build/%.o: src/%.c
+$(OBJ_DIR)/%.o: src/%.c
+	@printf "\e[32;1mCompiling\e[0m $<\n"
+	@mkdir -p $(shell dirname $@)
+	$(GCC) $(INCLUDES) $(FLAGS) -c $< -o $@
+
+$(LIBC_OBJ_DIR)/%.o: $(LIBC_DIR)/src/%.c
 	@printf "\e[32;1mCompiling\e[0m $<\n"
 	@mkdir -p $(shell dirname $@)
 	$(GCC) $(INCLUDES) $(FLAGS) -c $< -o $@

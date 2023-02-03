@@ -30,6 +30,6 @@ struct window_wrapper
     struct window_wrapper* prev;
 };
 
-int create_window(int x, int y, uint32_t width, uint32_t height, uint32_t gcolor, struct window** out_win);
+int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_t gcolor, struct window** out_win);
 void window_refresh();
 #endif

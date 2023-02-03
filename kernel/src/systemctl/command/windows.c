@@ -2,7 +2,7 @@
 #include "window_manager.h"
 #include "debug.h"
 
-void* isr80h_command9_create_window(struct interrupt_frame* frame)
+void* isr80h_command9_create_window_content(struct interrupt_frame* frame)
 {
     int64_t argc = frame->rsi;
     int64_t* argv = (int64_t*)frame->rdx;
@@ -18,6 +18,6 @@ void* isr80h_command9_create_window(struct interrupt_frame* frame)
     uint32_t gcolor = argv[4];
 
     struct window* win = 0;
-    create_window(x, y, width, height, gcolor, &win);
+    create_window_content(x, y, width, height, gcolor, &win);
     return (void*)win;
 }

@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include "config.h"
 #include "paging/paging.h"
+
+#define KERNEL_LAND
 #include "assets/img/tga.h"
 
 struct video_info_struct {

@@ -2,6 +2,9 @@
 #define LIBC_WINDOW_H
 
 #include <stdint.h>
+#include <stdbool.h>
+
+#include "window/message.h"
 
 struct screen_buffer
 {
@@ -12,6 +15,28 @@ struct screen_buffer
     int pitch;
     int pixelsize;
 }__attribute__((packed));
+
+typedef uint64_t window_handle;
+struct gui_window;
+typedef bool(*window_procedure)(struct gui_window*, struct message*);
+
+struct gui_window
+{
+    window_handle handle;
+    int id;
+    int x;
+    int y;
+    int width;
+    int height;
+    int state;
+    char* title;
+
+    window_procedure window_procedure;
+    window_procedure default_procedure;
+
+    struct gui_window* next;
+    struct gui_window* parent;
+};
 
 void putpixel(uint8_t* screen, int x, int y, uint32_t color, struct screen_buffer* screen_buffer);
 void draw_rect(uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t color, struct screen_buffer* screen_buffer);

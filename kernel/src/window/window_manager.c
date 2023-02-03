@@ -88,8 +88,7 @@ static int __append_window(struct window* win)
     return 0;
 }
 
-
-int create_window(int x, int y, uint32_t width, uint32_t height, uint32_t gcolor, struct window** out_win)
+int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_t gcolor, struct window** out_win)
 {
     int res = 0;
     struct screen_buffer* screen_buffer;

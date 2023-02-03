@@ -12,7 +12,8 @@ ASM_FLAGS = -f elf64 -g -F dwarf
 LIBC_OBJ = ./bin/libc.elf
 PROJECT_BUILD_PATH = ../../build/lib
 
-FILES =	./build/assets/img/tga.o
+FILES =	./build/assets/img/tga.o \
+		./build/window/window.o
 
 FLAGS = -mcmodel=large -std=gnu99 -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label $(INCLUDES) -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc -save-temps=obj
 

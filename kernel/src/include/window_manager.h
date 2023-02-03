@@ -17,6 +17,7 @@ struct window
     struct screen_buffer* screen_buffer;
     int width;
     int height;
+    bool need_draw;
     int message_queue_index;
     struct task* parent_task;
     struct message_queue message_queue;
@@ -30,5 +31,5 @@ struct window_wrapper
 };
 
 int create_window(int x, int y, uint32_t width, uint32_t height, uint32_t gcolor, struct window** out_win);
-
+void window_refresh();
 #endif

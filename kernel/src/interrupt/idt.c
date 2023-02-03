@@ -8,7 +8,7 @@
 #include "status.h"
 #include "process.h"
 #include "paging/paging.h"
-#include "drivers/vga/vesa.h"
+#include "window_manager.h"
 
 struct idt_desc64 idt_descriptors64[TOTAL_INTERRUPTS];
 struct idtr_desc64 idtr_descriptor64;
@@ -121,7 +121,7 @@ void interrupt_handler(int interrupt, struct interrupt_frame* frame)
 void timer_handler(int interrupt, struct interrupt_frame* frame)
 {
     task_wake_up(++current_ticks);
-    test_draw1();
+    window_refresh();
 
     acknowledge_pic(interrupt);
     if (task_list_next() != task_list_current())

@@ -17,8 +17,11 @@
 #include "drivers/keyboard/keyboard.h"
 #include "drivers/vga/vesa.h"
 #include "drivers/mouse/mouse.h"
+#include "window_manager.h"
 
 extern struct pml4_table* kernel_chunk;
+void test_draw();
+struct tga_content* background_pic = 0;
 
 void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
 {
@@ -94,4 +97,43 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
         assert(0);
     }
     process_launch(init->id);
+}
+
+
+void read_background()
+{
+    if (!background_pic)
+    {
+        FILE* fd = fopen("0:/data/background.tga", "r");
+        assert(fd->fdi);
+        struct file_stat* stat = kzalloc(sizeof(struct file_stat));
+        fstat(fd->fdi, stat);
+        unsigned char* pngptr = kzalloc(stat->filesize);
+        assert(pngptr);
+        fread(pngptr, stat->filesize, 1, fd);
+        fclose(fd);
+        kfree(stat);
+
+        struct tga_header* tga_header = (struct tga_header*)pngptr;
+        if (tga_header);
+        background_pic = tga_parse(pngptr, stat->filesize);
+    }
+}
+
+void draw_background()
+{
+    extern struct video_info_struct vesa_video_info;
+    struct window* background = 0;
+    int res = create_window(0, 0, vesa_video_info.width, vesa_video_info.height, 0, &background);
+    assert(!res);
+    read_background();
+    assert(background_pic);
+    memcpy(background->screen_buffer->buffer, background_pic->pixels, background->screen_buffer->pixelsize);
+    background->need_draw = true;
+}
+
+void test_draw()
+{
+    draw_background();
+
 }

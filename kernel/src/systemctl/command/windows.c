@@ -18,6 +18,12 @@ void* isr80h_command9_create_window_content(struct interrupt_frame* frame)
     uint32_t gcolor = argv[4];
 
     struct window* win = 0;
-    create_window_content(x, y, width, height, gcolor, &win);
+    int res = create_window_content(x, y, width, height, gcolor, &win);
+    if (res)
+    {
+        debug_printf("create_window fail!, error code: %d", res);
+        return 0;
+    }
+    win->need_draw = true;
     return (void*)win;
 }

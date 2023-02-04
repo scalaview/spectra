@@ -59,6 +59,7 @@ KFILES =./build/boot/multiboot_header.asm.o \
 		./build/task/command_argument.o \
 		./build/drivers/keyboard/keyboard.o \
 		./build/drivers/keyboard/classic.o \
+		./build/assets/img/tga.o \
 		./build/drivers/vga/vesa.o \
 		./build/drivers/mouse/mouse.o \
 		./build/window/window_manager.o

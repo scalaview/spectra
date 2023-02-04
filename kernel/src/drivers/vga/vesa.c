@@ -8,6 +8,7 @@
 #include "file.h"
 #include "assert.h"
 #include "debug.h"
+#include "assets/img/tga.h"
 
 struct video_info_struct vesa_video_info;
 static struct vga_font font;

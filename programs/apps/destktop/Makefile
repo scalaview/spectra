@@ -15,7 +15,6 @@ APP_BIN = ./bin/destktop.bin
 APP_ELF_FILES =	./bin/destktop.elf
 PROJECT_BUILD_PATH = ../../../build/apps
 
-
 FILES =	$(STD_LIB_BIN) \
 		./build/destktop.o
 

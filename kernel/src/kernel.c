@@ -19,6 +19,7 @@
 #include "drivers/mouse/mouse.h"
 #include "window_manager.h"
 #include "window/window.h"
+#include "assets/img/tga.h"
 
 extern struct pml4_table* kernel_chunk;
 void test_draw();
@@ -150,5 +151,5 @@ void test_draw_window()
 void test_draw()
 {
     draw_background();
-    test_draw_window();
+    // test_draw_window();
 }

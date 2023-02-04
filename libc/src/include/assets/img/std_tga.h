@@ -18,12 +18,6 @@ struct tga_header {
     uint8_t pixeltype;          // must be 40
 } __attribute__((packed));
 
-struct tga_content {
-    uint32_t width;
-    uint32_t height;
-    uint32_t pixels[];
-};
-
 #if defined(USER_LAND)
 extern void* malloc(size_t size);
 #define ALLOC(size) malloc(size)
@@ -45,7 +39,7 @@ extern void kfree(void* ptr);
  *   ret[1] = height of the image
  *   ret[2..] = 32 bit ARGB pixels (blue channel in the least significant byte, alpha channel in the most)
  */
-static struct tga_content* tga_parse(unsigned char* ptr, int size)
+unsigned int* std_tga_parse(unsigned char* ptr, int size)
 {
     uint32_t* data;
     int64_t i, j, k, x, y, w = (ptr[13] << 8) + ptr[12], h = (ptr[15] << 8) + ptr[14], o = (ptr[11] << 8) + ptr[10];
@@ -128,6 +122,6 @@ static struct tga_content* tga_parse(unsigned char* ptr, int size)
     }
     data[0] = w;
     data[1] = h;
-    return (struct tga_content*)data;
+    return data;
 }
 #endif

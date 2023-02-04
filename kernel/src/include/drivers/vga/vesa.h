@@ -5,9 +5,6 @@
 #include "paging/paging.h"
 #include "window/window.h"
 
-#define KERNEL_LAND
-#include "assets/img/tga.h"
-
 #define TEXT_FONT_WIDTH(str) (strlen(str)*8)
 #define TEXT_FONT_HEIGHT(str) (8)
 

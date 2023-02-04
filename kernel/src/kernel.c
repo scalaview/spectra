@@ -18,6 +18,7 @@
 #include "drivers/vga/vesa.h"
 #include "drivers/mouse/mouse.h"
 #include "window_manager.h"
+#include "window/window.h"
 
 extern struct pml4_table* kernel_chunk;
 void test_draw();
@@ -132,8 +133,22 @@ void draw_background()
     background->need_draw = true;
 }
 
+void test_draw_window()
+{
+    extern struct video_info_struct vesa_video_info;
+    struct window* win = 0;
+    int res = create_window_content(100, 100, 500, 500, 0xffffffff, &win);
+    assert(!res);
+    draw_rect(0, 0, win->width, 20, 0xff000000, win->screen_buffer);
+    char* c = "hello word!";
+    debug_printf("x: %d", (win->width - TEXT_FONT_WIDTH(c)) / 2);
+    debug_printf("y: %d", (20 - TEXT_FONT_HEIGHT(c)) / 2);
+    gfx_puts((win->width - TEXT_FONT_WIDTH(c)) / 2, (20 - TEXT_FONT_HEIGHT(c)) / 2, 0xFFFFFFFF, 0x0, c, win->screen_buffer);
+    win->need_draw = true;
+}
+
 void test_draw()
 {
     draw_background();
-
+    test_draw_window();
 }

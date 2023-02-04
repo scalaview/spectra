@@ -48,6 +48,8 @@
         "font.h": "c",
         "window_manager.h": "c",
         "windows.h": "c",
-        "tga.h": "c"
+        "tga.h": "c",
+        "window.h": "c",
+        "message.h": "c"
     }
 }

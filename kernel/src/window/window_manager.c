@@ -10,6 +10,7 @@
 struct window_wrapper* head = 0;
 struct window_wrapper* tail = 0;
 uint64_t __window_id = 0;
+extern struct video_info_struct vesa_video_info;
 
 static void __window_list_remove_one(struct window_wrapper* window_wrapper)
 {
@@ -122,11 +123,10 @@ int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_
         res = -ENOMEM;
         goto out;
     }
-    extern struct video_info_struct vesa_video_info;
     screen_buffer->height = height;
     screen_buffer->width = width;
-    screen_buffer->pitch = vesa_video_info.pitch;
     screen_buffer->pixelwidth = vesa_video_info.pixelwidth;
+    screen_buffer->pitch = width * screen_buffer->pixelwidth;
     screen_buffer->buffer = (uint8_t*)kzalloc(screen_buffer->width * screen_buffer->height * screen_buffer->pixelwidth);
 
     if (!screen_buffer->buffer)
@@ -135,6 +135,7 @@ int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_
         goto out;
     }
     screen_buffer->pixelsize = screen_buffer->width * screen_buffer->height * screen_buffer->pixelwidth;
+    memset(screen_buffer->buffer, gcolor, screen_buffer->pixelsize);
 
     win->screen_buffer = screen_buffer;
     memset(win->message_queue.buffer, 0, sizeof(struct message) * OS_MAX_MESSAGE_LENGTH);
@@ -149,7 +150,6 @@ out:
 
 void window_copy_rect(struct window* src)
 {
-    extern struct video_info_struct vesa_video_info;
     uint8_t pixelwidth = vesa_video_info.pixelwidth;
     int64_t reserve_pixel = src->x > 0 ? (src->x * pixelwidth) : 0;
     int64_t hidden_pixel = src->x > 0 ? 0 : -(src->x * pixelwidth);
@@ -157,15 +157,14 @@ void window_copy_rect(struct window* src)
 
     for (int i = 0; i < src->height; i++)
     {
-        void* start_line_addr = (void*)(vesa_video_info.buffer + i * vesa_video_info.width * pixelwidth + reserve_pixel);
-        void* start_buffer_addr = src->screen_buffer->buffer + i * src->screen_buffer->width * pixelwidth + hidden_pixel;
+        void* start_line_addr = (void*)(((uint64_t)vesa_video_info.buffer) + (src->y + i) * vesa_video_info.width * pixelwidth + reserve_pixel);
+        void* start_buffer_addr = (void*)(((uint64_t)src->screen_buffer->buffer) + i * src->screen_buffer->width * pixelwidth + hidden_pixel);
         memcpy(start_line_addr, start_buffer_addr, pixel_len);
     }
 }
 
 void __window_flush_screen_buffer()
 {
-    extern struct video_info_struct vesa_video_info;
     memcpy((void*)vesa_video_info.vir_linear_addr, vesa_video_info.buffer, vesa_video_info.width * vesa_video_info.height * vesa_video_info.pixelwidth);
 }
 

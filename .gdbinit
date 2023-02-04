@@ -4,5 +4,4 @@ add-symbol-file ./programs/apps/hello/bin/hello.elf
 target remote | qemu-system-x86_64 -hda ./bin/os.bin -S -gdb stdio -no-reboot -show-cursor
 # break *0x200000
 # break *0x100020
-b read_background
-b draw_background
+b window_manager.c:140

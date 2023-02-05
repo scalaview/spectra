@@ -1,6 +1,7 @@
 #include "systemctl/windows.h"
 #include "window_manager.h"
 #include "debug.h"
+#include "window/window.h"
 #include "kmemory.h"
 
 void* isr80h_command9_create_window_content(struct interrupt_frame* frame)
@@ -20,16 +21,17 @@ void* isr80h_command9_create_window_content(struct interrupt_frame* frame)
     uint32_t gcolor = argv[4];
 
     struct window* win = 0;
-    struct allocation* allocation = process_alloc(width * height * vesa_video_info.pixelwidth);
-    if (!allocation)
+    struct allocation* buffer_allocation = process_alloc(width * height * vesa_video_info.pixelwidth);
+    if (!buffer_allocation)
     {
         debug_printf("create_window fail!, not enought memory");
         return 0;
     }
-    int res = create_window_content(x, y, width, height, gcolor, (uint8_t*)allocation->kptr, &win);
-    if (res)
+
+    struct allocation* window_flags_allocation = process_alloc(sizeof(struct gui_window));
+    if (!window_flags_allocation)
     {
-        debug_printf("create_window fail!, error code: %d", res);
+        debug_printf("create_window fail!, not enought memory");
         return 0;
     }
 
@@ -39,10 +41,22 @@ void* isr80h_command9_create_window_content(struct interrupt_frame* frame)
         debug_printf("create_window fail!, not enought memory");
         return 0;
     }
+
+    int res = create_window_content(x, y, width, height, gcolor, (uint8_t*)buffer_allocation->kptr, (struct window_flags*)window_flags_allocation->kptr, &win);
+    if (res)
+    {
+        debug_printf("create_window fail!, error code: %d", res);
+        return 0;
+    }
+
     memcpy(buffer, win->screen_buffer, sizeof(struct screen_buffer));
-    buffer->canvas = (uint8_t*)allocation->tptr;
+    buffer->canvas = (uint8_t*)buffer_allocation->tptr;
+    struct gui_window* gui_window = (struct gui_window*)window_flags_allocation->tptr;
+    gui_window->buffer = buffer;
+    gui_window->height = height;
+    gui_window->width = width;
+    gui_window->x = x;
+    gui_window->y = y;
 
-    win->need_draw = true;
-
-    return (void*)buffer;
+    return (void*)gui_window;
 }

@@ -90,7 +90,7 @@ static int __append_window(struct window* win)
     return 0;
 }
 
-int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_t gcolor, uint8_t* canvas, struct window** out_win)
+int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_t gcolor, uint8_t* canvas, struct window_flags* flags, struct window** out_win)
 {
     int res = 0;
     struct screen_buffer* screen_buffer;
@@ -120,7 +120,10 @@ int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_
     win->y = y;
     win->z = 0;
     win->id = win_id;
-    win->need_draw = false;
+    flags->handle = win_id;
+    flags->need_draw = false;
+    win->flags = flags;
+
 
     __append_window(win);
     screen_buffer = (struct screen_buffer*)kzalloc(sizeof(struct screen_buffer));
@@ -154,6 +157,14 @@ out:
     return res;
 }
 
+void window_free(struct window* window)
+{
+    if (window->flags) kfree(window->flags);
+    if (window->screen_buffer && window->screen_buffer->canvas) kfree(window->screen_buffer->canvas);
+    if (window->screen_buffer) kfree(window->screen_buffer);
+    kfree(window);
+}
+
 void window_copy_rect(struct window* src)
 {
     uint8_t pixelwidth = vesa_video_info.pixelwidth;
@@ -179,7 +190,7 @@ void window_refresh()
     struct window_wrapper* current = head;
     while (current)
     {
-        if (current->win->need_draw) window_copy_rect(current->win);
+        if (current->win->flags->need_draw) window_copy_rect(current->win);
         current = current->next;
     }
 

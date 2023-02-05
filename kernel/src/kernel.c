@@ -127,12 +127,13 @@ void draw_background()
     extern struct video_info_struct vesa_video_info;
     struct window* background = 0;
     uint8_t* canvas = (uint8_t*)kzalloc(vesa_video_info.width * vesa_video_info.height * vesa_video_info.pixelwidth);
-    int res = create_window_content(0, 0, vesa_video_info.width, vesa_video_info.height, 0, canvas, &background);
+    struct window_flags* container = (struct window_flags*)kzalloc(sizeof(struct window_flags));
+    int res = create_window_content(0, 0, vesa_video_info.width, vesa_video_info.height, 0, canvas, container, &background);
     assert(!res);
     read_background();
     assert(background_pic);
     memcpy(background->screen_buffer->canvas, background_pic->pixels, background->screen_buffer->pixelsize);
-    background->need_draw = true;
+    background->flags->need_draw = true;
 }
 
 

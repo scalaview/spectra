@@ -28,6 +28,7 @@ typedef bool(*window_procedure)(struct gui_window*, struct message*);
 struct gui_window
 {
     window_handle handle;
+    bool need_draw;
     int id;
     int x;
     int y;
@@ -35,13 +36,14 @@ struct gui_window
     int height;
     int state;
     char* title;
+    struct screen_buffer* buffer;
 
     window_procedure window_procedure;
     window_procedure default_procedure;
 
     struct gui_window* next;
     struct gui_window* parent;
-};
+}__attribute__((packed));
 
 struct vga_font
 {

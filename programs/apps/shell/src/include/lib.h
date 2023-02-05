@@ -3,11 +3,8 @@
 
 #include <stddef.h>
 
-int printf(const char* format, ...);
-int sleep(int seconds);
-int fork();
-void* malloc(size_t size);
-void free(void* ptr);
-char keyboard_getkey();
+#include "stdio.h"
+#include "unistd.h"
+#include "stdlib.h"
 
 #endif

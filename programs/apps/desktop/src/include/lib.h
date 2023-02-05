@@ -1,7 +1,8 @@
-#ifndef _HELLO_LIB_H_
-#define _HELLO_LIB_H_
+#ifndef _DESKTOP_LIB_H_
+#define _DESKTOP_LIB_H_
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include "stdio.h"
 #include "unistd.h"

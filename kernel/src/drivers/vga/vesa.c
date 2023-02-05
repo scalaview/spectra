@@ -11,11 +11,11 @@
 #include "assets/img/tga.h"
 
 struct video_info_struct vesa_video_info;
-static struct vga_font font;
+struct vga_font font;
 
 struct tga_content* cursor = 0;
 
-static struct vga_font font8x8_basic = {
+struct vga_font font8x8_basic = {
     .font = font_pixel_8x8,
     .height = 8,
     .width = 8,
@@ -26,26 +26,6 @@ void vga_setfont(const struct vga_font* f)
     font.font = f->font;
     font.height = f->height;
     font.width = f->width;
-}
-
-static void __gfx_putchar(int x, int y, uint32_t fgcolor, uint32_t bgcolor, const char c, struct screen_buffer* screen_buffer) {
-    uint8_t i, j;
-    uint32_t t = (c & 127) * font.width;
-    for (i = 0; i < font.width; i++) {
-        for (j = 0; j < font.height; j++) {
-            if (x + i >= 0 && x + 1 < screen_buffer->width &&
-                y + j >= 0 && y + 1 < screen_buffer->height) {
-                putpixel(screen_buffer->buffer, x + i, y + j, ((font.font[t + j] >> i) & 1) ? fgcolor : bgcolor, screen_buffer->pitch, screen_buffer->pixelwidth);
-            }
-        }
-    }
-}
-
-void gfx_puts(int x, int y, uint32_t fgcolor, uint32_t bgcolor, const char* c, struct screen_buffer* screen_buffer) {
-    while (*c) {
-        __gfx_putchar(x, y, fgcolor, bgcolor, *c++, screen_buffer);
-        x += 8;
-    }
 }
 
 void extract_multiboot_framebuffer_tag()
@@ -102,7 +82,7 @@ void draw_icon(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t pixels[]
     for (int l = 0; l < h && (y + l) < screen_buffer->height; l++) {
         for (int i = 0; i < w && (x + i) < screen_buffer->width; i++) {
             int64_t position = l * w + i;
-            putpixel(screen_buffer->buffer, x + i, y + l, pixels[position], screen_buffer->pitch, screen_buffer->pixelwidth);
+            putpixel(screen_buffer->canvas, x + i, y + l, pixels[position], screen_buffer->pitch, screen_buffer->pixelwidth);
         }
     }
 }
@@ -112,7 +92,7 @@ void draw_transparent_icon(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint3
         for (int i = 0; i < w && (x + i) < screen_buffer->width; i++) {
             int64_t position = l * w + i;
             // check alpha value 
-            if (pixels[position] ^ 0xff000000) putpixel(screen_buffer->buffer, x + i, y + l, pixels[position], screen_buffer->pitch, screen_buffer->pixelwidth);
+            if (pixels[position] ^ 0xff000000) putpixel(screen_buffer->canvas, x + i, y + l, pixels[position], screen_buffer->pitch, screen_buffer->pixelwidth);
         }
     }
 }

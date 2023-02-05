@@ -6,6 +6,7 @@
 #include "kmemory.h"
 #include "assert.h"
 #include "config.h"
+#include "process.h"
 
 struct window_wrapper* head = 0;
 struct window_wrapper* tail = 0;
@@ -89,11 +90,16 @@ static int __append_window(struct window* win)
     return 0;
 }
 
-int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_t gcolor, struct window** out_win)
+int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_t gcolor, uint8_t* canvas, struct window** out_win)
 {
     int res = 0;
     struct screen_buffer* screen_buffer;
     struct window* win;
+    if (!canvas)
+    {
+        res = -EINVARG;
+        goto out;
+    }
     int win_id = __window_id++;
     if (win_id < 0)
     {
@@ -127,15 +133,15 @@ int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_
     screen_buffer->width = width;
     screen_buffer->pixelwidth = vesa_video_info.pixelwidth;
     screen_buffer->pitch = width * screen_buffer->pixelwidth;
-    screen_buffer->buffer = (uint8_t*)kzalloc(screen_buffer->width * screen_buffer->height * screen_buffer->pixelwidth);
+    screen_buffer->canvas = canvas;
 
-    if (!screen_buffer->buffer)
+    if (!screen_buffer->canvas)
     {
         res = -ENOMEM;
         goto out;
     }
     screen_buffer->pixelsize = screen_buffer->width * screen_buffer->height * screen_buffer->pixelwidth;
-    memset(screen_buffer->buffer, gcolor, screen_buffer->pixelsize);
+    memset(screen_buffer->canvas, gcolor, screen_buffer->pixelsize);
 
     win->screen_buffer = screen_buffer;
     memset(win->message_queue.buffer, 0, sizeof(struct message) * OS_MAX_MESSAGE_LENGTH);
@@ -158,7 +164,7 @@ void window_copy_rect(struct window* src)
     for (int i = 0; i < src->height; i++)
     {
         void* start_line_addr = (void*)(((uint64_t)vesa_video_info.buffer) + (src->y + i) * vesa_video_info.width * pixelwidth + reserve_pixel);
-        void* start_buffer_addr = (void*)(((uint64_t)src->screen_buffer->buffer) + i * src->screen_buffer->width * pixelwidth + hidden_pixel);
+        void* start_buffer_addr = (void*)(((uint64_t)src->screen_buffer->canvas) + i * src->screen_buffer->width * pixelwidth + hidden_pixel);
         memcpy(start_line_addr, start_buffer_addr, pixel_len);
     }
 }

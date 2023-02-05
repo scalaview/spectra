@@ -27,6 +27,7 @@ FILES =	./build/entry.asm.o \
 		./build/syscall.asm.o \
 		./build/unistd.o \
 		./build/process.o \
+		./build/vesa.o \
 		./build/assets/img/tga.o
 
 FILES  += $(LIBC_FILES)

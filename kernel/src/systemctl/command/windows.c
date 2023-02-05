@@ -1,9 +1,11 @@
 #include "systemctl/windows.h"
 #include "window_manager.h"
 #include "debug.h"
+#include "kmemory.h"
 
 void* isr80h_command9_create_window_content(struct interrupt_frame* frame)
 {
+    extern struct video_info_struct vesa_video_info;
     int64_t argc = frame->rsi;
     int64_t* argv = (int64_t*)frame->rdx;
     if (argc < 5)
@@ -18,12 +20,29 @@ void* isr80h_command9_create_window_content(struct interrupt_frame* frame)
     uint32_t gcolor = argv[4];
 
     struct window* win = 0;
-    int res = create_window_content(x, y, width, height, gcolor, &win);
+    struct allocation* allocation = process_alloc(width * height * vesa_video_info.pixelwidth);
+    if (!allocation)
+    {
+        debug_printf("create_window fail!, not enought memory");
+        return 0;
+    }
+    int res = create_window_content(x, y, width, height, gcolor, (uint8_t*)allocation->kptr, &win);
     if (res)
     {
         debug_printf("create_window fail!, error code: %d", res);
         return 0;
     }
+
+    struct screen_buffer* buffer = (struct screen_buffer*)process_malloc(sizeof(struct screen_buffer));
+    if (!buffer)
+    {
+        debug_printf("create_window fail!, not enought memory");
+        return 0;
+    }
+    memcpy(buffer, win->screen_buffer, sizeof(struct screen_buffer));
+    buffer->canvas = (uint8_t*)allocation->tptr;
+
     win->need_draw = true;
-    return (void*)win;
+
+    return (void*)buffer;
 }

@@ -5,18 +5,23 @@ OBJCOPY = x86_64-elf-objcopy
 ASM = nasm
 OBJ_DIR = ./build
 BIN_DIR = ./bin
-INC_DIR = ./src/include
+STD_LIB_DIR = ../../stdlib/
+STD_LIB_INC_DIR = ../../stdlib/src/include
 INCLUDES = $(addprefix -I, $(INC_DIR))
+INC_DIR = ./src/include
+INCLUDES += $(addprefix -I, $(STD_LIB_INC_DIR))
+LIBC_DIR = ../../../libc
+LIBC_INC_DIR = $(LIBC_DIR)/src/include
+INCLUDES += $(addprefix -I, $(LIBC_INC_DIR))
 LINK_FILE = ./src/linker.ld
 ASM_FLAGS = -f elf64 -g -F dwarf
-STD_LIB_DIR = ../../stdlib/
 STD_LIB_BIN = ../../stdlib/bin/stdlib.elf
-APP_BIN = ./bin/destktop.bin
-APP_ELF_FILES =	./bin/destktop.elf
+APP_BIN = ./bin/desktop.bin
+APP_ELF_FILES =	./bin/desktop.elf
 PROJECT_BUILD_PATH = ../../../build/apps
 
 FILES =	$(STD_LIB_BIN) \
-		./build/destktop.o
+		./build/desktop.o
 
 FLAGS = -mcmodel=large -std=gnu99 -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label $(INCLUDES) -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc -save-temps=obj
 

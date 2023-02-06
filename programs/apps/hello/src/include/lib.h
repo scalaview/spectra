@@ -3,10 +3,11 @@
 
 #include <stddef.h>
 
-int printf(const char* format, ...);
-int sleep(int seconds);
-void exit(int status);
-void* malloc(size_t size);
-void free(void* ptr);
+#include "stdio.h"
+#include "unistd.h"
+#include "stdlib.h"
+#include "string.h"
+#include "gui.h"
+#include "window/window.h"
 
 #endif

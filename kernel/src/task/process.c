@@ -607,13 +607,25 @@ out:
     return res;
 }
 
-void* process_malloc(size_t size)
+struct allocation* process_alloc(size_t size)
 {
     struct process* process = get_current_process();
     if (!process) return 0;
 
-    struct allocation* allocation = process->mmu.malloc(task_list_current(), size);
+    return process->mmu.malloc(task_list_current(), size);
+}
+
+void* process_malloc(size_t size)
+{
+    struct allocation* allocation = process_alloc(size);
     if (allocation) return allocation->tptr;
+    return 0;
+}
+
+void* process_internal_alloc(size_t size)
+{
+    struct allocation* allocation = process_alloc(size);
+    if (allocation) return allocation->kptr;
     return 0;
 }
 

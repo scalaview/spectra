@@ -1,5 +1,5 @@
-#ifndef ASSETS_IMG_TGA_H
-#define ASSETS_IMG_TGA_H
+#ifndef OS_STD_ASSETS_IMG_TGA_H
+#define OS_STD_ASSETS_IMG_TGA_H
 
 #include <stdint.h>
 
@@ -10,7 +10,4 @@ struct tga_content {
 };
 
 struct tga_content* tga_parse(unsigned char* ptr, int size);
-
 #endif
-
-

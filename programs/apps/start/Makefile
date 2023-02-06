@@ -1,15 +1,19 @@
-
 LD = x86_64-elf-ld
 GCC = x86_64-elf-gcc
 OBJCOPY = x86_64-elf-objcopy
 ASM = nasm
 OBJ_DIR = ./build
 BIN_DIR = ./bin
-INC_DIR = ./src/include
+STD_LIB_DIR = ../../stdlib/
+STD_LIB_INC_DIR = ../../stdlib/src/include
 INCLUDES = $(addprefix -I, $(INC_DIR))
+INC_DIR = ./src/include
+INCLUDES += $(addprefix -I, $(STD_LIB_INC_DIR))
+LIBC_DIR = ../../../libc
+LIBC_INC_DIR = $(LIBC_DIR)/src/include
+INCLUDES += $(addprefix -I, $(LIBC_INC_DIR))
 LINK_FILE = ./src/linker.ld
 ASM_FLAGS = -f elf64 -g -F dwarf
-STD_LIB_DIR = ../../stdlib/
 STD_LIB_BIN = ../../stdlib/bin/stdlib.elf
 APP_BIN = ./bin/start.bin
 APP_ELF_FILES =	./bin/start.elf

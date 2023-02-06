@@ -120,3 +120,20 @@ keyboard_getkey:
     int 0x80
 
     ret
+
+global create_window_content
+create_window_content:
+    xor rax, rax
+    push r8
+    push rcx
+    push rdx
+    push rsi
+    push rdi
+
+    mov rdi, 9  ; command
+    mov rsi, 5  ; argc
+    mov rdx, rsp ; argv
+    int 0x80
+
+    add rsp, 40
+    ret

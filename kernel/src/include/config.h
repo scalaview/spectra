@@ -37,4 +37,7 @@
 
 
 #define PROCESS_WAIT_FOR_KEYBOARD   -2
+
+#define OS_MAX_MESSAGE_LENGTH    512
+#define OS_MAX_WINDOW_LENGTH     64
 #endif

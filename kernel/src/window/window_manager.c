@@ -7,10 +7,12 @@
 #include "assert.h"
 #include "config.h"
 #include "process.h"
+#include "message_queue.h"
 
 struct window_wrapper* head = 0;
 struct window_wrapper* tail = 0;
 uint64_t __window_id = 0;
+static struct window* focused_window;
 extern struct video_info_struct vesa_video_info;
 
 static void __window_list_remove_one(struct window_wrapper* window_wrapper)
@@ -196,4 +198,22 @@ void window_refresh()
 
     draw_cursor();
     __window_flush_screen_buffer();
+}
+
+void window_add_message(struct window* win, struct message* msg)
+{
+    message_push(win->message_queue, msg);
+}
+
+void window_add_message_to_focused(struct message* msg)
+{
+    if (focused_window == NULL) {
+        return;
+    }
+    window_add_message(focused_window, msg);
+}
+
+void window_pop_message(struct window* win, struct message* msg_out)
+{
+    message_pop(win->message_queue, msg_out);
 }

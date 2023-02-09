@@ -39,4 +39,8 @@ struct window_wrapper
 int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_t gcolor, uint8_t* canvas, struct window_flags* flags, struct window** out_win);
 void window_free(struct window* window);
 void window_refresh();
+void window_add_message(struct window* win, struct message* msg);
+void window_add_message_to_focused(struct message* msg);
+void window_pop_message(struct window* win, struct message* msg_out);
+
 #endif

@@ -63,6 +63,7 @@ KFILES =./build/boot/multiboot_header.asm.o \
 		./build/drivers/vga/vesa.o \
 		./build/drivers/mouse/mouse.o \
 		./build/window/window_manager.o
+		./build/message_queue/message_queue.o
 
 KFILES  += $(LIBC_FILES)
 

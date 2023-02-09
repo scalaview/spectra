@@ -52,6 +52,7 @@
         "window.h": "c",
         "message.h": "c",
         "std_tga.h": "c",
-        "tag.h": "c"
+        "tag.h": "c",
+        "message_queue.h": "c"
     }
 }

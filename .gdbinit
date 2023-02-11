@@ -4,7 +4,6 @@ add-symbol-file ./programs/apps/desktop/bin/desktop.elf
 target remote | qemu-system-x86_64 -hda ./bin/os.bin -S -gdb stdio -no-reboot -show-cursor
 # break *0x200000
 # break *0x100020
-b kernel_init_vesa
-b main
-b gfx_puts
-# b isr80h_command9_create_window_content
+# b message_queue.c:27
+# b classic_keyboard_read
+b window_putchar

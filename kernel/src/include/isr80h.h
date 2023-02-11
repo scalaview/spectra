@@ -14,6 +14,7 @@ enum SystemCommands
     SYSTEM_COMMAND7_FREE,
     SYSTEM_COMMAND8_READKEY,
     SYSTEM_COMMAND9_CREATE_WINDOW,
+    SYSTEM_COMMAND10_GET_MESSAGE,
 };
 
 void isr80h_register_commands();

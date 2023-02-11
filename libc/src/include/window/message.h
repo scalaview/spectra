@@ -14,7 +14,7 @@
 struct message
 {
     uint16_t 		event;
-    int32_t 		key;
+    char 		key;
 
     uint16_t 		handle;
     int16_t 		x;

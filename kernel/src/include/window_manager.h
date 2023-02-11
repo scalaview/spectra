@@ -27,13 +27,8 @@ struct window
     int message_queue_index;
     struct task* parent_task;
     struct message_queue message_queue;
-};
-
-struct window_wrapper
-{
-    struct window* win;
-    struct window_wrapper* next;
-    struct window_wrapper* prev;
+    struct window* next;
+    struct window* prev;
 };
 
 int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_t gcolor, uint8_t* canvas, struct window_flags* flags, struct window** out_win);
@@ -42,5 +37,5 @@ void window_refresh();
 void window_add_message(struct window* win, struct message* msg);
 void window_add_message_to_focused(struct message* msg);
 void window_pop_message(struct window* win, struct message* msg_out);
-
+struct window* window_fetch(uint32_t id);
 #endif

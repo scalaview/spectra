@@ -10,5 +10,6 @@
 #include "string.h"
 #include "gui.h"
 #include "window/window.h"
+#include "messages.h"
 
 #endif

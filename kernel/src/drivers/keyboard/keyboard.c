@@ -52,8 +52,9 @@ void keyboard_push(char c)
     int head = keyboard_buffer.head;
     int tail = keyboard_buffer.tail;
 
-    if ((tail + 1) % OS_KEYBOARD_BUFFER_SIZE == head) {
-        return;
+    if ((tail + 1) % OS_KEYBOARD_BUFFER_SIZE == head)
+    {
+        keyboard_buffer.head = ++head % OS_KEYBOARD_BUFFER_SIZE;
     }
     keyboard_buffer.buffer[tail++] = c;
     keyboard_buffer.tail = tail % OS_KEYBOARD_BUFFER_SIZE;

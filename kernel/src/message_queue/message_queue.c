@@ -1,4 +1,5 @@
 #include "message_queue.h"
+#include "task.h"
 
 void message_push(struct message_queue* queue, struct message* msg)
 {
@@ -6,8 +7,10 @@ void message_push(struct message_queue* queue, struct message* msg)
 
     int tail = queue->tail;
 
-    if ((tail + 1) % OS_MAX_MESSAGE_LENGTH == queue->head) {
-        queue->head++;
+    if ((tail + 1) % OS_MAX_MESSAGE_LENGTH == queue->head)
+    {
+        int head = queue->head;
+        queue->head = (++head) % OS_MAX_MESSAGE_LENGTH;
     }
     queue->buffer[tail++] = *msg;
     queue->tail = tail % OS_MAX_MESSAGE_LENGTH;
@@ -16,10 +19,10 @@ void message_push(struct message_queue* queue, struct message* msg)
 void message_pop(struct message_queue* queue, struct message* msg_out)
 {
     int head = queue->head;
-    if (head == queue->tail)
-    {
-        return 0;
-    }
+    // if (head == queue->tail)
+    // {
+    //     return;
+    // }
 
     struct message msg = queue->buffer[head];
     while (!msg.event)

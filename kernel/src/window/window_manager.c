@@ -8,25 +8,26 @@
 #include "config.h"
 #include "process.h"
 #include "message_queue.h"
+#include "task.h"
 
-struct window_wrapper* head = 0;
-struct window_wrapper* tail = 0;
+struct window* head = 0;
+struct window* tail = 0;
 uint64_t __window_id = 0;
 static struct window* focused_window;
 extern struct video_info_struct vesa_video_info;
 
-static void __window_list_remove_one(struct window_wrapper* window_wrapper)
+static void __window_list_remove_one(struct window* win)
 {
-    struct window_wrapper* current = head->next;
+    struct window* current = head->next;
     while (current)
     {
-        if (current == window_wrapper)
+        if (current == win)
         {
-            struct window_wrapper* prev = window_wrapper->prev;
-            struct window_wrapper* next = window_wrapper->next;
+            struct window* prev = win->prev;
+            struct window* next = win->next;
             if (!prev)
             {
-                assert(head == window_wrapper);
+                assert(head == win);
                 head = next;
             }
             else
@@ -35,34 +36,35 @@ static void __window_list_remove_one(struct window_wrapper* window_wrapper)
             }
             if (!next)
             {
-                assert(tail == window_wrapper);
+                assert(tail == win);
                 tail = prev;
             }
             else
             {
                 next->prev = prev;
             }
-            window_wrapper->prev = NULL;
-            window_wrapper->next = NULL;
+            win->prev = NULL;
+            win->next = NULL;
             return;
         }
         current = current->next;
     }
     assert(0);
 }
-static void __window_list_insert(struct window_wrapper* window_wrapper)
+
+static void __append_window(struct window* win)
 {
-    if (window_wrapper->next || window_wrapper->prev) __window_list_remove_one(window_wrapper);
+    if (win->next || win->prev) __window_list_remove_one(win);
 
     // sort window
-    struct window_wrapper* current = tail;
+    struct window* current = tail;
     while (current)
     {
-        if (current->win->z <= window_wrapper->win->z)
+        if (current->z <= win->z)
         {
-            window_wrapper->next = current->next;
-            window_wrapper->prev = current;
-            current->next = window_wrapper;
+            win->next = current->next;
+            win->prev = current;
+            current->next = win;
             break;
         }
         current = tail->prev;
@@ -70,26 +72,15 @@ static void __window_list_insert(struct window_wrapper* window_wrapper)
     // reach head
     if (!current)
     {
-        window_wrapper->next = head;
-        if (head) head->prev = window_wrapper;
-        head = window_wrapper;
+        win->next = head;
+        if (head) head->prev = win;
+        head = win;
     }
 
     if (!tail)
     {
-        tail = window_wrapper;
+        tail = win;
     }
-
-}
-
-static int __append_window(struct window* win)
-{
-    struct window_wrapper* window_wrapper = (struct window_wrapper*)kzalloc(sizeof(struct window_wrapper));
-    if (!window_wrapper) return -ENOMEM;
-
-    window_wrapper->win = win;
-    __window_list_insert(window_wrapper);
-    return 0;
 }
 
 int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_t gcolor, uint8_t* canvas, struct window_flags* flags, struct window** out_win)
@@ -125,6 +116,7 @@ int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_
     flags->handle = win_id;
     flags->need_draw = false;
     win->flags = flags;
+    win->parent_task = task_list_current();
 
 
     __append_window(win);
@@ -151,7 +143,7 @@ int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_
     win->screen_buffer = screen_buffer;
     memset(win->message_queue.buffer, 0, sizeof(struct message) * OS_MAX_MESSAGE_LENGTH);
     *out_win = win;
-
+    focused_window = win;
 out:
     if (res && screen_buffer) kfree(screen_buffer);
     if (res && win) kfree(win);
@@ -189,10 +181,10 @@ void __window_flush_screen_buffer()
 
 void window_refresh()
 {
-    struct window_wrapper* current = head;
+    struct window* current = head;
     while (current)
     {
-        if (current->win->flags->need_draw) window_copy_rect(current->win);
+        if (current->flags->need_draw) window_copy_rect(current);
         current = current->next;
     }
 
@@ -202,7 +194,7 @@ void window_refresh()
 
 void window_add_message(struct window* win, struct message* msg)
 {
-    message_push(win->message_queue, msg);
+    message_push(&win->message_queue, msg);
 }
 
 void window_add_message_to_focused(struct message* msg)
@@ -215,5 +207,16 @@ void window_add_message_to_focused(struct message* msg)
 
 void window_pop_message(struct window* win, struct message* msg_out)
 {
-    message_pop(win->message_queue, msg_out);
+    message_pop(&win->message_queue, msg_out);
+}
+
+struct window* window_fetch(uint32_t id)
+{
+    struct window* current = head;
+    while (current)
+    {
+        if (current->id == id) return current;
+        current = current->next;
+    }
+    return 0;
 }

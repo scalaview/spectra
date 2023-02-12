@@ -54,6 +54,9 @@
         "std_tga.h": "c",
         "tag.h": "c",
         "message_queue.h": "c",
-        "messages.h": "c"
+        "messages.h": "c",
+        "color.h": "c",
+        "stdbool.h": "c",
+        "gui.h": "c"
     }
 }

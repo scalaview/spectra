@@ -89,7 +89,7 @@ static char classic_keyboard_read(struct message* msg_out)
         else if ('A' <= ch && ch <= 'Z')
             ch += 32;
     }
-    msg_out->key = ch;
+    msg_out->key = (int32_t)ch;
     return ch;
 }
 

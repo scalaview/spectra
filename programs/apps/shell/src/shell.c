@@ -1,44 +1,96 @@
 #include "lib.h"
+#include <stdint.h>
+
+uint32_t current_width = 0;
+uint32_t current_height = 0;
+struct gui_window* shell_win;
+const char* reserved_cmd = "shell# ";
+int shell_max_font_count = 0;
+
+void shell_putchar(const char ch, uint32_t reserved)
+{
+    screan_putchar(shell_win->buffer, ch, &current_width, &current_height, BLACK, WHITE, reserved);
+}
+
+void shell_print(const char* str, uint32_t reserved)
+{
+    for (char* ch = (char*)str; *ch != 0; ch++)
+    {
+        shell_putchar(*ch, reserved);
+    }
+}
 
 static int read_cmd(char* buffer)
 {
-    char ch[2] = { 0 };
+    struct message* msg = (struct message*)malloc(sizeof(struct message));
+    char ch;
     int buffer_size = 0;
 
-    while (1) {
-        ch[0] = keyboard_getkey();
-
-        if (ch[0] == '\n' || buffer_size >= 80) {
-            printf("%s", ch);
+    while (1)
+    {
+        window_get_message(shell_win, msg);
+        switch (msg->event)
+        {
+        case MESSAGE_KEY_PRESS:
+            ch = (char)msg->key;
+            if (ch == '\n' || buffer_size >= shell_max_font_count)
+            {
+                shell_putchar(ch, strlen(reserved_cmd));
+                goto out;
+            }
+            else if (ch == '\b')
+            {
+                if (buffer_size > 0) {
+                    buffer_size--;
+                    shell_putchar(ch, strlen(reserved_cmd));
+                }
+            }
+            else
+            {
+                buffer[buffer_size++] = ch;
+                shell_putchar(ch, strlen(reserved_cmd));
+            }
+            break;
+        default:
             break;
         }
-        else if (ch[0] == '\b') {
-            if (buffer_size > 0) {
-                buffer_size--;
-                printf("%s", ch);
-            }
-        }
-        else {
-            buffer[buffer_size++] = ch[0];
-            printf("%s", ch);
-        }
-    }
 
+    }
+out:
+    buffer[buffer_size] = 0;
     return buffer_size;
 }
 
 int main(int argc, char** argv)
 {
-    char buffer[80] = { 0 };
+    uint32_t width = 500;
+    uint32_t height = 500;
+    int64_t x = 100;
+    int64_t y = 100;
+    int id = 1;
+    const char* title = "Shell";
+    shell_win = create_gui_window(0, width, height, x, y, id, title);
+    if (!shell_win)
+    {
+        printf("create window fail!\n");
+        return 0;
+    }
+    create_window_control_panel(shell_win);
+    shell_max_font_count = (shell_win->width - (strlen(reserved_cmd) + 1) * TEXT_FONT_STATIC_WIDTH) / TEXT_FONT_STATIC_WIDTH;
+    char* buffer = (char*)malloc(sizeof(char) * shell_max_font_count);
     int buffer_size = 0;
-
+    current_width = 0;
+    current_height = 21;
+    shell_win->need_draw = true;
     while (1) {
-        printf("shell# ");
+        shell_print(reserved_cmd, 0);
         buffer_size = read_cmd(buffer);
 
         if (buffer_size == 0) {
             continue;
         }
+        printf("cmd: %s\n", buffer);
+        // eval
     }
     return 0;
 }

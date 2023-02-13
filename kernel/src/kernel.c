@@ -132,6 +132,7 @@ void draw_background()
     assert(!res);
     read_background();
     assert(background_pic);
+    background->keep_z_stale = true;
     memcpy(background->screen_buffer->canvas, background_pic->pixels, background->screen_buffer->pixelsize);
     background->flags->need_draw = true;
 }

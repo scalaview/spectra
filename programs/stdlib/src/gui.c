@@ -7,13 +7,26 @@
 
 struct gui_window* create_gui_window(struct gui_window* parent, uint32_t width, uint32_t height, int64_t x, int64_t y, int id, const char* title);
 
-bool default_window_procedure(struct gui_window*, struct message*);
-
 void window_add_container(struct gui_window* parent, struct gui_window* new_win)
 {
     struct gui_window* current = parent;
     while (current->next) current = current->next;
     current->next = new_win;
+}
+
+static bool __gui_window_default_procedure(struct gui_window* win, struct message* msg)
+{
+    switch (msg->event) {
+    case MESSAGE_MOUSE_PRESS:
+    case MESSAGE_MOUSE_RELEASE:
+        return false;
+    case MESSAGE_MOUSE_DRAG:
+        win->buffer->x += msg->diff_x;
+        win->buffer->y += msg->diff_y;
+        return true;
+
+    }
+    return false;
 }
 
 void get_absolute_position(struct gui_window* parent, int64_t x, int64_t y, int64_t* x_out, int64_t* y_out)
@@ -25,8 +38,8 @@ void get_absolute_position(struct gui_window* parent, int64_t x, int64_t y, int6
     {
         if (current->parent)
         {
-            abs_x = abs_x + current->x;
-            abs_y = abs_y + current->y;
+            abs_x = abs_x + current->buffer->x;
+            abs_y = abs_y + current->buffer->y;
         }
         current = current->parent;
     }
@@ -52,9 +65,9 @@ label_struct* create_window_lable(struct gui_window* parent, uint32_t width, uin
     return label;
 }
 
-label_struct* create_window_control_panel(struct gui_window* win)
+label_struct* create_window_control_panel(struct gui_window* win, int id)
 {
-    return create_window_lable(win, win->width, GUI_CONTROL_PANEL_HEIGHT, 0, 0, win->id + 999, win->title, BLACK, WHITE, BLACK);
+    return create_window_lable(win, win->width, GUI_CONTROL_PANEL_HEIGHT, 0, 0, id, win->title, BLACK, WHITE, BLACK);
 }
 
 struct gui_window* create_gui_window(struct gui_window* parent, uint32_t width, uint32_t height, int64_t x, int64_t y, int id, const char* title)
@@ -90,8 +103,7 @@ struct gui_window* create_gui_window(struct gui_window* parent, uint32_t width, 
     new_win->x = x;
     new_win->y = y;
     new_win->need_draw = false;
-    // new_win->window_procedure = &default_window_procedure;
-
+    new_win->default_procedure = &__gui_window_default_procedure;
 
     return new_win;
 }
@@ -124,4 +136,32 @@ void screan_putchar(struct screen_buffer* buffer, const char cha, uint32_t* curr
     }
     gfx_puts(*current_width, *current_height, t_color, tb_color, ch, buffer);
     *current_width = *current_width + TEXT_FONT_WIDTH(ch);
+}
+
+bool window_consume_message(struct gui_window* win, struct message* msg)
+{
+    bool consumed = false;
+    if (win->custom_procedure != NULL) {
+        consumed = win->custom_procedure(win, msg);
+    }
+    if (!consumed) {
+        consumed = win->default_procedure(win, msg);
+    }
+    return consumed;
+}
+
+bool window_consume_message_simple(struct gui_window* win, uint16_t event)
+{
+    struct message msg;
+    msg.event = event;
+    return window_consume_message(win, &msg);
+}
+
+void window_consume(struct gui_window* win, struct message* msg)
+{
+    for (struct gui_window* w = win; w != NULL; w = w->next) {
+        if (window_consume_message(w, msg)) {
+            break;
+        }
+    }
 }

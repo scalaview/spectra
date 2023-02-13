@@ -52,6 +52,7 @@ static int read_cmd(char* buffer)
             }
             break;
         default:
+            window_consume(shell_win, msg);
             break;
         }
 
@@ -75,7 +76,7 @@ int main(int argc, char** argv)
         printf("create window fail!\n");
         return 0;
     }
-    create_window_control_panel(shell_win);
+    create_window_control_panel(shell_win, 2);
     shell_max_font_count = (shell_win->width - (strlen(reserved_cmd) + 1) * TEXT_FONT_STATIC_WIDTH) / TEXT_FONT_STATIC_WIDTH;
     char* buffer = (char*)malloc(sizeof(char) * shell_max_font_count);
     int buffer_size = 0;

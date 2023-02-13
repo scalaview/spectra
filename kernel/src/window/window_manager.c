@@ -9,11 +9,13 @@
 #include "process.h"
 #include "message_queue.h"
 #include "task.h"
+#include "drivers/mouse/mouse.h"
+#include "debug.h"
 
 struct window* head = 0;
 struct window* tail = 0;
 uint64_t __window_id = 0;
-static struct window* focused_window;
+int32_t __max_z = 0;
 extern struct video_info_struct vesa_video_info;
 
 static void __window_list_remove_one(struct window* win)
@@ -65,9 +67,13 @@ static void __append_window(struct window* win)
             win->next = current->next;
             win->prev = current;
             current->next = win;
+            if (current == tail)
+            {
+                tail = win;
+            }
             break;
         }
-        current = tail->prev;
+        current = current->prev;
     }
     // reach head
     if (!current)
@@ -109,9 +115,9 @@ int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_
 
     win->height = height;
     win->width = width;
-    win->x = x;
-    win->y = y;
-    win->z = 0;
+
+    win->z = __max_z++;
+    win->keep_z_stale = false;
     win->id = win_id;
     flags->handle = win_id;
     flags->need_draw = false;
@@ -126,6 +132,8 @@ int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_
         res = -ENOMEM;
         goto out;
     }
+    screen_buffer->x = x;
+    screen_buffer->y = y;
     screen_buffer->height = height;
     screen_buffer->width = width;
     screen_buffer->pixelwidth = vesa_video_info.pixelwidth;
@@ -142,8 +150,10 @@ int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_
 
     win->screen_buffer = screen_buffer;
     memset(win->message_queue.buffer, 0, sizeof(struct message) * OS_MAX_MESSAGE_LENGTH);
+    win->message_queue.head = 0;
+    win->message_queue.tail = 0;
     *out_win = win;
-    focused_window = win;
+
 out:
     if (res && screen_buffer) kfree(screen_buffer);
     if (res && win) kfree(win);
@@ -162,13 +172,13 @@ void window_free(struct window* window)
 void window_copy_rect(struct window* src)
 {
     uint8_t pixelwidth = vesa_video_info.pixelwidth;
-    int64_t reserve_pixel = src->x > 0 ? (src->x * pixelwidth) : 0;
-    int64_t hidden_pixel = src->x > 0 ? 0 : -(src->x * pixelwidth);
-    uint32_t pixel_len = calculate_pixel_len(src->x, src->width, vesa_video_info.width) * pixelwidth;
+    int64_t reserve_pixel = src->screen_buffer->x > 0 ? (src->screen_buffer->x * pixelwidth) : 0;
+    int64_t hidden_pixel = src->screen_buffer->x > 0 ? 0 : -(src->screen_buffer->x * pixelwidth);
+    uint32_t pixel_len = calculate_pixel_len(src->screen_buffer->x, src->width, vesa_video_info.width) * pixelwidth;
 
     for (int i = 0; i < src->height; i++)
     {
-        void* start_line_addr = (void*)(((uint64_t)vesa_video_info.buffer) + (src->y + i) * vesa_video_info.width * pixelwidth + reserve_pixel);
+        void* start_line_addr = (void*)(((uint64_t)vesa_video_info.buffer) + (src->screen_buffer->y + i) * vesa_video_info.width * pixelwidth + reserve_pixel);
         void* start_buffer_addr = (void*)(((uint64_t)src->screen_buffer->canvas) + i * src->screen_buffer->width * pixelwidth + hidden_pixel);
         memcpy(start_line_addr, start_buffer_addr, pixel_len);
     }
@@ -199,10 +209,10 @@ void window_add_message(struct window* win, struct message* msg)
 
 void window_add_message_to_focused(struct message* msg)
 {
-    if (focused_window == NULL) {
+    if (tail == NULL) {
         return;
     }
-    window_add_message(focused_window, msg);
+    window_add_message(tail, msg);
 }
 
 void window_pop_message(struct window* win, struct message* msg_out)
@@ -219,4 +229,53 @@ struct window* window_fetch(uint32_t id)
         current = current->next;
     }
     return 0;
+}
+
+bool window_belongs_to(struct window* win, int16_t x, int16_t y)
+{
+    return x >= win->screen_buffer->x && x <= win->screen_buffer->x + win->width && y >= win->screen_buffer->y && y <= win->screen_buffer->y + win->height;
+}
+
+struct window* window_find_absolue_position(int16_t x, int16_t y)
+{
+    if (!tail) {
+        return 0;
+    }
+    struct window* current = tail;
+    while (current)
+    {
+        if (window_belongs_to(current, mouse_x, mouse_y))
+        {
+            return current;
+        }
+        current = current->prev;
+    }
+    return 0;
+}
+
+void window_change_focused(int32_t key)
+{
+    extern int16_t mouse_x;
+    extern int16_t mouse_y;
+    if (key & MOUSE_LEFT_CLICK)
+    {
+        struct window* win = window_find_absolue_position(mouse_x, mouse_y);
+
+        if (win && !win->keep_z_stale && win != tail)
+        {
+            tail->z = __max_z++;
+            __window_list_remove_one(win);
+            win->z = __max_z++;
+            __append_window(win);
+        }
+    }
+}
+
+void window_handle_message(struct message* msg)
+{
+    window_change_focused(msg->key);
+    if (msg->key & MOUSE_LEFT_DRAG)
+    {
+
+    }
 }

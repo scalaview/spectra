@@ -19,6 +19,8 @@ struct screen_buffer
     uint8_t pixelwidth;
     uint32_t pitch;
     uint32_t pixelsize;
+    int32_t x;
+    int32_t y;
 }__attribute__((packed));
 
 
@@ -31,15 +33,15 @@ struct gui_window
     window_handle handle;
     bool need_draw;
     int id;
-    int x;
-    int y;
+    int32_t x;
+    int32_t y;
     int width;
     int height;
     int state;
     char* title;
     struct screen_buffer* buffer;
 
-    window_procedure window_procedure;
+    window_procedure custom_procedure;
     window_procedure default_procedure;
 
     struct gui_window* next;

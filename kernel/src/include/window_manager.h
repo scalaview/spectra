@@ -17,14 +17,12 @@ struct window_flags
 struct window
 {
     uint32_t id;
-    int x;
-    int y;
     int z;
     struct screen_buffer* screen_buffer;
     int width;
     int height;
     struct window_flags* flags;
-    int message_queue_index;
+    bool keep_z_stale;
     struct task* parent_task;
     struct message_queue message_queue;
     struct window* next;
@@ -38,4 +36,9 @@ void window_add_message(struct window* win, struct message* msg);
 void window_add_message_to_focused(struct message* msg);
 void window_pop_message(struct window* win, struct message* msg_out);
 struct window* window_fetch(uint32_t id);
+bool window_belongs_to(struct window* win, int16_t x, int16_t y);
+struct window* window_find_absolue_position(int16_t x, int16_t y);
+void window_change_focused(int32_t key);
+void window_handle_message(struct message* msg);
+
 #endif

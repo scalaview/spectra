@@ -53,10 +53,6 @@ void* isr80h_command9_create_window_content(struct interrupt_frame* frame)
     buffer->canvas = (uint8_t*)buffer_allocation->tptr;
     struct gui_window* gui_window = (struct gui_window*)window_flags_allocation->tptr;
     gui_window->buffer = buffer;
-    gui_window->height = height;
-    gui_window->width = width;
-    gui_window->x = x;
-    gui_window->y = y;
 
     return (void*)gui_window;
 }

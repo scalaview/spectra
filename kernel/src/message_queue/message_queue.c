@@ -23,7 +23,6 @@ void message_pop(struct message_queue* queue, struct message* msg_out)
     // {
     //     return;
     // }
-
     struct message msg = queue->buffer[head];
     while (!msg.event)
     {

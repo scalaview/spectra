@@ -12,6 +12,8 @@ struct video_info_struct {
     uint8_t pixelwidth;
     uint32_t pitch;
     uint32_t pixelsize;
+    int32_t x;
+    int32_t y;
     uint64_t linear_addr;
     uint64_t vir_linear_addr;
     int bits;

@@ -42,7 +42,7 @@ void* isr80h_command9_create_window_content(struct interrupt_frame* frame)
         return 0;
     }
 
-    int res = create_window_content(x, y, width, height, gcolor, (uint8_t*)buffer_allocation->kptr, (struct window_flags*)window_flags_allocation->kptr, &win);
+    int res = create_window_content(x, y, width, height, gcolor, (uint8_t*)buffer_allocation->kptr, (struct window_container*)window_flags_allocation->kptr, &win);
     if (res)
     {
         debug_printf("create_window fail!, error code: %d", res);

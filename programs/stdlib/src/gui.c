@@ -18,13 +18,17 @@ static bool __gui_window_default_procedure(struct gui_window* win, struct messag
 {
     switch (msg->event) {
     case MESSAGE_MOUSE_PRESS:
+        printf("MESSAGE_MOUSE_PRESS");
     case MESSAGE_MOUSE_RELEASE:
+        printf("MESSAGE_MOUSE_RELEASE");
         return false;
     case MESSAGE_MOUSE_DRAG:
-        win->buffer->x += msg->diff_x;
-        win->buffer->y += msg->diff_y;
-        return true;
+        printf("MESSAGE_MOUSE_DRAG before x: %d, y: %d, diff_x: %d, diff_y:%d\n", win->x, win->y, msg->diff_x, msg->diff_y);
+        win->x += msg->diff_x;
+        win->y += msg->diff_y;
+        printf("MESSAGE_MOUSE_DRAG after x: %d, y: %d, diff_x: %d, diff_y:%d\n", win->x, win->y, msg->diff_x, msg->diff_y);
 
+        return true;
     }
     return false;
 }
@@ -38,8 +42,8 @@ void get_absolute_position(struct gui_window* parent, int64_t x, int64_t y, int6
     {
         if (current->parent)
         {
-            abs_x = abs_x + current->buffer->x;
-            abs_y = abs_y + current->buffer->y;
+            abs_x = abs_x + current->x;
+            abs_y = abs_y + current->y;
         }
         current = current->parent;
     }
@@ -95,8 +99,6 @@ struct gui_window* create_gui_window(struct gui_window* parent, uint32_t width, 
         return 0;
     }
     memcpy(new_win->title, (void*)title, strlen(title));
-
-
     new_win->id = id;
     new_win->height = height;
     new_win->width = width;

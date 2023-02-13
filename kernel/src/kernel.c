@@ -57,7 +57,7 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
 
     isr80h_register_commands();
     keyboard_initialize();
-    test_draw();
+
     mouse_initialize();
 
     debug_printf("hello word!");
@@ -99,6 +99,7 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
         assert(0);
     }
     process_launch(init->id);
+    test_draw();
 }
 
 
@@ -127,14 +128,14 @@ void draw_background()
     extern struct video_info_struct vesa_video_info;
     struct window* background = 0;
     uint8_t* canvas = (uint8_t*)kzalloc(vesa_video_info.width * vesa_video_info.height * vesa_video_info.pixelwidth);
-    struct window_flags* container = (struct window_flags*)kzalloc(sizeof(struct window_flags));
+    struct window_container* container = (struct window_container*)kzalloc(sizeof(struct window_container));
     int res = create_window_content(0, 0, vesa_video_info.width, vesa_video_info.height, 0, canvas, container, &background);
     assert(!res);
     read_background();
     assert(background_pic);
     background->keep_z_stale = true;
     memcpy(background->screen_buffer->canvas, background_pic->pixels, background->screen_buffer->pixelsize);
-    background->flags->need_draw = true;
+    background->container->need_draw = true;
 }
 
 

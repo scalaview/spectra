@@ -7,6 +7,7 @@
 #include "config.h"
 #include "message.h"
 #include "kmemory.h"
+#include "task.h"
 
 struct message_queue
 {
@@ -15,7 +16,7 @@ struct message_queue
     int head;
 };
 
-void message_push(struct message_queue* queue, struct message* msg);
-void message_pop(struct message_queue* queue, struct message* msg_out);
+void message_push(struct task* task, struct message_queue* queue, struct message* msg);
+void message_pop(struct task* task, struct message_queue* queue, struct message* msg_out);
 
 #endif

@@ -6,4 +6,5 @@ target remote | qemu-system-x86_64 -hda ./bin/os.bin -S -gdb stdio -no-reboot -s
 # break *0x100020
 # b message_queue.c:27
 # b classic_keyboard_read
-b __append_window
+b create_window_content
+b process_execve

@@ -1,7 +1,7 @@
 #include "message_queue.h"
-#include "task.h"
+#include "debug.h"
 
-void message_push(struct message_queue* queue, struct message* msg)
+void message_push(struct task* task, struct message_queue* queue, struct message* msg)
 {
     if (!msg) return;
 
@@ -14,22 +14,25 @@ void message_push(struct message_queue* queue, struct message* msg)
     }
     queue->buffer[tail++] = *msg;
     queue->tail = tail % OS_MAX_MESSAGE_LENGTH;
+    debug_printf("push task: %x, head: %d, tail: %d, msg: %d\n", task, queue->head, queue->tail, msg->event);
+    task_wake_up_one(task, WINDOW_WAIT_FOR_MESSAGE);
+
 }
 
-void message_pop(struct message_queue* queue, struct message* msg_out)
+void message_pop(struct task* task, struct message_queue* queue, struct message* msg_out)
 {
-    int head = queue->head;
-    // if (head == queue->tail)
-    // {
-    //     return;
-    // }
-    struct message msg = queue->buffer[head];
+
+    // int head = queue->head;
+    struct message msg = queue->buffer[queue->head];
+    if (!msg.event) task_sleep_one_until(task, WINDOW_WAIT_FOR_MESSAGE);
+    msg = queue->buffer[queue->head];
+    debug_printf("pop task: %x, head: %d, tail: %d, msg: %d\n", task, queue->head, queue->tail, msg.event);
     while (!msg.event)
     {
-        task_sleep(1);
-        msg = queue->buffer[head];
+        task_sleep_one_until(task, WINDOW_WAIT_FOR_MESSAGE);
+        msg = queue->buffer[queue->head];
     }
     *msg_out = msg;
-    memset(&queue->buffer[head], 0, sizeof(struct message));
-    queue->head = (head + 1) % OS_KEYBOARD_BUFFER_SIZE;
+    memset(&queue->buffer[queue->head], 0, sizeof(struct message));
+    queue->head = (queue->head + 1) % OS_MAX_MESSAGE_LENGTH;
 }

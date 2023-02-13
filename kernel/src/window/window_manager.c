@@ -89,7 +89,7 @@ static void __append_window(struct window* win)
     }
 }
 
-int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_t gcolor, uint8_t* canvas, struct window_flags* flags, struct window** out_win)
+int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_t gcolor, uint8_t* canvas, struct window_container* container, struct window** out_win)
 {
     int res = 0;
     struct screen_buffer* screen_buffer;
@@ -119,9 +119,11 @@ int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_
     win->z = __max_z++;
     win->keep_z_stale = false;
     win->id = win_id;
-    flags->handle = win_id;
-    flags->need_draw = false;
-    win->flags = flags;
+    container->handle = win_id;
+    container->need_draw = false;
+    container->x = x;
+    container->y = y;
+    win->container = container;
     win->parent_task = task_list_current();
 
 
@@ -132,8 +134,6 @@ int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_
         res = -ENOMEM;
         goto out;
     }
-    screen_buffer->x = x;
-    screen_buffer->y = y;
     screen_buffer->height = height;
     screen_buffer->width = width;
     screen_buffer->pixelwidth = vesa_video_info.pixelwidth;
@@ -163,7 +163,7 @@ out:
 
 void window_free(struct window* window)
 {
-    if (window->flags) kfree(window->flags);
+    if (window->container) kfree(window->container);
     if (window->screen_buffer && window->screen_buffer->canvas) kfree(window->screen_buffer->canvas);
     if (window->screen_buffer) kfree(window->screen_buffer);
     kfree(window);
@@ -172,13 +172,14 @@ void window_free(struct window* window)
 void window_copy_rect(struct window* src)
 {
     uint8_t pixelwidth = vesa_video_info.pixelwidth;
-    int64_t reserve_pixel = src->screen_buffer->x > 0 ? (src->screen_buffer->x * pixelwidth) : 0;
-    int64_t hidden_pixel = src->screen_buffer->x > 0 ? 0 : -(src->screen_buffer->x * pixelwidth);
-    uint32_t pixel_len = calculate_pixel_len(src->screen_buffer->x, src->width, vesa_video_info.width) * pixelwidth;
+    int64_t reserve_pixel = src->container->x > 0 ? (src->container->x * pixelwidth) : 0;
+    int64_t hidden_pixel = src->container->x > 0 ? 0 : -(src->container->x * pixelwidth);
+    uint32_t pixel_len = calculate_pixel_len(src->container->x, src->width, vesa_video_info.width) * pixelwidth;
 
-    for (int i = 0; i < src->height; i++)
+    for (int i = (src->container->y >= 0) ? 0 : src->height + src->container->y;
+        i < src->height && (src->container->y + i) < vesa_video_info.height; i++)
     {
-        void* start_line_addr = (void*)(((uint64_t)vesa_video_info.buffer) + (src->screen_buffer->y + i) * vesa_video_info.width * pixelwidth + reserve_pixel);
+        void* start_line_addr = (void*)(((uint64_t)vesa_video_info.buffer) + (src->container->y + i) * vesa_video_info.width * pixelwidth + reserve_pixel);
         void* start_buffer_addr = (void*)(((uint64_t)src->screen_buffer->canvas) + i * src->screen_buffer->width * pixelwidth + hidden_pixel);
         memcpy(start_line_addr, start_buffer_addr, pixel_len);
     }
@@ -194,7 +195,10 @@ void window_refresh()
     struct window* current = head;
     while (current)
     {
-        if (current->flags->need_draw) window_copy_rect(current);
+        if (current->container->need_draw)
+        {
+            window_copy_rect(current);
+        }
         current = current->next;
     }
 
@@ -204,7 +208,7 @@ void window_refresh()
 
 void window_add_message(struct window* win, struct message* msg)
 {
-    message_push(&win->message_queue, msg);
+    message_push(win->parent_task, &win->message_queue, msg);
 }
 
 void window_add_message_to_focused(struct message* msg)
@@ -217,7 +221,7 @@ void window_add_message_to_focused(struct message* msg)
 
 void window_pop_message(struct window* win, struct message* msg_out)
 {
-    message_pop(&win->message_queue, msg_out);
+    message_pop(win->parent_task, &win->message_queue, msg_out);
 }
 
 struct window* window_fetch(uint32_t id)
@@ -233,7 +237,7 @@ struct window* window_fetch(uint32_t id)
 
 bool window_belongs_to(struct window* win, int16_t x, int16_t y)
 {
-    return x >= win->screen_buffer->x && x <= win->screen_buffer->x + win->width && y >= win->screen_buffer->y && y <= win->screen_buffer->y + win->height;
+    return x >= win->container->x && x <= win->container->x + win->width && y >= win->container->y && y <= win->container->y + win->height;
 }
 
 struct window* window_find_absolue_position(int16_t x, int16_t y)
@@ -274,8 +278,14 @@ void window_change_focused(int32_t key)
 void window_handle_message(struct message* msg)
 {
     window_change_focused(msg->key);
-    if (msg->key & MOUSE_LEFT_DRAG)
+    if (msg->key & MOUSE_LEFT_DRAG) // Too slow when handle drag in user land
     {
-
+        // TODO remove it
+        tail->container->x += msg->diff_x;
+        tail->container->y += msg->diff_y;
+    }
+    else if (msg->event)
+    {
+        window_add_message_to_focused(msg);
     }
 }

@@ -15,10 +15,11 @@
 uint8_t mouse_cycle = 0;
 uint8_t mouse_byte[3];
 int16_t mouse_x = 0;
+int16_t __previous_mouse_x = 0;
 int16_t mouse_y = 0;
+int16_t __previous_mouse_y = 0;
 extern struct video_info_struct vesa_video_info;
 uint8_t previous_key = 0;
-uint32_t previous_ticks = 0;
 
 int8_t abs(int8_t n) {
     const int8_t ret[2] = { n, -n };
@@ -82,19 +83,41 @@ void ps2_mouse_interrupt_handler()
                 int8_t diff_y = mouse_byte[2];
                 if (abs(diff_x) > vesa_video_info.width) diff_x = 0;
                 if (abs(diff_y) > vesa_video_info.height) diff_y = 0;
-                mouse_x += diff_x;
-                mouse_y -= diff_y;
-
-                if (mouse_x >= vesa_video_info.width) mouse_x = vesa_video_info.width;
-                if (mouse_x < 0) mouse_x = 0;
-                if (mouse_y >= vesa_video_info.height) mouse_y = vesa_video_info.height - 1;
-                if (mouse_y < 0) mouse_y = 0;
+                int32_t moved_x = mouse_x + diff_x;
+                int32_t moved_y = mouse_y - diff_y;
+                if (moved_x > 0 && moved_x >= vesa_video_info.width)
+                {
+                    mouse_x = vesa_video_info.width - 1;
+                }
+                else if (moved_x < 0)
+                {
+                    mouse_x = 0;
+                }
+                else
+                {
+                    mouse_x += diff_x;
+                }
+                if (moved_y > 0 && moved_y >= vesa_video_info.height)
+                {
+                    mouse_y = vesa_video_info.height - 1;
+                }
+                else if (moved_y < 0)
+                {
+                    mouse_y = 0;
+                }
+                else
+                {
+                    mouse_y -= diff_y;
+                }
                 mouse_cycle = 0;
                 struct message message;
                 message.x = mouse_x;
                 message.y = mouse_y;
-                message.diff_x = diff_x;
-                message.diff_y = diff_y;
+
+                message.diff_x = mouse_x - __previous_mouse_x;
+                message.diff_y = mouse_y - __previous_mouse_y;
+                __previous_mouse_x = mouse_x;
+                __previous_mouse_y = mouse_y;
 
                 if (mouse_byte[0] & MOUSE_LEFT_CLICK) {
                     debug_printf("MOUSE_LEFT_CLICK ");
@@ -112,19 +135,17 @@ void ps2_mouse_interrupt_handler()
                     message.event = MESSAGE_MOUSE_PRESS;
                     message.key |= MOUSE_MIDDLE_CLICK;
                 }
-                if (previous_key & MOUSE_LEFT_CLICK && (message.key & MOUSE_LEFT_CLICK)
-                    && previous_ticks - get_current_ticks() <= 5)
+                if (previous_key & MOUSE_LEFT_CLICK && message.key & MOUSE_LEFT_CLICK)
                 {
                     debug_printf("MOUSE_DRAG\n");
-                    message.event = MESSAGE_MOUSE_PRESS;
+                    message.event = MESSAGE_MOUSE_DRAG;
                     message.key |= MOUSE_LEFT_DRAG;
                 }
                 previous_key = mouse_byte[0];
-                previous_ticks = get_current_ticks();
 
-                debug_printf("mouse_x: %d, mouse_y: %d\n", mouse_x, mouse_y);
+                debug_printf("diff_x: %d, mouse_x: %d, diff_y: %d, mouse_y: %d\n", diff_x, mouse_x, diff_y, mouse_y);
                 window_handle_message(&message);
-                if (message.event) window_add_message_to_focused(&message);
+                // if (message.event) window_add_message_to_focused(&message);
                 break;
             }
         }

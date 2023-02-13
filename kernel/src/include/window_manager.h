@@ -8,10 +8,12 @@
 #include "task.h"
 #include "drivers/vga/vesa.h"
 
-struct window_flags
+struct window_container
 {
     uint64_t handle;
     bool need_draw;
+    int32_t x;
+    int32_t y;
 }__attribute__((packed));
 
 struct window
@@ -21,7 +23,7 @@ struct window
     struct screen_buffer* screen_buffer;
     int width;
     int height;
-    struct window_flags* flags;
+    struct window_container* container;
     bool keep_z_stale;
     struct task* parent_task;
     struct message_queue message_queue;
@@ -29,7 +31,7 @@ struct window
     struct window* prev;
 };
 
-int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_t gcolor, uint8_t* canvas, struct window_flags* flags, struct window** out_win);
+int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_t gcolor, uint8_t* canvas, struct window_container* flags, struct window** out_win);
 void window_free(struct window* window);
 void window_refresh();
 void window_add_message(struct window* win, struct message* msg);

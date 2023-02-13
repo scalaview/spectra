@@ -346,15 +346,18 @@ void yield()
     task_schedule();
 }
 
+void task_sleep_one_until(struct task* task, int wait)
+{
+    task_list_remove_one(&tasks_manager.ready_list, task);
+    task->wait = wait;
+    task->state = TASK_WAIT;
+    task_list_add_one(&tasks_manager.wait_list, task);
+    task_schedule();
+}
+
 void task_sleep_until(int wait)
 {
-    struct task* current = task_list_current();
-    current->wait = wait;
-    task_list_remove_one(&tasks_manager.ready_list, current);
-
-    current->state = TASK_WAIT;
-    task_list_add_one(&tasks_manager.wait_list, current);
-    task_schedule();
+    task_sleep_one_until(task_list_current(), wait);
 }
 
 void task_sleep(int wait)
@@ -374,6 +377,14 @@ void task_active(struct task* task)
     task_list_remove_one(&tasks_manager.wait_list, task);
     task->state = TASK_READY;
     task_ready_list_append_one(task);
+}
+
+void task_wake_up_one(struct task* task, int wait)
+{
+    if (task->wait == wait && task->state == TASK_WAIT)
+    {
+        __task_wait_list_move_to_ready(task);
+    }
 }
 
 void task_wake_up(int wait)

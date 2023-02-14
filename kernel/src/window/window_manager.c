@@ -7,24 +7,31 @@
 #include "assert.h"
 #include "config.h"
 #include "process.h"
+#include "message_queue.h"
+#include "task.h"
+#include "drivers/mouse/mouse.h"
+#include "debug.h"
 
-struct window_wrapper* head = 0;
-struct window_wrapper* tail = 0;
-uint64_t __window_id = 0;
 extern struct video_info_struct vesa_video_info;
 
-static void __window_list_remove_one(struct window_wrapper* window_wrapper)
+struct window* head = 0;
+struct window* tail = 0;
+static uint64_t __window_id = 0;
+static int32_t __max_z = 0;
+static uint16_t __previous_message_key = 0;
+
+static void __window_list_remove_one(struct window* win)
 {
-    struct window_wrapper* current = head->next;
+    struct window* current = head->next;
     while (current)
     {
-        if (current == window_wrapper)
+        if (current == win)
         {
-            struct window_wrapper* prev = window_wrapper->prev;
-            struct window_wrapper* next = window_wrapper->next;
+            struct window* prev = win->prev;
+            struct window* next = win->next;
             if (!prev)
             {
-                assert(head == window_wrapper);
+                assert(head == win);
                 head = next;
             }
             else
@@ -33,64 +40,58 @@ static void __window_list_remove_one(struct window_wrapper* window_wrapper)
             }
             if (!next)
             {
-                assert(tail == window_wrapper);
+                assert(tail == win);
                 tail = prev;
             }
             else
             {
                 next->prev = prev;
             }
-            window_wrapper->prev = NULL;
-            window_wrapper->next = NULL;
+            win->prev = NULL;
+            win->next = NULL;
             return;
         }
         current = current->next;
     }
     assert(0);
 }
-static void __window_list_insert(struct window_wrapper* window_wrapper)
+
+static void __append_window(struct window* win)
 {
-    if (window_wrapper->next || window_wrapper->prev) __window_list_remove_one(window_wrapper);
+    if (win->next || win->prev) __window_list_remove_one(win);
 
     // sort window
-    struct window_wrapper* current = tail;
+    struct window* current = tail;
     while (current)
     {
-        if (current->win->z <= window_wrapper->win->z)
+        if (current->z <= win->z)
         {
-            window_wrapper->next = current->next;
-            window_wrapper->prev = current;
-            current->next = window_wrapper;
+            win->next = current->next;
+            win->prev = current;
+            current->next = win;
+            if (current == tail)
+            {
+                tail = win;
+            }
             break;
         }
-        current = tail->prev;
+        current = current->prev;
     }
     // reach head
     if (!current)
     {
-        window_wrapper->next = head;
-        if (head) head->prev = window_wrapper;
-        head = window_wrapper;
+        win->next = head;
+        if (head) head->prev = win;
+        head = win;
     }
 
     if (!tail)
     {
-        tail = window_wrapper;
+        tail = win;
     }
-
 }
 
-static int __append_window(struct window* win)
-{
-    struct window_wrapper* window_wrapper = (struct window_wrapper*)kzalloc(sizeof(struct window_wrapper));
-    if (!window_wrapper) return -ENOMEM;
-
-    window_wrapper->win = win;
-    __window_list_insert(window_wrapper);
-    return 0;
-}
-
-int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_t gcolor, uint8_t* canvas, struct window_flags* flags, struct window** out_win)
+int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_t gcolor, uint8_t* canvas, struct window_container* container, struct window** out_win)
 {
     int res = 0;
     struct screen_buffer* screen_buffer;
@@ -116,13 +117,16 @@ int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_
 
     win->height = height;
     win->width = width;
-    win->x = x;
-    win->y = y;
-    win->z = 0;
+
+    win->z = __max_z++;
+    win->keep_z_stale = false;
     win->id = win_id;
-    flags->handle = win_id;
-    flags->need_draw = false;
-    win->flags = flags;
+    container->handle = win_id;
+    container->need_draw = false;
+    container->x = x;
+    container->y = y;
+    win->container = container;
+    win->parent_task = task_list_current();
 
 
     __append_window(win);
@@ -148,6 +152,8 @@ int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_
 
     win->screen_buffer = screen_buffer;
     memset(win->message_queue.buffer, 0, sizeof(struct message) * OS_MAX_MESSAGE_LENGTH);
+    win->message_queue.head = 0;
+    win->message_queue.tail = 0;
     *out_win = win;
 
 out:
@@ -159,7 +165,8 @@ out:
 
 void window_free(struct window* window)
 {
-    if (window->flags) kfree(window->flags);
+    __window_list_remove_one(window);
+    if (window->container) kfree(window->container);
     if (window->screen_buffer && window->screen_buffer->canvas) kfree(window->screen_buffer->canvas);
     if (window->screen_buffer) kfree(window->screen_buffer);
     kfree(window);
@@ -168,13 +175,14 @@ void window_free(struct window* window)
 void window_copy_rect(struct window* src)
 {
     uint8_t pixelwidth = vesa_video_info.pixelwidth;
-    int64_t reserve_pixel = src->x > 0 ? (src->x * pixelwidth) : 0;
-    int64_t hidden_pixel = src->x > 0 ? 0 : -(src->x * pixelwidth);
-    uint32_t pixel_len = calculate_pixel_len(src->x, src->width, vesa_video_info.width) * pixelwidth;
+    int64_t reserve_pixel = src->container->x > 0 ? (src->container->x * pixelwidth) : 0;
+    int64_t hidden_pixel = src->container->x > 0 ? 0 : -(src->container->x * pixelwidth);
+    uint32_t pixel_len = calculate_pixel_len(src->container->x, src->width, vesa_video_info.width) * pixelwidth;
 
-    for (int i = 0; i < src->height; i++)
+    for (int i = (src->container->y >= 0) ? 0 : -src->container->y;
+        i < src->height && (src->container->y + i) < vesa_video_info.height; i++)
     {
-        void* start_line_addr = (void*)(((uint64_t)vesa_video_info.buffer) + (src->y + i) * vesa_video_info.width * pixelwidth + reserve_pixel);
+        void* start_line_addr = (void*)(((uint64_t)vesa_video_info.buffer) + (src->container->y + i) * vesa_video_info.width * pixelwidth + reserve_pixel);
         void* start_buffer_addr = (void*)(((uint64_t)src->screen_buffer->canvas) + i * src->screen_buffer->width * pixelwidth + hidden_pixel);
         memcpy(start_line_addr, start_buffer_addr, pixel_len);
     }
@@ -187,13 +195,110 @@ void __window_flush_screen_buffer()
 
 void window_refresh()
 {
-    struct window_wrapper* current = head;
+    struct window* current = head;
     while (current)
     {
-        if (current->win->flags->need_draw) window_copy_rect(current->win);
+        if (current->container->need_draw)
+        {
+            window_copy_rect(current);
+        }
         current = current->next;
     }
 
     draw_cursor();
     __window_flush_screen_buffer();
+}
+
+void window_add_message(struct window* win, struct message* msg)
+{
+    message_push(win->parent_task, &win->message_queue, msg);
+}
+
+void window_add_message_to_focused(struct message* msg)
+{
+    if (tail == NULL) {
+        return;
+    }
+    window_add_message(tail, msg);
+}
+
+void window_pop_message(struct window* win, struct message* msg_out)
+{
+    message_pop(win->parent_task, &win->message_queue, msg_out);
+}
+
+struct window* window_fetch(uint32_t id)
+{
+    struct window* current = head;
+    while (current)
+    {
+        if (current->id == id) return current;
+        current = current->next;
+    }
+    return 0;
+}
+
+bool window_belongs_to(struct window* win, int16_t x, int16_t y)
+{
+    return x >= win->container->x && x <= win->container->x + win->width && y >= win->container->y && y <= win->container->y + win->height;
+}
+
+struct window* window_find_absolue_position(int16_t x, int16_t y)
+{
+    if (!tail) {
+        return 0;
+    }
+    struct window* current = tail;
+    while (current)
+    {
+        if (window_belongs_to(current, mouse_x, mouse_y))
+        {
+            return current;
+        }
+        current = current->prev;
+    }
+    return 0;
+}
+
+void window_change_focused(int32_t key)
+{
+    extern int16_t mouse_x;
+    extern int16_t mouse_y;
+    if (key & MOUSE_LEFT_CLICK)
+    {
+        struct window* win = window_find_absolue_position(mouse_x, mouse_y);
+
+        if (win && !win->keep_z_stale && win != tail)
+        {
+            tail->z = __max_z++;
+            __window_list_remove_one(win);
+            win->z = __max_z++;
+            __append_window(win);
+        }
+    }
+}
+
+static void __window_relative_position(struct window* win, int16_t x, int16_t y, int16_t* out_x, int16_t* out_y)
+{
+    *out_x = x - win->container->x;
+    *out_y = y - win->container->y;
+}
+
+void window_handle_message(struct message* msg)
+{
+    // Don't change focused window when mouse draging
+    if (!(__previous_message_key & MOUSE_LEFT_DRAG) || !(msg->key & MOUSE_LEFT_DRAG))  window_change_focused(msg->key);
+
+    if (msg->event)
+    {
+        // relative position
+        int16_t x = 0;
+        int16_t y = 0;
+        __window_relative_position(tail, msg->x, msg->y, &x, &y);
+        debug_printf("after window_relative_position x%d, y%d, x:%d, y:%d\n", msg->x, msg->y, x, y);
+        msg->x = x;
+        msg->y = y;
+        window_add_message_to_focused(msg);
+    }
+    __previous_message_key = msg->key;
 }

@@ -9,11 +9,17 @@
 #include "idt.h"
 #include "debug.h"
 #include "drivers/vga/vesa.h"
+#include "message.h"
+#include "window_manager.h"
 
 uint8_t mouse_cycle = 0;
 uint8_t mouse_byte[3];
 int16_t mouse_x = 0;
+int16_t __previous_mouse_x = 0;
 int16_t mouse_y = 0;
+int16_t __previous_mouse_y = 0;
+extern struct video_info_struct vesa_video_info;
+uint8_t previous_key = 0;
 
 int8_t abs(int8_t n) {
     const int8_t ret[2] = { n, -n };
@@ -56,45 +62,98 @@ uint8_t mouse_read() {
 
 void ps2_mouse_interrupt_handler()
 {
-    switch (mouse_cycle)
-    {
-    case 0:
-        mouse_byte[0] = insb(PS2_PORT_0X60);
-        if (!(mouse_byte[0] & MOUSE_AVALIABLE))
-            break;
-        mouse_cycle++;
-        break;
-    case 1:
-        mouse_byte[1] = insb(PS2_PORT_0X60);
-        mouse_cycle++;
-        break;
-    case 2:
-        mouse_byte[2] = insb(PS2_PORT_0X60);
-        int8_t diff_x = mouse_byte[1];
-        int8_t diff_y = mouse_byte[2];
-        if (abs(diff_x) > 1024) diff_x = 0;
-        if (abs(diff_y) > 768) diff_y = 0;
-        mouse_x += diff_x;
-        mouse_y -= diff_y;
+    uint8_t status = insb(MOUSE_STATUS);
+    while (status & MOUSE_BBIT) {
+        if (status & MOUSE_F_BIT) {
+            switch (mouse_cycle)
+            {
+            case 0:
+                mouse_byte[0] = insb(PS2_PORT_0X60);
+                if (!(mouse_byte[0] & MOUSE_AVALIABLE))
+                    break;
+                mouse_cycle++;
+                break;
+            case 1:
+                mouse_byte[1] = insb(PS2_PORT_0X60);
+                mouse_cycle++;
+                break;
+            case 2:
+                mouse_byte[2] = insb(PS2_PORT_0X60);
+                int8_t diff_x = mouse_byte[1];
+                int8_t diff_y = mouse_byte[2];
+                if (abs(diff_x) > vesa_video_info.width) diff_x = 0;
+                if (abs(diff_y) > vesa_video_info.height) diff_y = 0;
+                int32_t moved_x = mouse_x + diff_x;
+                int32_t moved_y = mouse_y - diff_y;
+                if (moved_x > 0 && moved_x >= vesa_video_info.width)
+                {
+                    mouse_x = vesa_video_info.width - 1;
+                }
+                else if (moved_x < 0)
+                {
+                    mouse_x = 0;
+                }
+                else
+                {
+                    mouse_x += diff_x;
+                }
+                if (moved_y > 0 && moved_y >= vesa_video_info.height)
+                {
+                    mouse_y = vesa_video_info.height - 1;
+                }
+                else if (moved_y < 0)
+                {
+                    mouse_y = 0;
+                }
+                else
+                {
+                    mouse_y -= diff_y;
+                }
+                mouse_cycle = 0;
+                struct message message;
+                message.x = mouse_x;
+                message.y = mouse_y;
 
-        if (mouse_x >= 1020) mouse_x = 1020;
-        if (mouse_x < 0) mouse_x = 0;
-        if (mouse_y >= 768) mouse_y = 767;
-        if (mouse_y < 0) mouse_y = 0;
-        mouse_cycle = 0;
-        break;
+                message.diff_x = mouse_x - __previous_mouse_x;
+                message.diff_y = mouse_y - __previous_mouse_y;
+                __previous_mouse_x = mouse_x;
+                __previous_mouse_y = mouse_y;
+
+                if (mouse_byte[0] & MOUSE_LEFT_CLICK) {
+                    debug_printf("MOUSE_LEFT_CLICK ");
+                    message.event = MESSAGE_MOUSE_PRESS;
+                    message.key |= MOUSE_LEFT_CLICK;
+                }
+                if (mouse_byte[0] & MOUSE_RIGHT_CLICK) {
+                    debug_printf("MOUSE_RIGHT_CLICK ");
+                    message.event = MESSAGE_MOUSE_PRESS;
+                    message.key |= MOUSE_RIGHT_CLICK;
+
+                }
+                if (mouse_byte[0] & MOUSE_MIDDLE_CLICK) {
+                    debug_printf("MOUSE_MIDDLE_CLICK ");
+                    message.event = MESSAGE_MOUSE_PRESS;
+                    message.key |= MOUSE_MIDDLE_CLICK;
+                }
+                if (previous_key & MOUSE_LEFT_CLICK && message.key & MOUSE_LEFT_CLICK)
+                {
+                    debug_printf("MOUSE_DRAG\n");
+                    message.event = MESSAGE_MOUSE_PRESS;
+                    message.key |= MOUSE_LEFT_DRAG;
+                }
+                previous_key = mouse_byte[0];
+
+                debug_printf("diff_x: %d, mouse_x: %d, diff_y: %d, mouse_y: %d\n", diff_x, mouse_x, diff_y, mouse_y);
+                window_handle_message(&message);
+                goto out;
+            }
+        }
+        status = insb(MOUSE_STATUS);
     }
-    if (mouse_byte[0] & 0x01) {
-        debug_printf("MOUSE_LEFT_CLICK ");
-    }
-    if (mouse_byte[0] & 0x02) {
-        debug_printf("MOUSE_RIGHT_CLICK ");
-    }
-    if (mouse_byte[0] & 0x04) {
-        debug_printf("MOUSE_MIDDLE_CLICK ");
-    }
-    debug_printf("mouse_x: %d, mouse_y: %d\n", mouse_x, mouse_y);
+out:
+    return;
 }
+
 void mouse_initialize()
 {
     uint8_t status;

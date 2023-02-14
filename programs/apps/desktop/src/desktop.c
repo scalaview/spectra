@@ -3,21 +3,30 @@
 
 int main(int argc, char** argv)
 {
-    uint32_t width = 500;
-    uint32_t height = 500;
-    struct gui_window* gui_win = create_window_content(100, 100, width, height, 0xffffffff);
-    struct screen_buffer* buffer = gui_win->buffer;
-    if (!buffer)
+    uint32_t width = 600;
+    uint32_t height = 600;
+    int32_t x = 200;
+    int32_t y = 200;
+    int id = 2;
+    const char* title = "untitle";
+    struct gui_window* win = create_gui_window(0, width, height, x, y, id, title);
+    if (!win)
     {
         printf("create window fail!\n");
         return 0;
     }
+    create_window_control_panel(win, 2);
+    win->need_draw = true;
+    struct message* msg = (struct message*)malloc(sizeof(struct message));
+    while (1)
+    {
+        window_get_message(win, msg);
+        if (msg->event)
+        {
+            window_consume(win, msg);
+            win->need_draw = true;
+        }
+    }
 
-    draw_rect(0, 0, width, 20, 0xff000000, buffer);
-    char* c = "hello word!";
-    printf("x: %d\n", (width - TEXT_FONT_WIDTH(c)) / 2);
-    printf("y: %d\n", (20 - TEXT_FONT_HEIGHT(c)) / 2);
-    gfx_puts((width - TEXT_FONT_WIDTH(c)) / 2, (20 - TEXT_FONT_HEIGHT(c)) / 2, 0xffffffff, 0x0, c, buffer);
-    gui_win->need_draw = true;
     return 0;
 }

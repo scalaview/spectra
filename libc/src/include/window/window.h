@@ -6,7 +6,8 @@
 
 #include "window/message.h"
 
-#define TEXT_FONT_WIDTH(str) (strlen(str)*8)
+#define TEXT_FONT_STATIC_WIDTH  8
+#define TEXT_FONT_WIDTH(str) (strlen(str)*TEXT_FONT_STATIC_WIDTH)
 #define TEXT_FONT_HEIGHT(str) (8)
 
 // canvas
@@ -29,21 +30,25 @@ struct gui_window
 {
     window_handle handle;
     bool need_draw;
+    int32_t x;
+    int32_t y;
     int id;
-    int x;
-    int y;
-    int width;
-    int height;
+    uint32_t width;
+    uint32_t height;
     int state;
     char* title;
     struct screen_buffer* buffer;
 
-    window_procedure window_procedure;
+    window_procedure custom_procedure;
     window_procedure default_procedure;
+    struct gui_window* dragged;
 
     struct gui_window* next;
     struct gui_window* parent;
 }__attribute__((packed));
+
+typedef struct gui_window label_struct;
+typedef struct gui_window button_struct;
 
 struct vga_font
 {

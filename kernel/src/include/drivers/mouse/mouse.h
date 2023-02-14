@@ -13,6 +13,14 @@
 #define MOUSE_SET_DEFUAL            0xF6
 #define MOUSE_ENABLE                0xF4
 #define MOUSE_AVALIABLE             0x08
+#define MOUSE_STATUS                0x64
+#define MOUSE_F_BIT                 0x20
+#define MOUSE_BBIT                  0x01
+
+#define MOUSE_LEFT_CLICK   		0b00001
+#define MOUSE_RIGHT_CLICK  		0b00010
+#define MOUSE_MIDDLE_CLICK 		0b00100
+#define MOUSE_LEFT_DRAG  		0b01000
 
 extern int16_t mouse_x;
 extern int16_t mouse_y;

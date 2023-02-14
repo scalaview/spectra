@@ -137,3 +137,30 @@ create_window_content:
 
     add rsp, 40
     ret
+
+global sys_window_get_message
+sys_window_get_message:
+    xor rax, rax
+    push rsi
+    push rdi
+
+    mov rdi, 10  ; command
+    mov rsi, 2  ; argc
+    mov rdx, rsp ; argv
+    int 0x80
+
+    add rsp, 16
+    ret
+
+global sys_window_free
+sys_window_free:
+    xor rax, rax
+    push rdi
+
+    mov rdi, 11  ; command
+    mov rsi, 1  ; argc
+    mov rdx, rsp ; argv
+    int 0x80
+
+    add rsp, 8
+    ret

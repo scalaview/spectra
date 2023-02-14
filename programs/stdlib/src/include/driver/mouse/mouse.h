@@ -1,0 +1,9 @@
+#ifndef STD_LIB_MOUSE_H
+#define STD_LIB_MOUSE_H
+
+#define MOUSE_LEFT_CLICK   		0b00001
+#define MOUSE_RIGHT_CLICK  		0b00010
+#define MOUSE_MIDDLE_CLICK 		0b00100
+#define MOUSE_LEFT_DRAG  		0b01000
+
+#endif

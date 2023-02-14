@@ -3,6 +3,7 @@
 #include "systemctl/io.h"
 #include "systemctl/process.h"
 #include "systemctl/windows.h"
+#include "systemctl/messages.h"
 
 void isr80h_register_commands()
 {
@@ -16,4 +17,6 @@ void isr80h_register_commands()
     isr80h_register_command(SYSTEM_COMMAND7_FREE, isr80h_command7_free);
     isr80h_register_command(SYSTEM_COMMAND8_READKEY, isr80h_command8_readkey);
     isr80h_register_command(SYSTEM_COMMAND9_CREATE_WINDOW, isr80h_command9_create_window_content);
+    isr80h_register_command(SYSTEM_COMMAND10_GET_MESSAGE, isr80h_command10_get_message);
+    isr80h_register_command(SYSTEM_COMMAND11_FREE_WINDOW_CONTENT, isr80h_command11_free_window_content);
 }

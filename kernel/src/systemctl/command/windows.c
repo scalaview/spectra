@@ -42,7 +42,7 @@ void* isr80h_command9_create_window_content(struct interrupt_frame* frame)
         return 0;
     }
 
-    int res = create_window_content(x, y, width, height, gcolor, (uint8_t*)buffer_allocation->kptr, (struct window_flags*)window_flags_allocation->kptr, &win);
+    int res = create_window_content(x, y, width, height, gcolor, (uint8_t*)buffer_allocation->kptr, (struct window_container*)window_flags_allocation->kptr, &win);
     if (res)
     {
         debug_printf("create_window fail!, error code: %d", res);
@@ -53,10 +53,28 @@ void* isr80h_command9_create_window_content(struct interrupt_frame* frame)
     buffer->canvas = (uint8_t*)buffer_allocation->tptr;
     struct gui_window* gui_window = (struct gui_window*)window_flags_allocation->tptr;
     gui_window->buffer = buffer;
-    gui_window->height = height;
-    gui_window->width = width;
-    gui_window->x = x;
-    gui_window->y = y;
 
     return (void*)gui_window;
+}
+
+void* isr80h_command11_free_window_content(struct interrupt_frame* frame)
+{
+    int64_t argc = frame->rsi;
+    int64_t* argv = (int64_t*)frame->rdx;
+    if (argc < 1)
+    {
+        debug_printf("missing params in free window");
+        return 0;
+    }
+
+    int id = argv[0];
+    struct window* win = window_fetch(id);
+    if (!win)
+    {
+        debug_printf("no window found");
+        return 0;
+    }
+
+    window_free(win);
+    return 0;
 }

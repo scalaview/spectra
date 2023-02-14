@@ -8,35 +8,39 @@
 #include "task.h"
 #include "drivers/vga/vesa.h"
 
-struct window_flags
+struct window_container
 {
     uint64_t handle;
     bool need_draw;
+    int32_t x;
+    int32_t y;
 }__attribute__((packed));
 
 struct window
 {
     uint32_t id;
-    int x;
-    int y;
     int z;
     struct screen_buffer* screen_buffer;
-    int width;
-    int height;
-    struct window_flags* flags;
-    int message_queue_index;
+    uint32_t width;
+    uint32_t height;
+    struct window_container* container;
+    bool keep_z_stale;
     struct task* parent_task;
     struct message_queue message_queue;
+    struct window* next;
+    struct window* prev;
 };
 
-struct window_wrapper
-{
-    struct window* win;
-    struct window_wrapper* next;
-    struct window_wrapper* prev;
-};
-
-int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_t gcolor, uint8_t* canvas, struct window_flags* flags, struct window** out_win);
+int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_t gcolor, uint8_t* canvas, struct window_container* flags, struct window** out_win);
 void window_free(struct window* window);
 void window_refresh();
+void window_add_message(struct window* win, struct message* msg);
+void window_add_message_to_focused(struct message* msg);
+void window_pop_message(struct window* win, struct message* msg_out);
+struct window* window_fetch(uint32_t id);
+bool window_belongs_to(struct window* win, int16_t x, int16_t y);
+struct window* window_find_absolue_position(int16_t x, int16_t y);
+void window_change_focused(int32_t key);
+void window_handle_message(struct message* msg);
+
 #endif

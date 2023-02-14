@@ -21,8 +21,8 @@ struct window
     uint32_t id;
     int z;
     struct screen_buffer* screen_buffer;
-    int width;
-    int height;
+    uint32_t width;
+    uint32_t height;
     struct window_container* container;
     bool keep_z_stale;
     struct task* parent_task;

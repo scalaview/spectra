@@ -20,7 +20,7 @@ struct video_info_struct {
 
 void kernel_init_vesa();
 int map_vesa_paging(struct pml4_table* pml4_table);
-uint64_t calculate_pixel_len(int x, uint64_t width, uint64_t screen_width);
+uint32_t calculate_pixel_len(int x, uint32_t width, uint32_t screen_width);
 extern void putpixel(uint8_t* screen, int x, int y, uint32_t color, uint32_t pitch, uint32_t pixelwidth);
 extern void draw_cursor();
 

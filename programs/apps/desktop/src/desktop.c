@@ -5,8 +5,8 @@ int main(int argc, char** argv)
 {
     uint32_t width = 600;
     uint32_t height = 600;
-    int64_t x = 200;
-    int64_t y = 200;
+    int32_t x = 200;
+    int32_t y = 200;
     int id = 2;
     const char* title = "untitle";
     struct gui_window* win = create_gui_window(0, width, height, x, y, id, title);

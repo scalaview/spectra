@@ -6,7 +6,7 @@
 #include "stdio.h"
 #include "driver/mouse/mouse.h"
 
-struct gui_window* create_gui_window(struct gui_window* parent, uint32_t width, uint32_t height, int64_t x, int64_t y, int id, const char* title);
+struct gui_window* create_gui_window(struct gui_window* parent, uint32_t width, uint32_t height, int32_t x, int32_t y, int id, const char* title);
 
 void window_add_container(struct gui_window* parent, struct gui_window* new_win)
 {
@@ -86,11 +86,11 @@ static bool __gui_window_default_procedure(struct gui_window* win, struct messag
     return false;
 }
 
-void get_absolute_position(struct gui_window* parent, int64_t x, int64_t y, int64_t* x_out, int64_t* y_out)
+void get_absolute_position(struct gui_window* parent, int32_t x, int32_t y, int32_t* x_out, int32_t* y_out)
 {
     struct gui_window* current = parent;
-    int64_t abs_x = x;
-    int64_t abs_y = y;
+    int32_t abs_x = x;
+    int32_t abs_y = y;
     while (current)
     {
         if (current->parent)
@@ -106,13 +106,13 @@ void get_absolute_position(struct gui_window* parent, int64_t x, int64_t y, int6
 
 void draw_rect_in_absolute_position(struct gui_window* parent, uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t color)
 {
-    int64_t abs_x = 0;
-    int64_t abs_y = 0;
+    int32_t abs_x = 0;
+    int32_t abs_y = 0;
     get_absolute_position(parent, x, y, &abs_x, &abs_y);
     draw_rect(abs_x, abs_y, width, height, color, parent->buffer);
 }
 
-label_struct* create_window_lable(struct gui_window* parent, uint32_t width, uint32_t height, int64_t x, int64_t y, int id, const char* title, uint32_t color, uint32_t t_color, uint32_t tb_color)
+label_struct* create_window_lable(struct gui_window* parent, uint32_t width, uint32_t height, int32_t x, int32_t y, int id, const char* title, uint32_t color, uint32_t t_color, uint32_t tb_color)
 {
     label_struct* label = create_gui_window(parent, width, height, x, y, id, title);
     if (!label) return 0;
@@ -127,7 +127,7 @@ label_struct* create_window_control_panel(struct gui_window* win, int id)
     return create_window_lable(win, win->width, GUI_CONTROL_PANEL_HEIGHT, 0, 0, id, win->title, BLACK, WHITE, BLACK);
 }
 
-struct gui_window* create_gui_window(struct gui_window* parent, uint32_t width, uint32_t height, int64_t x, int64_t y, int id, const char* title)
+struct gui_window* create_gui_window(struct gui_window* parent, uint32_t width, uint32_t height, int32_t x, int32_t y, int id, const char* title)
 {
     struct gui_window* new_win;
     if (!parent)

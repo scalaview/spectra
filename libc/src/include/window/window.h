@@ -33,8 +33,8 @@ struct gui_window
     int32_t x;
     int32_t y;
     int id;
-    int width;
-    int height;
+    uint32_t width;
+    uint32_t height;
     int state;
     char* title;
     struct screen_buffer* buffer;

@@ -65,8 +65,8 @@ int main(int argc, char** argv)
 {
     uint32_t width = 500;
     uint32_t height = 500;
-    int64_t x = 100;
-    int64_t y = 100;
+    int32_t x = 100;
+    int32_t y = 100;
     int id = 1;
     const char* title = "Shell";
     shell_win = create_gui_window(0, width, height, x, y, id, title);

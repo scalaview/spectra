@@ -98,9 +98,9 @@ void draw_transparent_icon(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint3
 }
 
 
-uint64_t calculate_pixel_len(int x, uint64_t width, uint64_t screen_width)
+uint32_t calculate_pixel_len(int x, uint32_t width, uint32_t screen_width)
 {
-    int64_t display_width = x + width;
+    int32_t display_width = x + width;
     if (x >= 0)
     {
         return display_width > screen_width ? (screen_width - x) : width;

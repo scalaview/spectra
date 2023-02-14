@@ -1,10 +1,11 @@
-#include "gui.h"
+#include "gui/gui.h"
 #include "stdlib.h"
 #include "memory.h"
 #include "assets/color.h"
 #include "string.h"
 #include "stdio.h"
 #include "driver/mouse/mouse.h"
+#include "gui/button.h"
 
 struct gui_window* create_gui_window(struct gui_window* parent, uint32_t width, uint32_t height, int32_t x, int32_t y, int id, const char* title);
 
@@ -27,7 +28,7 @@ static struct gui_window* __gui_windoww_find_child(struct gui_window* win, int16
     return 0;
 }
 
-static struct gui_window* __gui_window_get_root(struct gui_window* win)
+struct gui_window* gui_window_get_root(struct gui_window* win)
 {
     struct gui_window* current = win;
     while (current)
@@ -75,12 +76,16 @@ static bool __gui_window_default_procedure(struct gui_window* win, struct messag
 
     case MESSAGE_MOUSE_DRAG:
         printf("MESSAGE_MOUSE_RELEASE");
-        struct gui_window* root_win = __gui_window_get_root(win);
+        struct gui_window* root_win = gui_window_get_root(win);
         printf("MESSAGE_MOUSE_DRAG before x: %d, y: %d, diff_x: %d, diff_y:%d\n", root_win->x, root_win->y, msg->diff_x, msg->diff_y);
         root_win->x += msg->diff_x;
         root_win->y += msg->diff_y;
         printf("MESSAGE_MOUSE_DRAG after x: %d, y: %d, diff_x: %d, diff_y:%d\n", root_win->x, root_win->y, msg->diff_x, msg->diff_y);
         return true;
+    case MESSAGE_CLOSE:
+        printf("=================close========================\n");
+        break;
+
     }
     win->dragged = 0;
     return false;
@@ -122,9 +127,25 @@ label_struct* create_window_lable(struct gui_window* parent, uint32_t width, uin
     return label;
 }
 
+button_struct* gui_window_create_close_button(struct gui_window* win, int id)
+{
+    int32_t x = win->width - GUI_CONTROL_PANEL_CLOSE_BTN_WIDTH - TEXT_FONT_STATIC_WIDTH;
+    int32_t y = (win->height - GUI_CONTROL_PANEL_CLOSE_BTN_HEIGHT) / 2;
+    button_struct* btn = gui_window_create_button(win, GUI_CONTROL_PANEL_CLOSE_BTN_WIDTH, GUI_CONTROL_PANEL_CLOSE_BTN_HEIGHT, x, y, id, 0);
+    if (!btn) return 0;
+    // TODO replace with close img
+    draw_rect_in_absolute_position(win, x, y, GUI_CONTROL_PANEL_CLOSE_BTN_WIDTH, GUI_CONTROL_PANEL_CLOSE_BTN_HEIGHT, RED);
+    return btn;
+}
+
 label_struct* create_window_control_panel(struct gui_window* win, int id)
 {
-    return create_window_lable(win, win->width, GUI_CONTROL_PANEL_HEIGHT, 0, 0, id, win->title, BLACK, WHITE, BLACK);
+    label_struct* panel = create_window_lable(win, win->width, GUI_CONTROL_PANEL_HEIGHT, 0, 0, id, win->title, BLACK, WHITE, BLACK);
+    if (!panel) return 0;
+
+    button_struct* close_btn = gui_window_create_close_button(panel, GUI_CONTROL_PANEL_CLOSS_BUTTON_ID);
+    close_btn->custom_procedure = 0;
+    return panel;
 }
 
 struct gui_window* create_gui_window(struct gui_window* parent, uint32_t width, uint32_t height, int32_t x, int32_t y, int id, const char* title)
@@ -145,13 +166,16 @@ struct gui_window* create_gui_window(struct gui_window* parent, uint32_t width, 
         new_win->handle = parent->handle;
         window_add_container(parent, new_win);
     }
-    new_win->title = (char*)malloc(strlen(title));
-    if (!new_win->title)
+    if (title)
     {
-        free(new_win);
-        return 0;
+        new_win->title = (char*)malloc(strlen(title));
+        if (!new_win->title)
+        {
+            free(new_win);
+            return 0;
+        }
+        memcpy(new_win->title, (void*)title, strlen(title));
     }
-    memcpy(new_win->title, (void*)title, strlen(title));
     new_win->id = id;
     new_win->height = height;
     new_win->width = width;

@@ -75,12 +75,13 @@ int main(int argc, char** argv)
         printf("create window fail!\n");
         return 0;
     }
-    create_window_control_panel(shell_win, 2);
+    label_struct* control_panel = create_window_control_panel(shell_win, 2);
+    if (control_panel);
     shell_max_font_count = (shell_win->width - (strlen(reserved_cmd) + 1) * TEXT_FONT_STATIC_WIDTH) / TEXT_FONT_STATIC_WIDTH;
     char* buffer = (char*)malloc(sizeof(char) * shell_max_font_count);
     int buffer_size = 0;
     current_width = 0;
-    current_height = 21;
+    current_height = GUI_CONTROL_PANEL_HEIGHT + 2;
     shell_win->need_draw = true;
     while (1) {
         shell_print(reserved_cmd, 0);

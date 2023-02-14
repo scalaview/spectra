@@ -4,7 +4,12 @@
 #include <stdint.h>
 #include "window/window.h"
 
-#define GUI_CONTROL_PANEL_HEIGHT 20
+#define GUI_CONTROL_PANEL_CLOSS_BUTTON_ID 99999
+
+
+#define GUI_CONTROL_PANEL_HEIGHT 24
+#define GUI_CONTROL_PANEL_CLOSE_BTN_HEIGHT 16
+#define GUI_CONTROL_PANEL_CLOSE_BTN_WIDTH 16
 
 extern struct gui_window* create_window_content(int32_t x, int32_t y, uint32_t width, uint32_t height, uint32_t gcolor);
 label_struct* create_window_lable(struct gui_window* parent, uint32_t width, uint32_t height, int32_t x, int32_t y, int id, const char* title, uint32_t color, uint32_t t_color, uint32_t tb_color);
@@ -14,5 +19,7 @@ void screan_putchar(struct screen_buffer* buffer, const char ch, uint32_t* curre
 bool window_consume_message(struct gui_window* win, struct message* msg);
 bool window_consume_message_simple(struct gui_window* win, uint16_t event);
 void window_consume(struct gui_window* win, struct message* msg);
+button_struct* gui_window_create_close_button(struct gui_window* win, int id);
+struct gui_window* gui_window_get_root(struct gui_window* win);
 
 #endif

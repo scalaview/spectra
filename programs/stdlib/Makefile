@@ -29,7 +29,8 @@ FILES =	./build/entry.asm.o \
 		./build/process.o \
 		./build/vesa.o \
 		./build/messages.o \
-		./build/gui.o \
+		./build/gui/button.o \
+		./build/gui/gui.o \
 		./build/assets/img/tga.o
 
 FILES  += $(LIBC_FILES)

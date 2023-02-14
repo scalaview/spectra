@@ -57,6 +57,7 @@
         "messages.h": "c",
         "color.h": "c",
         "stdbool.h": "c",
-        "gui.h": "c"
+        "gui.h": "c",
+        "button.h": "c"
     }
 }

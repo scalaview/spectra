@@ -7,7 +7,7 @@
 #include "unistd.h"
 #include "stdlib.h"
 #include "string.h"
-#include "gui.h"
+#include "gui/gui.h"
 #include "window/window.h"
 #include "messages.h"
 #include "assets/color.h"

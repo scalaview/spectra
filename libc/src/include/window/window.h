@@ -48,6 +48,7 @@ struct gui_window
 }__attribute__((packed));
 
 typedef struct gui_window label_struct;
+typedef struct gui_window button_struct;
 
 struct vga_font
 {

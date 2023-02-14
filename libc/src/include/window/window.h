@@ -43,7 +43,8 @@ struct gui_window
     window_procedure default_procedure;
     struct gui_window* dragged;
 
-    struct gui_window* next;
+    struct gui_window* children;
+    struct gui_window* other;
     struct gui_window* parent;
 }__attribute__((packed));
 

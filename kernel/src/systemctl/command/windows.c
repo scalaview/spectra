@@ -56,3 +56,25 @@ void* isr80h_command9_create_window_content(struct interrupt_frame* frame)
 
     return (void*)gui_window;
 }
+
+void* isr80h_command11_free_window_content(struct interrupt_frame* frame)
+{
+    int64_t argc = frame->rsi;
+    int64_t* argv = (int64_t*)frame->rdx;
+    if (argc < 1)
+    {
+        debug_printf("missing params in free window");
+        return 0;
+    }
+
+    int id = argv[0];
+    struct window* win = window_fetch(id);
+    if (!win)
+    {
+        debug_printf("no window found");
+        return 0;
+    }
+
+    window_free(win);
+    return 0;
+}

@@ -151,3 +151,16 @@ sys_window_get_message:
 
     add rsp, 16
     ret
+
+global sys_window_free
+sys_window_free:
+    xor rax, rax
+    push rdi
+
+    mov rdi, 11  ; command
+    mov rsi, 1  ; argc
+    mov rdx, rsp ; argv
+    int 0x80
+
+    add rsp, 8
+    ret

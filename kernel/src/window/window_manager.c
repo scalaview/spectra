@@ -165,6 +165,7 @@ out:
 
 void window_free(struct window* window)
 {
+    __window_list_remove_one(window);
     if (window->container) kfree(window->container);
     if (window->screen_buffer && window->screen_buffer->canvas) kfree(window->screen_buffer->canvas);
     if (window->screen_buffer) kfree(window->screen_buffer);

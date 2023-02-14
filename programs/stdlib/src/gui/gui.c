@@ -244,3 +244,19 @@ void window_consume(struct gui_window* win, struct message* msg)
         }
     }
 }
+
+void gui_window_free(struct gui_window* win)
+{
+    int id = win->handle;
+    win->need_draw = false;
+    struct gui_window* current = win->next;
+    while (current)
+    {
+        free(current->title);
+        free(current);
+        current = current->next;
+    }
+    free(win->title);
+    free(win);
+    sys_window_free(id);
+}

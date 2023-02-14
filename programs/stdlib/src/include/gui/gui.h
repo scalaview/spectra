@@ -21,5 +21,7 @@ bool window_consume_message_simple(struct gui_window* win, uint16_t event);
 void window_consume(struct gui_window* win, struct message* msg);
 button_struct* gui_window_create_close_button(struct gui_window* win, int id);
 struct gui_window* gui_window_get_root(struct gui_window* win);
+extern void sys_window_free(int id);
+void gui_window_free(struct gui_window* win);
 
 #endif

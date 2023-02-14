@@ -178,7 +178,7 @@ void window_copy_rect(struct window* src)
     int64_t hidden_pixel = src->container->x > 0 ? 0 : -(src->container->x * pixelwidth);
     uint32_t pixel_len = calculate_pixel_len(src->container->x, src->width, vesa_video_info.width) * pixelwidth;
 
-    for (int i = (src->container->y >= 0) ? 0 : src->height + src->container->y;
+    for (int i = (src->container->y >= 0) ? 0 : -src->container->y;
         i < src->height && (src->container->y + i) < vesa_video_info.height; i++)
     {
         void* start_line_addr = (void*)(((uint64_t)vesa_video_info.buffer) + (src->container->y + i) * vesa_video_info.width * pixelwidth + reserve_pixel);

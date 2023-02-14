@@ -1,15 +1,15 @@
 #include "gui/button.h"
 #include "gui/gui.h"
 #include "window/message.h"
+#include "stdio.h"
 
 bool button_default_procedure(struct gui_window* win, struct message* msg)
 {
+
     if (msg->event == MESSAGE_MOUSE_PRESS)
     {
-        struct gui_window* target = gui_window_get_root(win);
-        if (!target) return false;
         msg->event = MESSAGE_CLOSE;
-        return window_consume_message(target, msg);
+        return true;
     }
     return false;
 }

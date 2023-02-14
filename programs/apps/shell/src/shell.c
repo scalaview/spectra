@@ -55,6 +55,7 @@ static int read_cmd(char* buffer)
             window_consume(shell_win, msg);
             break;
         }
+        if (shell_win->state == WINDOW_CLOSE) break;
     }
 out:
     buffer[buffer_size] = 0;
@@ -86,12 +87,14 @@ int main(int argc, char** argv)
     while (1) {
         shell_print(reserved_cmd, 0);
         buffer_size = read_cmd(buffer);
-
+        if (shell_win->state == WINDOW_CLOSE) break;
         if (buffer_size == 0) {
             continue;
         }
         printf("cmd: %s\n", buffer);
         // eval
     }
+    gui_window_free(shell_win);
+
     return 0;
 }

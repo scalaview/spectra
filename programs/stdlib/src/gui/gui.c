@@ -8,24 +8,25 @@
 #include "gui/button.h"
 
 struct gui_window* create_gui_window(struct gui_window* parent, uint32_t width, uint32_t height, int32_t x, int32_t y, int id, const char* title);
+bool window_consume(struct gui_window* win, struct message* msg);
 
-void window_add_container(struct gui_window* parent, struct gui_window* new_win)
+static void __window_add_child(struct gui_window* parent, struct gui_window* new_win)
 {
-    struct gui_window* current = parent;
-    while (current->next) current = current->next;
-    current->next = new_win;
+    struct gui_window* child = parent->children;
+    if (!child)
+    {
+        parent->children = new_win;
+        return;
+    }
+    while (child->other) child = child->other;
+    child->other = new_win;
+
 }
 
-static struct gui_window* __gui_windoww_find_child(struct gui_window* win, int16_t x, int16_t y)
+static bool __gui_window_pointer_inside(struct gui_window* win, int16_t x, int16_t y)
 {
-    struct gui_window* current = win->next;
-    while (current)
-    {
-        printf("inside gui_windoww_find_child\n");
-        if (x >= current->x && x <= current->x + current->width && y >= current->y && y <= current->y + current->height) return current;
-        current = current->next;
-    }
-    return 0;
+    printf("pointer_inside? %d, x:%d, y:%d, w.x:%d, w.y%d, w.w:%d, w.h%d\n", win->id, x, y, win->x, win->y, win->width, win->height);
+    return (x >= win->x && x <= win->x + win->width && y >= win->y && y <= win->y + win->height);
 }
 
 struct gui_window* gui_window_get_root(struct gui_window* win)
@@ -39,17 +40,16 @@ struct gui_window* gui_window_get_root(struct gui_window* win)
     return current;
 }
 
-static struct gui_window* __gui_window_get_tail(struct gui_window* win)
+static bool __gui_window_control_panel_default_procedure(struct gui_window* win, struct message* msg)
 {
-    struct gui_window* current = win;
-    while (current)
-    {
-        if (!current->next) break;
-        current = current->next;
-    }
-    return current;
-}
 
+    if (msg->event == MESSAGE_MOUSE_PRESS)
+    {
+        msg->event = MESSAGE_MOUSE_DRAG;
+        return true;
+    }
+    return false;
+}
 
 static bool __gui_window_default_procedure(struct gui_window* win, struct message* msg)
 {
@@ -57,35 +57,24 @@ static bool __gui_window_default_procedure(struct gui_window* win, struct messag
     {
     case MESSAGE_MOUSE_PRESS:
         printf("MESSAGE_MOUSE_PRESS");
-        if (msg->key & MOUSE_LEFT_DRAG)
-        {
-            struct gui_window* target = 0;
-            if (win->dragged)  target = win->dragged;
-            else    target = __gui_windoww_find_child(win, msg->x, msg->y);
-            if (target)
-            {
-                msg->event = MESSAGE_MOUSE_DRAG;
-                win->dragged = target;
-                return window_consume_message(target, msg);
-            }
-        }
         break;
     case MESSAGE_MOUSE_RELEASE:
         printf("MESSAGE_MOUSE_RELEASE");
         break;
-
     case MESSAGE_MOUSE_DRAG:
+        // handle_drag:
         printf("MESSAGE_MOUSE_RELEASE");
         struct gui_window* root_win = gui_window_get_root(win);
         printf("MESSAGE_MOUSE_DRAG before x: %d, y: %d, diff_x: %d, diff_y:%d\n", root_win->x, root_win->y, msg->diff_x, msg->diff_y);
         root_win->x += msg->diff_x;
         root_win->y += msg->diff_y;
         printf("MESSAGE_MOUSE_DRAG after x: %d, y: %d, diff_x: %d, diff_y:%d\n", root_win->x, root_win->y, msg->diff_x, msg->diff_y);
+        root_win->dragged = win;
         return true;
     case MESSAGE_CLOSE:
-        printf("=================close========================\n");
-        break;
-
+        printf("=================close=============%d===========\n", win->id);
+        win->state = WINDOW_CLOSE;
+        return true;
     }
     win->dragged = 0;
     return false;
@@ -142,7 +131,7 @@ label_struct* create_window_control_panel(struct gui_window* win, int id)
 {
     label_struct* panel = create_window_lable(win, win->width, GUI_CONTROL_PANEL_HEIGHT, 0, 0, id, win->title, BLACK, WHITE, BLACK);
     if (!panel) return 0;
-
+    panel->default_procedure = &__gui_window_control_panel_default_procedure;
     button_struct* close_btn = gui_window_create_close_button(panel, GUI_CONTROL_PANEL_CLOSS_BUTTON_ID);
     close_btn->custom_procedure = 0;
     return panel;
@@ -164,7 +153,7 @@ struct gui_window* create_gui_window(struct gui_window* parent, uint32_t width, 
         new_win->buffer = parent->buffer;
         new_win->parent = parent;
         new_win->handle = parent->handle;
-        window_add_container(parent, new_win);
+        __window_add_child(parent, new_win);
     }
     if (title)
     {
@@ -219,12 +208,19 @@ void screan_putchar(struct screen_buffer* buffer, const char cha, uint32_t* curr
 
 bool window_consume_message(struct gui_window* win, struct message* msg)
 {
+    if (!__gui_window_pointer_inside(win, msg->x, msg->y))
+    {
+        // printf("no inside window\n");
+        return false;
+    }
     bool consumed = false;
     if (win->custom_procedure != NULL) {
         consumed = win->custom_procedure(win, msg);
     }
     if (!consumed) {
+        // printf("default_procedure start %d, %d\n", win->id, msg->event);
         consumed = win->default_procedure(win, msg);
+        // printf("default_procedure end %d, %d\n", win->id, msg->event);
     }
     return consumed;
 }
@@ -236,12 +232,55 @@ bool window_consume_message_simple(struct gui_window* win, uint16_t event)
     return window_consume_message(win, &msg);
 }
 
-void window_consume(struct gui_window* win, struct message* msg)
+static bool __window_consume(struct gui_window* win, struct message* msg)
 {
-    for (struct gui_window* w = win; w != NULL; w = w->next) {
-        if (window_consume_message(w, msg)) {
-            break;
+    for (struct gui_window* w = win; w; w = w->other)
+    {
+        struct message _msg;
+        _msg = *msg;
+        if (w->parent)
+        {
+            _msg.x = msg->x - w->x;
+            _msg.y = msg->y - w->y;
         }
+        // printf("window_consume %d, %d %d %d %d %d\n", win->id, msg->x, _msg.x, w->x, msg->event, _msg.event);
+        if (w->children && __window_consume(w->children, &_msg))
+        {
+            msg->event = _msg.event;
+            return true;
+        }
+        msg->event = _msg.event;
+        if (window_consume_message(w, msg))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool window_consume(struct gui_window* root, struct message* msg)
+{
+    if (root->dragged && msg->key & MOUSE_LEFT_DRAG)
+    {
+        msg->event = MESSAGE_MOUSE_DRAG;
+        return __gui_window_default_procedure(root, msg);
+    }
+    __window_consume(root->children, msg);
+    return __gui_window_default_procedure(root, msg);
+}
+
+void __gui_window_free(struct gui_window* win)
+{
+    for (struct gui_window* w = win; w;)
+    {
+        struct gui_window* n = w->other;
+        if (w->children)
+        {
+            __gui_window_free(w->children);
+        }
+        free(w->title);
+        free(w);
+        w = n;
     }
 }
 
@@ -249,14 +288,6 @@ void gui_window_free(struct gui_window* win)
 {
     int id = win->handle;
     win->need_draw = false;
-    struct gui_window* current = win->next;
-    while (current)
-    {
-        free(current->title);
-        free(current);
-        current = current->next;
-    }
-    free(win->title);
-    free(win);
+    __gui_window_free(win);
     sys_window_free(id);
 }

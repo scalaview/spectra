@@ -24,9 +24,10 @@ int main(int argc, char** argv)
         if (msg->event)
         {
             window_consume(win, msg);
+            if (win->state == WINDOW_CLOSE) break;
             win->need_draw = true;
         }
     }
-
+    gui_window_free(win);
     return 0;
 }

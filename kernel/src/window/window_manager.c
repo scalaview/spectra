@@ -12,11 +12,13 @@
 #include "drivers/mouse/mouse.h"
 #include "debug.h"
 
+extern struct video_info_struct vesa_video_info;
+
 struct window* head = 0;
 struct window* tail = 0;
-uint64_t __window_id = 0;
-int32_t __max_z = 0;
-extern struct video_info_struct vesa_video_info;
+static uint64_t __window_id = 0;
+static int32_t __max_z = 0;
+static uint16_t __previous_message_key = 0;
 
 static void __window_list_remove_one(struct window* win)
 {
@@ -275,17 +277,27 @@ void window_change_focused(int32_t key)
     }
 }
 
+static void __window_relative_position(struct window* win, int16_t x, int16_t y, int16_t* out_x, int16_t* out_y)
+{
+    *out_x = x - win->container->x;
+    *out_y = y - win->container->y;
+}
+
 void window_handle_message(struct message* msg)
 {
-    window_change_focused(msg->key);
-    if (msg->key & MOUSE_LEFT_DRAG) // Too slow when handle drag in user land
+    // Don't change focused window when mouse draging
+    if (!(__previous_message_key & MOUSE_LEFT_DRAG) || !(msg->key & MOUSE_LEFT_DRAG))  window_change_focused(msg->key);
+
+    if (msg->event)
     {
-        // TODO remove it
-        tail->container->x += msg->diff_x;
-        tail->container->y += msg->diff_y;
-    }
-    else if (msg->event)
-    {
+        // relative position
+        int16_t x = 0;
+        int16_t y = 0;
+        __window_relative_position(tail, msg->x, msg->y, &x, &y);
+        debug_printf("after window_relative_position x%d, y%d, x:%d, y:%d\n", msg->x, msg->y, x, y);
+        msg->x = x;
+        msg->y = y;
         window_add_message_to_focused(msg);
     }
+    __previous_message_key = msg->key;
 }

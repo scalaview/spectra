@@ -55,7 +55,6 @@ static int read_cmd(char* buffer)
             window_consume(shell_win, msg);
             break;
         }
-
     }
 out:
     buffer[buffer_size] = 0;

@@ -138,19 +138,20 @@ void ps2_mouse_interrupt_handler()
                 if (previous_key & MOUSE_LEFT_CLICK && message.key & MOUSE_LEFT_CLICK)
                 {
                     debug_printf("MOUSE_DRAG\n");
-                    message.event = MESSAGE_MOUSE_DRAG;
+                    message.event = MESSAGE_MOUSE_PRESS;
                     message.key |= MOUSE_LEFT_DRAG;
                 }
                 previous_key = mouse_byte[0];
 
                 debug_printf("diff_x: %d, mouse_x: %d, diff_y: %d, mouse_y: %d\n", diff_x, mouse_x, diff_y, mouse_y);
                 window_handle_message(&message);
-                // if (message.event) window_add_message_to_focused(&message);
-                break;
+                goto out;
             }
         }
         status = insb(MOUSE_STATUS);
     }
+out:
+    return;
 }
 
 void mouse_initialize()

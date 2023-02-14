@@ -4,6 +4,7 @@
 #include "assets/color.h"
 #include "string.h"
 #include "stdio.h"
+#include "driver/mouse/mouse.h"
 
 struct gui_window* create_gui_window(struct gui_window* parent, uint32_t width, uint32_t height, int64_t x, int64_t y, int id, const char* title);
 
@@ -14,22 +15,74 @@ void window_add_container(struct gui_window* parent, struct gui_window* new_win)
     current->next = new_win;
 }
 
+static struct gui_window* __gui_windoww_find_child(struct gui_window* win, int16_t x, int16_t y)
+{
+    struct gui_window* current = win->next;
+    while (current)
+    {
+        printf("inside gui_windoww_find_child\n");
+        if (x >= current->x && x <= current->x + current->width && y >= current->y && y <= current->y + current->height) return current;
+        current = current->next;
+    }
+    return 0;
+}
+
+static struct gui_window* __gui_window_get_root(struct gui_window* win)
+{
+    struct gui_window* current = win;
+    while (current)
+    {
+        if (!current->parent) break;
+        current = current->parent;
+    }
+    return current;
+}
+
+static struct gui_window* __gui_window_get_tail(struct gui_window* win)
+{
+    struct gui_window* current = win;
+    while (current)
+    {
+        if (!current->next) break;
+        current = current->next;
+    }
+    return current;
+}
+
+
 static bool __gui_window_default_procedure(struct gui_window* win, struct message* msg)
 {
-    switch (msg->event) {
+    switch (msg->event)
+    {
     case MESSAGE_MOUSE_PRESS:
         printf("MESSAGE_MOUSE_PRESS");
+        if (msg->key & MOUSE_LEFT_DRAG)
+        {
+            struct gui_window* target = 0;
+            if (win->dragged)  target = win->dragged;
+            else    target = __gui_windoww_find_child(win, msg->x, msg->y);
+            if (target)
+            {
+                msg->event = MESSAGE_MOUSE_DRAG;
+                win->dragged = target;
+                return window_consume_message(target, msg);
+            }
+        }
+        break;
     case MESSAGE_MOUSE_RELEASE:
         printf("MESSAGE_MOUSE_RELEASE");
-        return false;
-    case MESSAGE_MOUSE_DRAG:
-        printf("MESSAGE_MOUSE_DRAG before x: %d, y: %d, diff_x: %d, diff_y:%d\n", win->x, win->y, msg->diff_x, msg->diff_y);
-        win->x += msg->diff_x;
-        win->y += msg->diff_y;
-        printf("MESSAGE_MOUSE_DRAG after x: %d, y: %d, diff_x: %d, diff_y:%d\n", win->x, win->y, msg->diff_x, msg->diff_y);
+        break;
 
+    case MESSAGE_MOUSE_DRAG:
+        printf("MESSAGE_MOUSE_RELEASE");
+        struct gui_window* root_win = __gui_window_get_root(win);
+        printf("MESSAGE_MOUSE_DRAG before x: %d, y: %d, diff_x: %d, diff_y:%d\n", root_win->x, root_win->y, msg->diff_x, msg->diff_y);
+        root_win->x += msg->diff_x;
+        root_win->y += msg->diff_y;
+        printf("MESSAGE_MOUSE_DRAG after x: %d, y: %d, diff_x: %d, diff_y:%d\n", root_win->x, root_win->y, msg->diff_x, msg->diff_y);
         return true;
     }
+    win->dragged = 0;
     return false;
 }
 

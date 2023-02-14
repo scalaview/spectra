@@ -17,6 +17,16 @@ int main(int argc, char** argv)
     }
     create_window_control_panel(win, 2);
     win->need_draw = true;
+    struct message* msg = (struct message*)malloc(sizeof(struct message));
+    while (1)
+    {
+        window_get_message(win, msg);
+        if (msg->event)
+        {
+            window_consume(win, msg);
+            win->need_draw = true;
+        }
+    }
 
     return 0;
 }

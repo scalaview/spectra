@@ -31,7 +31,8 @@ FILES =	./build/entry.asm.o \
 		./build/messages.o \
 		./build/gui/button.o \
 		./build/gui/gui.o \
-		./build/assets/img/tga.o
+		./build/assets/img/tga.o \
+		./build/assets/img/parser.o
 
 FILES  += $(LIBC_FILES)
 

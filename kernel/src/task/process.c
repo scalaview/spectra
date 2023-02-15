@@ -629,10 +629,10 @@ void* process_internal_alloc(size_t size)
     return 0;
 }
 
-void __process_allocation_free(struct process* process, void* task_address)
+struct allocation* process_fetch_allocation(struct process* process, void* task_address)
 {
     int64_t diff = ((uint64_t)task_address - (uint64_t)(process->program_info.virtual_end_address));
-    if (diff < 0) return;
+    if (diff < 0) return 0;
     int64_t index = (diff / PAGE_SIZE_4K) % PROCESS_ALLOCATIONS;
     struct allocation_wrapper* allocation_wrapper = &process->allocations[index];
 
@@ -652,16 +652,22 @@ void __process_allocation_free(struct process* process, void* task_address)
                 allocation_wrapper->tail = prev == next ? NULL : prev;
             }
             prev->next = next->next;
-            break;
+            return next;
         }
         prev = next;
         next = next->next;
     }
 
-    if (next)
+    return 0;
+}
+
+void __process_allocation_free(struct process* process, void* task_address)
+{
+    struct allocation* allocation = process_fetch_allocation(process, task_address);
+    if (allocation)
     {
-        kfree(next->kptr);
-        kfree(next);
+        kfree(allocation->kptr);
+        kfree(allocation);
     }
     return;
 }

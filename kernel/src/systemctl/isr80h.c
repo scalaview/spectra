@@ -19,4 +19,9 @@ void isr80h_register_commands()
     isr80h_register_command(SYSTEM_COMMAND9_CREATE_WINDOW, isr80h_command9_create_window_content);
     isr80h_register_command(SYSTEM_COMMAND10_GET_MESSAGE, isr80h_command10_get_message);
     isr80h_register_command(SYSTEM_COMMAND11_FREE_WINDOW_CONTENT, isr80h_command11_free_window_content);
+    isr80h_register_command(SYSTEM_COMMAND12_FOPEN, isr80h_command12_fopen);
+    isr80h_register_command(SYSTEM_COMMAND13_FSTAT, isr80h_command13_fstat);
+    isr80h_register_command(SYSTEM_COMMAND14_FREAD, isr80h_command14_fread);
+    isr80h_register_command(SYSTEM_COMMAND15_FLOSE, isr80h_command15_fclose);
+    isr80h_register_command(SYSTEM_COMMAND16_FSEEK, isr80h_command16_fseek);
 }

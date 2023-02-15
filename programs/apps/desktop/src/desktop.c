@@ -1,21 +1,26 @@
 #include "lib.h"
 #include <stdint.h>
+#include "assets/img/parser.h"
+#include "memory.h"
 
 int main(int argc, char** argv)
 {
-    uint32_t width = 600;
-    uint32_t height = 600;
-    int32_t x = 200;
-    int32_t y = 200;
+    struct tga_content* background_pic = 0;
+    int res = img_tga_parser("0:/data/background.tga", (void*)(&background_pic));
+    if (res);
+    uint32_t width = 1024;
+    uint32_t height = 768;
+    int32_t x = 0;
+    int32_t y = 0;
     int id = 2;
-    const char* title = "untitle";
+    const char* title = "desktop";
     struct gui_window* win = create_gui_window(0, width, height, x, y, id, title);
     if (!win)
     {
         printf("create window fail!\n");
         return 0;
     }
-    create_window_control_panel(win, 2);
+    memcpy(win->buffer->canvas, background_pic->pixels, win->buffer->pixelsize);
     win->need_draw = true;
     struct message* msg = (struct message*)malloc(sizeof(struct message));
     while (1)

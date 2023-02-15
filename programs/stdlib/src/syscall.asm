@@ -164,3 +164,77 @@ sys_window_free:
 
     add rsp, 8
     ret
+
+global fopen
+fopen:
+    xor rax, rax
+    push rdx
+    push rsi
+    push rdi
+
+    mov rdi, 12  ; command
+    mov rsi, 3  ; argc
+    mov rdx, rsp ; argv
+    int 0x80
+
+    add rsp, 24
+    ret
+
+global fread
+fread:
+    xor rax, rax
+    push rcx
+    push rdx
+    push rsi
+    push rdi
+
+    mov rdi, 14  ; command
+    mov rsi, 4  ; argc
+    mov rdx, rsp ; argv
+    int 0x80
+
+    add rsp, 32
+    ret
+
+global fstat
+fstat:
+    xor rax, rax
+    push rdx
+    push rsi
+    push rdi
+
+    mov rdi, 13  ; command
+    mov rsi, 3  ; argc
+    mov rdx, rsp ; argv
+    int 0x80
+
+    add rsp, 24
+    ret
+
+global fseek
+fseek:
+    xor rax, rax
+    push rdx
+    push rsi
+    push rdi
+
+    mov rdi, 16  ; command
+    mov rsi, 3  ; argc
+    mov rdx, rsp ; argv
+    int 0x80
+
+    add rsp, 24
+    ret
+
+global fclose
+fclose:
+    xor rax, rax
+    push rdi
+
+    mov rdi, 15  ; command
+    mov rsi, 1  ; argc
+    mov rdx, rsp ; argv
+    int 0x80
+
+    add rsp, 8
+    ret

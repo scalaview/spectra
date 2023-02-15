@@ -82,5 +82,6 @@ void process_malloc_free(void* task_address);
 int process_inject_arguments(struct process* process, struct command_argument* root_argument);
 struct process* get_process(int process_id);
 void init_idle_process();
+struct allocation* process_fetch_allocation(struct process* process, void* task_address);
 
 #endif

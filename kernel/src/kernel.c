@@ -99,7 +99,7 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
         assert(0);
     }
     process_launch(init->id);
-    test_draw();
+    // test_draw();
 }
 
 

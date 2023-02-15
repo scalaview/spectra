@@ -249,7 +249,6 @@ static bool __window_consume(struct gui_window* win, struct message* msg)
             msg->event = _msg.event;
             return true;
         }
-        msg->event = _msg.event;
         if (window_consume_message(w, msg))
         {
             return true;

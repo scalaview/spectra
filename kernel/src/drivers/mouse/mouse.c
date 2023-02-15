@@ -143,7 +143,7 @@ void ps2_mouse_interrupt_handler()
                 }
                 previous_key = mouse_byte[0];
 
-                debug_printf("diff_x: %d, mouse_x: %d, diff_y: %d, mouse_y: %d\n", diff_x, mouse_x, diff_y, mouse_y);
+                // debug_printf("diff_x: %d, mouse_x: %d, diff_y: %d, mouse_y: %d\n", diff_x, mouse_x, diff_y, mouse_y);
                 window_handle_message(&message);
                 goto out;
             }

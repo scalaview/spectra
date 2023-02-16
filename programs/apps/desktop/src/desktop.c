@@ -5,11 +5,14 @@
 
 bool open_app_event_handler(struct gui_window* win, struct message* msg)
 {
-    printf("====================app click 1======================\n");
-    // execve("0:/usr/bin/shell.bin", 0, 0);
-    printf("====================app click 2======================\n");
-
-    return true;
+    if (msg->event == MESSAGE_MOUSE_PRESS)
+    {
+        printf("====================app click 1======================\n");
+        execve("0:/usr/bin/shell.bin", 0, 0);
+        printf("====================app click 2======================\n");
+        return true;
+    }
+    return false;
 }
 
 

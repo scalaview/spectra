@@ -84,7 +84,7 @@ int main(int argc, char** argv)
     current_x = 0;
     current_y = GUI_CONTROL_PANEL_HEIGHT + 2;
     shell_win->need_draw = true;
-    while (1) {
+    while (0) {
         shell_print(reserved_cmd, 0);
         buffer_size = read_cmd(buffer);
         if (shell_win->state == WINDOW_CLOSE) break;
@@ -94,6 +94,7 @@ int main(int argc, char** argv)
         printf("cmd: %s\n", buffer);
         // eval
     }
+    sleep(10);
     gui_window_free(shell_win);
 
     return 0;

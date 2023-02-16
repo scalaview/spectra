@@ -22,9 +22,10 @@ void message_pop(struct task* task, struct message_queue* queue, struct message*
 {
 
     // int head = queue->head;
+    if (queue->head == queue->tail)  task_sleep_one_until(task, WINDOW_WAIT_FOR_MESSAGE);
     struct message msg = queue->buffer[queue->head];
-    if (!msg.event) task_sleep_one_until(task, WINDOW_WAIT_FOR_MESSAGE);
-    msg = queue->buffer[queue->head];
+    // if (!msg.event) task_sleep_one_until(task, WINDOW_WAIT_FOR_MESSAGE);
+    // msg = queue->buffer[queue->head];
     debug_printf("pop task: %x, head: %d, tail: %d, msg: %d\n", task, queue->head, queue->tail, msg.event);
     *msg_out = msg;
     memset(&queue->buffer[queue->head], 0, sizeof(struct message));

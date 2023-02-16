@@ -279,7 +279,7 @@ void process_wake_up(int id)
     //TODO support thread task
     while (task)
     {
-        if (task->state == TASK_WAIT)
+        if (task->state == TASK_WAIT && task->wait >= 0)
         {
             task_active(task);
         }

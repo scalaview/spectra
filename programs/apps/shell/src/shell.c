@@ -1,15 +1,15 @@
 #include "lib.h"
 #include <stdint.h>
 
-uint32_t current_width = 0;
-uint32_t current_height = 0;
+int32_t current_x = 0;
+int32_t current_y = 0;
 struct gui_window* shell_win;
 const char* reserved_cmd = "shell# ";
 int shell_max_font_count = 0;
 
 void shell_putchar(const char ch, uint32_t reserved)
 {
-    screan_putchar(shell_win->buffer, ch, &current_width, &current_height, BLACK, WHITE, reserved);
+    screan_putchar(shell_win->buffer, ch, &current_x, &current_y, BLACK, WHITE, reserved);
 }
 
 void shell_print(const char* str, uint32_t reserved)
@@ -81,8 +81,8 @@ int main(int argc, char** argv)
     shell_max_font_count = (shell_win->width - (strlen(reserved_cmd) + 1) * TEXT_FONT_STATIC_WIDTH) / TEXT_FONT_STATIC_WIDTH;
     char* buffer = (char*)malloc(sizeof(char) * shell_max_font_count);
     int buffer_size = 0;
-    current_width = 0;
-    current_height = GUI_CONTROL_PANEL_HEIGHT + 2;
+    current_x = 0;
+    current_y = GUI_CONTROL_PANEL_HEIGHT + 2;
     shell_win->need_draw = true;
     while (1) {
         shell_print(reserved_cmd, 0);

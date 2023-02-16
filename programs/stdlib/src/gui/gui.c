@@ -168,39 +168,51 @@ struct gui_window* create_gui_window(struct gui_window* parent, uint32_t width, 
     return new_win;
 }
 
-void screan_putchar(struct screen_buffer* buffer, const char cha, uint32_t* current_width, uint32_t* current_height, uint32_t t_color, uint32_t tb_color, uint32_t reserved)
+void screan_putchar(struct screen_buffer* buffer, const char cha, int32_t* current_x, int32_t* current_y, uint32_t t_color, uint32_t tb_color, uint32_t reserved)
 {
     char ch[2] = { cha , 0 };
 
     if (ch[0] == '\n')
     {
-        *current_height = *current_height + TEXT_FONT_STATIC_WIDTH;
-        *current_width = 0;
+        *current_y = *current_y + TEXT_FONT_STATIC_WIDTH;
+        *current_x = 0;
         return;
     }
     if (ch[0] == '\b')
     {
         char c = ' ';
-        if (*current_width >= TEXT_FONT_STATIC_WIDTH + reserved)
+        if (*current_x >= TEXT_FONT_STATIC_WIDTH + reserved)
         {
-            *current_width = *current_width - TEXT_FONT_STATIC_WIDTH;
-            gfx_puts(*current_width, *current_height, t_color, tb_color, &c, buffer);
+            *current_x = *current_x - TEXT_FONT_STATIC_WIDTH;
+            gfx_puts(*current_x, *current_y, t_color, tb_color, &c, buffer);
         }
 
         return;
     }
-    if (*current_width + TEXT_FONT_STATIC_WIDTH > buffer->width)
+    if (*current_x + TEXT_FONT_STATIC_WIDTH > buffer->width)
     {
-        *current_height = *current_height + TEXT_FONT_STATIC_WIDTH;
-        *current_width = 0;
+        *current_y = *current_y + TEXT_FONT_STATIC_WIDTH;
+        *current_x = 0;
     }
-    gfx_puts(*current_width, *current_height, t_color, tb_color, ch, buffer);
-    *current_width = *current_width + TEXT_FONT_WIDTH(ch);
+    gfx_puts(*current_x, *current_y, t_color, tb_color, ch, buffer);
+    *current_x = *current_x + TEXT_FONT_WIDTH(ch);
+}
+
+void gui_window_print(struct gui_window* win, int32_t x, int32_t y, const char* str, uint32_t t_color, uint32_t tb_color, uint32_t reserved)
+{
+    int32_t current_x = x;
+    int32_t current_y = y;
+    get_absolute_position(win, x, y, &current_x, &current_y);
+
+    while (*str != 0)
+    {
+        screan_putchar(win->buffer, *str++, &current_x, &current_y, t_color, tb_color, reserved);
+    }
 }
 
 bool window_consume_message(struct gui_window* win, struct message* msg)
 {
-    printf("window_consume_message startwindow_consume_message\n");
+    printf("window_consume_message start %d\n", win->id);
     if (!__gui_window_pointer_inside(win, msg->x, msg->y))
     {
         printf("no inside window\n");

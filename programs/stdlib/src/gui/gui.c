@@ -200,14 +200,17 @@ void screan_putchar(struct screen_buffer* buffer, const char cha, uint32_t* curr
 
 bool window_consume_message(struct gui_window* win, struct message* msg)
 {
+    printf("window_consume_message startwindow_consume_message\n");
     if (!__gui_window_pointer_inside(win, msg->x, msg->y))
     {
-        // printf("no inside window\n");
+        printf("no inside window\n");
         return false;
     }
     bool consumed = false;
     if (win->custom_procedure != NULL) {
+        // printf("custom_procedure start %d, %d\n", win->id, msg->event);
         consumed = win->custom_procedure(win, msg);
+        // printf("custom_procedure end %d, %d\n", win->id, msg->event);
     }
     if (!consumed) {
         // printf("default_procedure start %d, %d\n", win->id, msg->event);

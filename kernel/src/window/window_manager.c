@@ -19,6 +19,7 @@ struct window* tail = 0;
 static uint64_t __window_id = 0;
 static int32_t __max_z = 0;
 static uint16_t __previous_message_key = 0;
+static window* focused_window = 0;
 
 static void __window_list_remove_one(struct window* win)
 {

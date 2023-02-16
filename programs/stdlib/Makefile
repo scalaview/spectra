@@ -30,6 +30,7 @@ FILES =	./build/entry.asm.o \
 		./build/vesa.o \
 		./build/messages.o \
 		./build/gui/button.o \
+		./build/gui/label.o \
 		./build/gui/gui.o \
 		./build/assets/img/tga.o \
 		./build/assets/img/parser.o

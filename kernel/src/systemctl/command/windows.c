@@ -9,16 +9,19 @@ void* isr80h_command9_create_window_content(struct interrupt_frame* frame)
     extern struct video_info_struct vesa_video_info;
     int64_t argc = frame->rsi;
     int64_t* argv = (int64_t*)frame->rdx;
-    if (argc < 5)
+    if (argc < 6)
     {
         debug_printf("missing params in create_window");
         return 0;
     }
     int x = argv[0];
     int y = argv[1];
-    uint32_t width = argv[2];
-    uint32_t height = argv[3];
-    uint32_t gcolor = argv[4];
+    int z = argv[2];
+    uint32_t width = argv[3];
+    uint32_t height = argv[4];
+    uint32_t gcolor = argv[5];
+    uint32_t attributes = argv[6];
+    if (z);
 
     struct window* win = 0;
     struct allocation* buffer_allocation = process_alloc(width * height * vesa_video_info.pixelwidth);
@@ -42,7 +45,7 @@ void* isr80h_command9_create_window_content(struct interrupt_frame* frame)
         return 0;
     }
 
-    int res = create_window_content(x, y, width, height, gcolor, (uint8_t*)buffer_allocation->kptr, (struct window_container*)window_flags_allocation->kptr, &win);
+    int res = create_window_content(x, y, z, width, height, gcolor, (uint8_t*)buffer_allocation->kptr, attributes, (struct window_container*)window_flags_allocation->kptr, &win);
     if (res)
     {
         debug_printf("create_window fail!, error code: %d", res);

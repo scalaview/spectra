@@ -10,6 +10,8 @@
 #define TEXT_FONT_WIDTH(str) (strlen(str)*TEXT_FONT_STATIC_WIDTH)
 #define TEXT_FONT_HEIGHT(str) (8)
 
+#define POSITION_STABLE     0x00000001
+
 // canvas
 struct screen_buffer
 {
@@ -32,6 +34,9 @@ struct gui_window
     bool need_draw;
     int32_t x;
     int32_t y;
+    int32_t z;
+    uint16_t attributes;
+
     int id;
     uint32_t width;
     uint32_t height;

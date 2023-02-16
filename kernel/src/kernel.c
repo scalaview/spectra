@@ -99,47 +99,4 @@ void kernel_main(uint32_t magic, struct multiboot_info* mbi_phya)
         assert(0);
     }
     process_launch(init->id);
-    // test_draw();
-}
-
-
-void read_background()
-{
-    if (!background_pic)
-    {
-        FILE* fd = fopen("0:/data/background.tga", "r");
-        assert(fd->fdi);
-        struct file_stat* stat = kzalloc(sizeof(struct file_stat));
-        fstat(fd->fdi, stat);
-        unsigned char* pngptr = kzalloc(stat->filesize);
-        assert(pngptr);
-        fread(pngptr, stat->filesize, 1, fd);
-        fclose(fd);
-        kfree(stat);
-
-        struct tga_header* tga_header = (struct tga_header*)pngptr;
-        if (tga_header);
-        background_pic = tga_parse(pngptr, stat->filesize);
-    }
-}
-
-void draw_background()
-{
-    extern struct video_info_struct vesa_video_info;
-    struct window* background = 0;
-    uint8_t* canvas = (uint8_t*)kzalloc(vesa_video_info.width * vesa_video_info.height * vesa_video_info.pixelwidth);
-    struct window_container* container = (struct window_container*)kzalloc(sizeof(struct window_container));
-    int res = create_window_content(0, 0, vesa_video_info.width, vesa_video_info.height, 0, canvas, container, &background);
-    assert(!res);
-    read_background();
-    assert(background_pic);
-    background->keep_z_stale = true;
-    memcpy(background->screen_buffer->canvas, background_pic->pixels, background->screen_buffer->pixelsize);
-    background->container->need_draw = true;
-}
-
-
-void test_draw()
-{
-    draw_background();
 }

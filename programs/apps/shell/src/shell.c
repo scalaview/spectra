@@ -70,7 +70,7 @@ int main(int argc, char** argv)
     int32_t y = 100;
     int id = 1;
     const char* title = "Shell";
-    shell_win = create_gui_window(0, width, height, x, y, id, title);
+    shell_win = create_gui_window(0, width, height, x, y, 0, id, title, 0);
     if (!shell_win)
     {
         printf("create window fail!\n");

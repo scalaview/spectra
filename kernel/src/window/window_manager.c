@@ -64,7 +64,7 @@ static void __append_window(struct window* win)
     struct window* current = tail;
     while (current)
     {
-        if (current->z <= win->z)
+        if (current->container->z <= win->container->z)
         {
             win->next = current->next;
             win->prev = current;
@@ -91,7 +91,7 @@ static void __append_window(struct window* win)
     }
 }
 
-int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_t gcolor, uint8_t* canvas, struct window_container* container, struct window** out_win)
+int create_window_content(int32_t x, int32_t y, int32_t z, uint32_t width, uint32_t height, uint32_t gcolor, uint8_t* canvas, uint16_t attributes, struct window_container* container, struct window** out_win)
 {
     int res = 0;
     struct screen_buffer* screen_buffer;
@@ -118,16 +118,17 @@ int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_
     win->height = height;
     win->width = width;
 
-    win->z = __max_z++;
-    win->keep_z_stale = false;
     win->id = win_id;
     container->handle = win_id;
     container->need_draw = false;
     container->x = x;
     container->y = y;
+    container->z = z;
+    container->attributes |= attributes;
+    if (!(attributes & POSITION_STABLE))
+        container->z = __max_z++;
     win->container = container;
     win->parent_task = task_list_current();
-
 
     __append_window(win);
     screen_buffer = (struct screen_buffer*)kzalloc(sizeof(struct screen_buffer));
@@ -195,15 +196,20 @@ void __window_flush_screen_buffer()
 void window_refresh()
 {
     struct window* current = head;
+    int32_t z = 0;
     while (current)
     {
         if (current->container->need_draw)
         {
             window_copy_rect(current);
         }
+        if (!(current->container->attributes & POSITION_STABLE))
+        {
+            current->container->z = z++;
+        }
         current = current->next;
     }
-
+    __max_z = z;
     draw_cursor();
     __window_flush_screen_buffer();
 }
@@ -267,11 +273,11 @@ void window_change_focused(int32_t key)
     {
         struct window* win = window_find_absolue_position(mouse_x, mouse_y);
 
-        if (win && !win->keep_z_stale && win != tail)
+        if (win && !(win->container->attributes & POSITION_STABLE) && win != tail)
         {
-            tail->z = __max_z++;
+            tail->container->z = __max_z++;
             __window_list_remove_one(win);
-            win->z = __max_z++;
+            win->container->z = __max_z++;
             __append_window(win);
         }
     }

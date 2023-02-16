@@ -60,6 +60,7 @@
         "gui.h": "c",
         "button.h": "c",
         "parser.h": "c",
-        "state.h": "c"
+        "state.h": "c",
+        "label.h": "c"
     }
 }

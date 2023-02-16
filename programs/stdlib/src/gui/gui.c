@@ -6,8 +6,9 @@
 #include "stdio.h"
 #include "driver/mouse/mouse.h"
 #include "gui/button.h"
+#include "gui/label.h"
 
-struct gui_window* create_gui_window(struct gui_window* parent, uint32_t width, uint32_t height, int32_t x, int32_t y, int id, const char* title);
+struct gui_window* create_gui_window(struct gui_window* parent, uint32_t width, uint32_t height, int32_t x, int32_t y, int32_t z, int id, const char* title, uint16_t attributes);
 bool window_consume(struct gui_window* win, struct message* msg);
 
 static void __window_add_child(struct gui_window* parent, struct gui_window* new_win)
@@ -106,21 +107,11 @@ void draw_rect_in_absolute_position(struct gui_window* parent, uint32_t x, uint3
     draw_rect(abs_x, abs_y, width, height, color, parent->buffer);
 }
 
-label_struct* create_window_lable(struct gui_window* parent, uint32_t width, uint32_t height, int32_t x, int32_t y, int id, const char* title, uint32_t color, uint32_t t_color, uint32_t tb_color)
-{
-    label_struct* label = create_gui_window(parent, width, height, x, y, id, title);
-    if (!label) return 0;
-    struct screen_buffer* buffer = label->buffer;
-    draw_rect_in_absolute_position(parent, x, y, width, height, color);
-    gfx_puts((width - TEXT_FONT_WIDTH(title)) / 2, (height - TEXT_FONT_HEIGHT(title)) / 2, t_color, tb_color, title, buffer);
-    return label;
-}
-
 button_struct* gui_window_create_close_button(struct gui_window* win, int id)
 {
     int32_t x = win->width - GUI_CONTROL_PANEL_CLOSE_BTN_WIDTH - TEXT_FONT_STATIC_WIDTH;
     int32_t y = (win->height - GUI_CONTROL_PANEL_CLOSE_BTN_HEIGHT) / 2;
-    button_struct* btn = gui_window_create_button(win, GUI_CONTROL_PANEL_CLOSE_BTN_WIDTH, GUI_CONTROL_PANEL_CLOSE_BTN_HEIGHT, x, y, id, 0);
+    button_struct* btn = gui_window_create_button(win, GUI_CONTROL_PANEL_CLOSE_BTN_WIDTH, GUI_CONTROL_PANEL_CLOSE_BTN_HEIGHT, x, y, 0, id, POSITION_STABLE, 0);
     if (!btn) return 0;
     // TODO replace with close img
     draw_rect_in_absolute_position(win, x, y, GUI_CONTROL_PANEL_CLOSE_BTN_WIDTH, GUI_CONTROL_PANEL_CLOSE_BTN_HEIGHT, RED);
@@ -129,7 +120,7 @@ button_struct* gui_window_create_close_button(struct gui_window* win, int id)
 
 label_struct* create_window_control_panel(struct gui_window* win, int id)
 {
-    label_struct* panel = create_window_lable(win, win->width, GUI_CONTROL_PANEL_HEIGHT, 0, 0, id, win->title, BLACK, WHITE, BLACK);
+    label_struct* panel = create_window_label(win, win->width, GUI_CONTROL_PANEL_HEIGHT, 0, 0, 0, id, win->title, POSITION_STABLE, BLACK, WHITE, BLACK);
     if (!panel) return 0;
     panel->default_procedure = &__gui_window_control_panel_default_procedure;
     button_struct* close_btn = gui_window_create_close_button(panel, GUI_CONTROL_PANEL_CLOSS_BUTTON_ID);
@@ -137,13 +128,13 @@ label_struct* create_window_control_panel(struct gui_window* win, int id)
     return panel;
 }
 
-struct gui_window* create_gui_window(struct gui_window* parent, uint32_t width, uint32_t height, int32_t x, int32_t y, int id, const char* title)
+struct gui_window* create_gui_window(struct gui_window* parent, uint32_t width, uint32_t height, int32_t x, int32_t y, int32_t z, int id, const char* title, uint16_t attributes)
 {
     struct gui_window* new_win;
     if (!parent)
     {
         // create screen buffer
-        new_win = create_window_content(x, y, width, height, 0xffffffff);
+        new_win = create_window_content(x, y, z, width, height, 0xffffffff, attributes);
         if (!new_win->buffer) return 0;
     }
     else
@@ -153,6 +144,9 @@ struct gui_window* create_gui_window(struct gui_window* parent, uint32_t width, 
         new_win->buffer = parent->buffer;
         new_win->parent = parent;
         new_win->handle = parent->handle;
+        new_win->x = x;
+        new_win->y = y;
+        new_win->z = z;
         __window_add_child(parent, new_win);
     }
     if (title)
@@ -168,8 +162,6 @@ struct gui_window* create_gui_window(struct gui_window* parent, uint32_t width, 
     new_win->id = id;
     new_win->height = height;
     new_win->width = width;
-    new_win->x = x;
-    new_win->y = y;
     new_win->need_draw = false;
     new_win->default_procedure = &__gui_window_default_procedure;
 

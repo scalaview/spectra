@@ -14,24 +14,24 @@ struct window_container
     bool need_draw;
     int32_t x;
     int32_t y;
+    int32_t z;
+    uint16_t attributes;
 }__attribute__((packed));
 
 struct window
 {
     uint32_t id;
-    int z;
     struct screen_buffer* screen_buffer;
     uint32_t width;
     uint32_t height;
     struct window_container* container;
-    bool keep_z_stale;
     struct task* parent_task;
     struct message_queue message_queue;
     struct window* next;
     struct window* prev;
 };
 
-int create_window_content(int x, int y, uint32_t width, uint32_t height, uint32_t gcolor, uint8_t* canvas, struct window_container* flags, struct window** out_win);
+int create_window_content(int32_t x, int32_t y, int32_t z, uint32_t width, uint32_t height, uint32_t gcolor, uint8_t* canvas, uint16_t attributes, struct window_container* container, struct window** out_win);
 void window_free(struct window* window);
 void window_refresh();
 void window_add_message(struct window* win, struct message* msg);

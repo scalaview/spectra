@@ -14,7 +14,7 @@ int main(int argc, char** argv)
     int32_t y = 0;
     int id = 2;
     const char* title = "desktop";
-    struct gui_window* win = create_gui_window(0, width, height, x, y, id, title);
+    struct gui_window* win = create_gui_window(0, width, height, x, y, -1, id, title, POSITION_STABLE);
     if (!win)
     {
         printf("create window fail!\n");

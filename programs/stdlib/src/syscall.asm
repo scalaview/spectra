@@ -121,21 +121,26 @@ keyboard_getkey:
 
     ret
 
+; extern struct gui_window* create_window_content(int32_t x, int32_t y, int32_t z, uint32_t width, uint32_t height, uint32_t gcolor, uint16_t attributes);
+
 global create_window_content
 create_window_content:
     xor rax, rax
-    push r8
-    push rcx
-    push rdx
-    push rsi
-    push rdi
+    mov rax, QWORD[rsp + 8]
+    push rax ; attributes
+    push r9  ; gcolor
+    push r8  ; height
+    push rcx ; width
+    push rdx ; z
+    push rsi ; y
+    push rdi ; x
 
     mov rdi, 9  ; command
-    mov rsi, 5  ; argc
+    mov rsi, 7  ; argc
     mov rdx, rsp ; argv
     int 0x80
 
-    add rsp, 40
+    add rsp, 56
     ret
 
 global sys_window_get_message

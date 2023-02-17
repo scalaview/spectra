@@ -3,5 +3,6 @@
 #include "idt.h"
 
 void* isr80h_command10_get_message(struct interrupt_frame* frame);
+void* isr80h_command17_push_message(struct interrupt_frame* frame);
 
 #endif

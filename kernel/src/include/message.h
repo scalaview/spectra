@@ -7,10 +7,9 @@
 #define MESSAGE_MOUSE_PRESS 	    0x2
 #define MESSAGE_MOUSE_RELEASE	    0x3
 #define MESSAGE_MOUSE_DRAG	        0x4
-#define MESSAGE_CLOSE	            0x5
-
 #define MESSAGE_KEY_PRESS		    0x5
 #define MESSAGE_KEY_RELEASE         0x6
+#define MESSAGE_CLOSE	            0x7
 
 struct message
 {

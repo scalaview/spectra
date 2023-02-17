@@ -21,6 +21,7 @@ PROJECT_BUILD_PATH = ../../build/lib
 LIBC_FILES = $(LIBC_OBJ_DIR)/window/window.o
 
 FILES =	./build/entry.asm.o \
+		./build/entry.o \
 		./build/memory.o \
 		./build/stdio.o \
 		./build/string.o \

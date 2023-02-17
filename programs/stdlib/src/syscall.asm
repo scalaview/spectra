@@ -243,3 +243,17 @@ fclose:
 
     add rsp, 8
     ret
+
+global sys_window_push_message
+sys_window_push_message:
+    xor rax, rax
+    push rsi
+    push rdi
+
+    mov rdi, 17  ; command
+    mov rsi, 2  ; argc
+    mov rdx, rsp ; argv
+    int 0x80
+
+    add rsp, 16
+    ret

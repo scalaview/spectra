@@ -107,6 +107,16 @@ void draw_rect_in_absolute_position(struct gui_window* parent, uint32_t x, uint3
     draw_rect(abs_x, abs_y, width, height, color, parent->buffer);
 }
 
+bool __close_button_default_procedure(struct gui_window* win, struct message* msg)
+{
+    if (msg->event == MESSAGE_MOUSE_PRESS)
+    {
+        msg->event = MESSAGE_CLOSE;
+        return true;
+    }
+    return false;
+}
+
 button_struct* gui_window_create_close_button(struct gui_window* win, int id)
 {
     int32_t x = win->width - GUI_CONTROL_PANEL_CLOSE_BTN_WIDTH - TEXT_FONT_STATIC_WIDTH;
@@ -114,6 +124,7 @@ button_struct* gui_window_create_close_button(struct gui_window* win, int id)
     button_struct* btn = gui_window_create_button(win, GUI_CONTROL_PANEL_CLOSE_BTN_WIDTH, GUI_CONTROL_PANEL_CLOSE_BTN_HEIGHT, x, y, 0, id, POSITION_STABLE, 0);
     if (!btn) return 0;
     // TODO replace with close img
+    btn->default_procedure = &__close_button_default_procedure;
     draw_rect_in_absolute_position(win, x, y, GUI_CONTROL_PANEL_CLOSE_BTN_WIDTH, GUI_CONTROL_PANEL_CLOSE_BTN_HEIGHT, RED);
     return btn;
 }
@@ -123,8 +134,7 @@ label_struct* create_window_control_panel(struct gui_window* win, int id)
     label_struct* panel = create_window_label(win, win->width, GUI_CONTROL_PANEL_HEIGHT, 0, 0, 0, id, win->title, POSITION_STABLE, BLACK, WHITE, BLACK);
     if (!panel) return 0;
     panel->default_procedure = &__gui_window_control_panel_default_procedure;
-    button_struct* close_btn = gui_window_create_close_button(panel, GUI_CONTROL_PANEL_CLOSS_BUTTON_ID);
-    close_btn->custom_procedure = 0;
+    gui_window_create_close_button(panel, GUI_CONTROL_PANEL_CLOSS_BUTTON_ID);
     return panel;
 }
 

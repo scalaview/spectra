@@ -1,6 +1,8 @@
 # spectra
 
-<p>A 64bit operating system kernel.</p>
+<p>A 64bit operating system kernel with graphical user interface.</p>
+
+![screenshot](./assets/screen01.png)
 
 ## Documentation
 TODO
@@ -18,3 +20,23 @@ TODO
     - [✔] sleep/wake_up
 
 - [✔] PS2 Keyboard
+
+- [✔] Mouse Driver
+
+- [✔] Message Queue handle Events
+
+- [✔] Graphical User Interface
+    - [✔] VESA
+    - [✔] Font 8X8
+    - [✔] Standard library
+    - [✔] Implement window/button/label
+    - [✔] Implement event bubbling
+    - [✔] Support img UI element
+
+- [✔] TGA image file support
+
+- [✔] Implement Apps
+    - [✔] Desktop
+    - [✔] Shell
+
+

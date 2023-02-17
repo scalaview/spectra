@@ -21,7 +21,6 @@ void* isr80h_command9_create_window_content(struct interrupt_frame* frame)
     uint32_t height = argv[4];
     uint32_t gcolor = argv[5];
     uint32_t attributes = argv[6];
-    if (z);
 
     struct window* win = 0;
     struct allocation* buffer_allocation = process_alloc(width * height * vesa_video_info.pixelwidth);

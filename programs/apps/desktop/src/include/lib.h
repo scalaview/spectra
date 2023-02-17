@@ -11,5 +11,7 @@
 #include "gui/gui.h"
 #include "window/window.h"
 #include "messages.h"
+#include "gui/button.h"
+#include "assets/color.h"
 
 #endif

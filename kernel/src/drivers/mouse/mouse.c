@@ -113,7 +113,7 @@ void ps2_mouse_interrupt_handler()
                 struct message message;
                 message.x = mouse_x;
                 message.y = mouse_y;
-
+                message.key = 0;
                 message.diff_x = mouse_x - __previous_mouse_x;
                 message.diff_y = mouse_y - __previous_mouse_y;
                 __previous_mouse_x = mouse_x;

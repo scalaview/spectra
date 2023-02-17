@@ -3,6 +3,19 @@
 #include "assets/img/parser.h"
 #include "memory.h"
 
+bool open_app_event_handler(struct gui_window* win, struct message* msg)
+{
+    if (msg->event == MESSAGE_MOUSE_PRESS)
+    {
+        printf("====================app click 1======================\n");
+        execve("0:/usr/bin/shell.bin", 0, 0);
+        printf("====================app click 2======================\n");
+        return true;
+    }
+    return false;
+}
+
+
 int main(int argc, char** argv)
 {
     struct tga_content* background_pic = 0;
@@ -21,6 +34,12 @@ int main(int argc, char** argv)
         return 0;
     }
     memcpy(win->buffer->canvas, background_pic->pixels, win->buffer->pixelsize);
+
+    button_struct* btn = gui_window_create_button(win, 80, 80, 48, 48, 0, 2, 0, &open_app_event_handler);
+    draw_rect_in_absolute_position(win, 48, 48, 80, 80, WHITE);
+
+    gui_window_print(btn, 0, 80 - TEXT_FONT_STATIC_WIDTH - 2, "test", BLACK, WHITE, 0);
+
     win->need_draw = true;
     struct message* msg = (struct message*)malloc(sizeof(struct message));
     while (1)
@@ -32,6 +51,7 @@ int main(int argc, char** argv)
             if (win->state == WINDOW_CLOSE) break;
             win->need_draw = true;
         }
+
     }
     gui_window_free(win);
     return 0;

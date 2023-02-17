@@ -19,6 +19,7 @@ struct window* tail = 0;
 static uint64_t __window_id = 0;
 static int32_t __max_z = 0;
 static uint16_t __previous_message_key = 0;
+static struct window* focused_window = 0;
 
 static void __window_list_remove_one(struct window* win)
 {
@@ -49,6 +50,8 @@ static void __window_list_remove_one(struct window* win)
             }
             win->prev = NULL;
             win->next = NULL;
+            if (win == focused_window) focused_window = tail;
+
             return;
         }
         current = current->next;
@@ -131,6 +134,8 @@ int create_window_content(int32_t x, int32_t y, int32_t z, uint32_t width, uint3
     win->parent_task = task_list_current();
 
     __append_window(win);
+
+    focused_window = win;
     screen_buffer = (struct screen_buffer*)kzalloc(sizeof(struct screen_buffer));
     if (!screen_buffer)
     {
@@ -221,10 +226,10 @@ void window_add_message(struct window* win, struct message* msg)
 
 void window_add_message_to_focused(struct message* msg)
 {
-    if (tail == NULL) {
+    if (focused_window == NULL) {
         return;
     }
-    window_add_message(tail, msg);
+    window_add_message(focused_window, msg);
 }
 
 void window_pop_message(struct window* win, struct message* msg_out)
@@ -272,13 +277,16 @@ void window_change_focused(int32_t key)
     if (key & MOUSE_LEFT_CLICK)
     {
         struct window* win = window_find_absolue_position(mouse_x, mouse_y);
-
-        if (win && !(win->container->attributes & POSITION_STABLE) && win != tail)
+        // debug_printf("window_find_absolue_position: %d, %d, %x, %x\n", mouse_x, mouse_y, win->parent_task, focused_window->parent_task);
+        if (win && win != focused_window)
         {
-            tail->container->z = __max_z++;
-            __window_list_remove_one(win);
-            win->container->z = __max_z++;
-            __append_window(win);
+            if (!(win->container->attributes & POSITION_STABLE))
+            {
+                __window_list_remove_one(win);
+                win->container->z = __max_z++;
+                __append_window(win);
+            }
+            focused_window = win;
         }
     }
 }
@@ -289,6 +297,16 @@ static void __window_relative_position(struct window* win, int16_t x, int16_t y,
     *out_y = y - win->container->y;
 }
 
+static void window_convert_relative_position(struct window* win, struct message* msg)
+{
+    int16_t x = 0;
+    int16_t y = 0;
+    __window_relative_position(win, msg->x, msg->y, &x, &y);
+    msg->x = x;
+    msg->y = y;
+}
+
+
 void window_handle_message(struct message* msg)
 {
     // Don't change focused window when mouse draging
@@ -297,12 +315,7 @@ void window_handle_message(struct message* msg)
     if (msg->event)
     {
         // relative position
-        int16_t x = 0;
-        int16_t y = 0;
-        __window_relative_position(tail, msg->x, msg->y, &x, &y);
-        debug_printf("after window_relative_position x%d, y%d, x:%d, y:%d\n", msg->x, msg->y, x, y);
-        msg->x = x;
-        msg->y = y;
+        window_convert_relative_position(focused_window, msg);
         window_add_message_to_focused(msg);
     }
     __previous_message_key = msg->key;

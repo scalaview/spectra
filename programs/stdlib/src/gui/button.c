@@ -5,12 +5,6 @@
 
 bool button_default_procedure(struct gui_window* win, struct message* msg)
 {
-
-    if (msg->event == MESSAGE_MOUSE_PRESS)
-    {
-        msg->event = MESSAGE_CLOSE;
-        return true;
-    }
     return false;
 }
 

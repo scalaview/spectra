@@ -1,5 +1,6 @@
 add-symbol-file ./kernel/bin/kernel.elf
 # add-symbol-file ./programs/apps/init/bin/init.elf
+# add-symbol-file ./programs/apps/shell/bin/shell.elf
 add-symbol-file ./programs/apps/desktop/bin/desktop.elf
 target remote | qemu-system-x86_64 -hda ./bin/os.bin -S -gdb stdio -no-reboot -show-cursor
 # break *0x200000
@@ -8,6 +9,7 @@ target remote | qemu-system-x86_64 -hda ./bin/os.bin -S -gdb stdio -no-reboot -s
 # b classic_keyboard_read
 # b create_gui_window
 # b isr80h_command9_create_window_content
-# b window_refresh
-b create_window_content
-b isr80h_command9_create_window_content
+# b idt.c:103
+# b create_window_label
+# b setup_env
+b window_consume

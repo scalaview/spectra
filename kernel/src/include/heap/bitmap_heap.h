@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "paging/paging.h"
 
 #define OS_BITMAP_BLOCK_SIZE    4096
 #define BITMAP_HEAP_TABLE_ENTRY_TAKEN 0x01
@@ -35,8 +36,11 @@ struct bitmap_heap
     void* start_addr;
 }__attribute__((packed));
 
-#define align_down(p) ((uint64_t)(p) - ((uint64_t)(p) % OS_BITMAP_BLOCK_SIZE))
-#define align_up(p) (((uint64_t)(p) % OS_BITMAP_BLOCK_SIZE != 0) ? (align_down(p) + OS_BITMAP_BLOCK_SIZE) : (uint64_t)(p))
+#define align_down_4k(p) ((uint64_t)(p) - ((uint64_t)(p) % OS_BITMAP_BLOCK_SIZE))
+#define align_up_4k(p) (((uint64_t)(p) % OS_BITMAP_BLOCK_SIZE != 0) ? (align_down_4k(p) + OS_BITMAP_BLOCK_SIZE) : (uint64_t)(p))
+
+#define align_down_2m(p) ((uint64_t)(p) - ((uint64_t)(p) % PAGE_SIZE_2M))
+#define align_up_2m(p) (((uint64_t)(p) % PAGE_SIZE_2M != 0) ? (align_down_2m(p) + PAGE_SIZE_2M) : (uint64_t)(p))
 
 int init_bitmap_heap(struct bitmap_heap* heap, void* start, void* end, struct heap_bitmap_table* heap_table);
 void* bitmap_heap_malloc(struct bitmap_heap* heap, size_t size);

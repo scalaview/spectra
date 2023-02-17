@@ -3,11 +3,14 @@
 
 #include <stddef.h>
 
-int printf(const char* format, ...);
-int sleep(int seconds);
-int fork();
-void* malloc(size_t size);
-void free(void* ptr);
-char keyboard_getkey();
+#include "stdio.h"
+#include "unistd.h"
+#include "stdlib.h"
+#include "string.h"
+#include "gui/gui.h"
+#include "gui/label.h"
+#include "window/window.h"
+#include "messages.h"
+#include "assets/color.h"
 
 #endif

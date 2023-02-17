@@ -7,6 +7,7 @@
 #include "assert.h"
 #include "tss.h"
 #include "printk.h"
+#include "drivers/vga/vesa.h"
 
 struct tasks_manager tasks_manager = {
     .current = NULL
@@ -147,7 +148,7 @@ void* task_stack_bottom(void* stack, size_t size)
 static struct allocation* __task_malloc(struct task* task, struct process* process, size_t size)
 {
     if (size <= 0) return 0;
-    size_t aligned_size = align_up(size);
+    size_t aligned_size = align_up_4k(size);
     void* kptr = kzalloc(aligned_size);
     if (!kptr) return 0;
     struct allocation* allocation = 0;
@@ -215,7 +216,11 @@ int task_initialize(struct task* task, struct process* process)
         goto out;
     }
     // map kernel page
-    if (!process->page_chunk) process->page_chunk = kernel_paging_initialize();
+    if (!process->page_chunk)
+    {
+        process->page_chunk = kernel_paging_initialize();
+        map_vesa_paging(process->page_chunk);
+    }
     if (!process->page_chunk)
     {
         res = -ENOMEM;
@@ -336,20 +341,23 @@ void task_schedule()
 void yield()
 {
     struct task* current = task_list_current();
-    if (current->process->id == IDLE_PROCESS_ID && is_list_empty(&tasks_manager.ready_list)) return;
-    task_ready_list_append_one(current);
+    if (is_list_empty(&tasks_manager.ready_list)) return;
+    if (current->process->id != IDLE_PROCESS_ID) task_ready_list_append_one(current);
+    task_schedule();
+}
+
+void task_sleep_one_until(struct task* task, int wait)
+{
+    task_list_remove_one(&tasks_manager.ready_list, task);
+    task->wait = wait;
+    task->state = TASK_WAIT;
+    task_list_add_one(&tasks_manager.wait_list, task);
     task_schedule();
 }
 
 void task_sleep_until(int wait)
 {
-    struct task* current = task_list_current();
-    current->wait = wait;
-    task_list_remove_one(&tasks_manager.ready_list, current);
-
-    current->state = TASK_WAIT;
-    task_list_add_one(&tasks_manager.wait_list, current);
-    task_schedule();
+    task_sleep_one_until(task_list_current(), wait);
 }
 
 void task_sleep(int wait)
@@ -369,6 +377,14 @@ void task_active(struct task* task)
     task_list_remove_one(&tasks_manager.wait_list, task);
     task->state = TASK_READY;
     task_ready_list_append_one(task);
+}
+
+void task_wake_up_one(struct task* task, int wait)
+{
+    if (task->wait == wait && task->state == TASK_WAIT)
+    {
+        __task_wait_list_move_to_ready(task);
+    }
 }
 
 void task_wake_up(int wait)

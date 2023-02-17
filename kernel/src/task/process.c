@@ -78,6 +78,8 @@ static int process_load_binary_program(const char* fullpath, struct process* pro
     }
     process->program_info.ptr = code_ptr;
     process->program_info.size = stat->filesize;
+    size_t path_len = strlen(fullpath);
+    strncpy(process->program_info.filename, fullpath, (PROGRAME_MAX_FILEPATH > path_len ? path_len : PROGRAME_MAX_FILEPATH));
 
 out:
     fclose(fd);
@@ -104,14 +106,14 @@ static int process_initialize_binary_program(const char* fullpath, struct proces
     if (ring_level == RING0) // kernel land
     {
         program_info->virtual_base_address = (void*)RING_0_VMA;
-        program_info->virtual_end_address = (void*)align_up(((uint64_t)program_info->virtual_base_address) + program_info->size);
+        program_info->virtual_end_address = (void*)align_up_4k(((uint64_t)program_info->virtual_base_address) + program_info->size);
         program_info->code_segement = KERNEL_CODE_SEGMENT;
         program_info->data_segement = KERNEL_DATA_SEGMENT;
     }
     else if (ring_level == RING3) // userland
     {
         program_info->virtual_base_address = (void*)RING_3_VMA;
-        program_info->virtual_end_address = (void*)align_up(((uint64_t)program_info->virtual_base_address) + program_info->size);
+        program_info->virtual_end_address = (void*)align_up_4k(((uint64_t)program_info->virtual_base_address) + program_info->size);
         program_info->code_segement = USER_CODE_SEGMENT | 3;
         program_info->data_segement = USER_DATA_SEGMENT | 3;
     }
@@ -279,7 +281,7 @@ void process_wake_up(int id)
     //TODO support thread task
     while (task)
     {
-        if (task->state == TASK_WAIT)
+        if (task->state == TASK_WAIT && task->wait >= 0)
         {
             task_active(task);
         }
@@ -607,20 +609,32 @@ out:
     return res;
 }
 
-void* process_malloc(size_t size)
+struct allocation* process_alloc(size_t size)
 {
     struct process* process = get_current_process();
     if (!process) return 0;
 
-    struct allocation* allocation = process->mmu.malloc(task_list_current(), size);
+    return process->mmu.malloc(task_list_current(), size);
+}
+
+void* process_malloc(size_t size)
+{
+    struct allocation* allocation = process_alloc(size);
     if (allocation) return allocation->tptr;
     return 0;
 }
 
-void __process_allocation_free(struct process* process, void* task_address)
+void* process_internal_alloc(size_t size)
+{
+    struct allocation* allocation = process_alloc(size);
+    if (allocation) return allocation->kptr;
+    return 0;
+}
+
+struct allocation* process_fetch_allocation(struct process* process, void* task_address)
 {
     int64_t diff = ((uint64_t)task_address - (uint64_t)(process->program_info.virtual_end_address));
-    if (diff < 0) return;
+    if (diff < 0) return 0;
     int64_t index = (diff / PAGE_SIZE_4K) % PROCESS_ALLOCATIONS;
     struct allocation_wrapper* allocation_wrapper = &process->allocations[index];
 
@@ -640,16 +654,22 @@ void __process_allocation_free(struct process* process, void* task_address)
                 allocation_wrapper->tail = prev == next ? NULL : prev;
             }
             prev->next = next->next;
-            break;
+            return next;
         }
         prev = next;
         next = next->next;
     }
 
-    if (next)
+    return 0;
+}
+
+void __process_allocation_free(struct process* process, void* task_address)
+{
+    struct allocation* allocation = process_fetch_allocation(process, task_address);
+    if (allocation)
     {
-        kfree(next->kptr);
-        kfree(next);
+        kfree(allocation->kptr);
+        kfree(allocation);
     }
     return;
 }

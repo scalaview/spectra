@@ -3,6 +3,8 @@
 #include "task.h"
 #include "idt.h"
 #include "io.h"
+#include "message.h"
+#include "window_manager.h"
 
 static char key_map[256] = {
     0, 0, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
@@ -48,13 +50,13 @@ int classic_keyboard_initialize()
     return 0;
 }
 
-static char classic_keyboard_read()
+static char classic_keyboard_read(struct message* msg_out)
 {
     unsigned char scan_code;
     char ch;
 
     scan_code = insb(KEYBOARD_INPUT_PORT);
-
+    msg_out->event = MESSAGE_KEY_PRESS;
     if (scan_code == KEYBOARD_E0_KEY) {
         state |= E0_SIGN;
         return 0;
@@ -67,6 +69,7 @@ static char classic_keyboard_read()
 
     if (scan_code & KEYBOARD_KEY_UP) {
         state &= ~(shift_code[scan_code]);
+        msg_out->event = MESSAGE_KEY_RELEASE;
         return 0;
     }
 
@@ -86,17 +89,20 @@ static char classic_keyboard_read()
         else if ('A' <= ch && ch <= 'Z')
             ch += 32;
     }
-
+    msg_out->key = (int32_t)ch;
     return ch;
 }
 
 void classic_keyboard_interrupt_handler()
 {
-    char ch = classic_keyboard_read();
+    struct message msg;
+    memset(&msg, 0, sizeof(struct message));
+    char ch = classic_keyboard_read(&msg);
 
     if (ch > 0)
     {
         keyboard_push(ch);
+        window_add_message_to_focused(&msg);
         task_wake_up(PROCESS_WAIT_FOR_KEYBOARD);
     }
 }

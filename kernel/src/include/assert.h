@@ -1,5 +1,5 @@
-#ifndef DEBUG_H
-#define DEBUG_H
+#ifndef DEBUG_ASSERT_H
+#define DEBUG_ASSERT_H
 #include <stdint.h>
 
 #define assert(e) do {\

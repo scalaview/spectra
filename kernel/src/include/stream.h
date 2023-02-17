@@ -6,7 +6,7 @@
 #include "disk.h"
 #include "config.h"
 
-#define STREAM_SECTOR_SIZE(t)      (t >= (4 * IO_SECTOR_SIZE)) ? 2 : 1;
+#define STREAM_SECTOR_SIZE(t)      (t >= (16 * IO_SECTOR_SIZE)) ? 16 : ((t%IO_SECTOR_SIZE == 0) ? (t/IO_SECTOR_SIZE) : ((t + IO_SECTOR_SIZE)/IO_SECTOR_SIZE));
 
 struct disk_stream
 {

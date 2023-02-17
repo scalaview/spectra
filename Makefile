@@ -10,7 +10,6 @@ GRUB_CONF_PATH = $(KERNEL_PATH)/src/grub.cfg
 KERNEL_BIN	= $(KERNEL_PATH)/bin/kernel.elf
 APPS_PATH	= ./programs/apps
 LIB_PATH	= ./programs/stdlib
-
 APP_BIN_PATH = $(BUILD_DIR)/apps
 LIB_BUILD_PATH = $(BUILD_DIR)/lib
 

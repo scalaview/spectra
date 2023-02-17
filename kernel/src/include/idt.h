@@ -3,6 +3,11 @@
 
 #include <stdint.h>
 
+#define PIC1_COMMAND        0x20
+#define PIC2_COMMAND        0xA0
+#define IRQ_BASE            0x20
+#define ISR_TIMER           0x20
+
 struct idt_desc64 {
     uint16_t offset_1;        // offset bits 0..15
     uint16_t selector;        // a code segment selector in GDT or LDT
@@ -46,6 +51,7 @@ typedef void* (*ISR80H_COMMAND)(struct interrupt_frame* frame);
 typedef void (*INTERRUPT_CALLBACK_FUNCTION)(int interrupt, struct interrupt_frame* frame);
 
 void idt_initialize();
+void acknowledge_pic(uint8_t irq);
 void interrupt_handler(int interrupt_no, struct interrupt_frame* frame);
 void isr80h_handler(struct interrupt_frame* frame);
 void isr80h_register_command(int command_id, ISR80H_COMMAND command);

@@ -2,11 +2,13 @@
 #include "config.h"
 #include "kmemory.h"
 #include "assert.h"
-#include "printk.h"
+#include "debug.h"
 #include "io.h"
 #include "task.h"
 #include "status.h"
 #include "process.h"
+#include "paging/paging.h"
+#include "window_manager.h"
 
 struct idt_desc64 idt_descriptors64[TOTAL_INTERRUPTS];
 struct idtr_desc64 idtr_descriptor64;
@@ -55,6 +57,14 @@ const char* exception_messages[] = {
     "Reserved" // 31
 };
 
+void acknowledge_pic(uint8_t irq)
+{
+    if (irq > 0x27) {
+        outb(PIC2_COMMAND, 0x20);
+    }
+    outb(PIC1_COMMAND, 0x20);
+}
+
 
 uint64_t get_current_ticks()
 {
@@ -86,7 +96,14 @@ void idt_set(int interrupt_no, void* address, uint8_t attribute)
 
 void idt_handle_exception(int interrupt, struct interrupt_frame* frame)
 {
-    printk("%s: %d, error_code: %d", exception_messages[interrupt], interrupt, frame->error_code);
+
+    debug_printf("%s: %d, error_code: %x", exception_messages[interrupt], interrupt, frame->error_code);
+    if (interrupt == 14) // page fault
+    {
+        void* address = read_cr2();
+        debug_printf(" occurred at %x", address);
+    }
+    debug_printf("\n");
     if (frame->cs & RING3) process_exit();
     // while (1);
 }
@@ -98,13 +115,15 @@ void interrupt_handler(int interrupt, struct interrupt_frame* frame)
         interrupt_callbacks[interrupt](interrupt, frame);
     }
     /* Acknowledge master PIC. */
-    outb(0x20, 0x20);
+    acknowledge_pic(interrupt);
 }
 
 void timer_handler(int interrupt, struct interrupt_frame* frame)
 {
     task_wake_up(++current_ticks);
-    outb(0x20, 0x20);
+    window_refresh();
+
+    acknowledge_pic(interrupt);
     if (task_list_next() != task_list_current())
     {
         yield();
@@ -125,11 +144,11 @@ void idt_initialize()
 
     idt_set(0x80, isr80h_wrapper, 0xEE);
 
-    for (int i = 0; i < 0x20; i++)
+    for (int i = 0; i < IRQ_BASE; i++)
     {
         idt_register_interrupt_callback(i, idt_handle_exception);
     }
-    idt_register_interrupt_callback(0x20, timer_handler);
+    idt_register_interrupt_callback(ISR_TIMER, timer_handler);
     load_idt(&idtr_descriptor64);
 }
 
@@ -148,12 +167,12 @@ void isr80h_register_command(int command_id, ISR80H_COMMAND command)
 {
     if (command_id < 0 || command_id >= OS_MAX_ISR80H_COMMANDS)
     {
-        printk("The command is out of range\n");
+        debug_printf("The command is out of range\n");
         assert(0);
     }
     if (isr80h_commands[command_id])
     {
-        printk("The command already exists\n");
+        debug_printf("The command already exists\n");
         assert(0);
     }
     assert(!isr80h_commands[command_id]);

@@ -11,6 +11,7 @@
 
 #define OS_MAX_PROCESSES        16
 #define IDLE_PROCESS_ID         0
+#define PROGRAME_MAX_FILEPATH   1024
 
 typedef enum
 {
@@ -23,6 +24,7 @@ typedef enum
 struct program_info
 {
     void* ptr;
+    char filename[PROGRAME_MAX_FILEPATH];
     size_t size;
     void* virtual_base_address;
     void* virtual_end_address;
@@ -75,10 +77,13 @@ void process_exit();
 int process_wait(int pid);
 int process_fork();
 int process_execve(const char* pathname, const char* argv[], const char* envp[], RING_LEV ring_lev);
+struct allocation* process_alloc(size_t size);
 void* process_malloc(size_t size);
+void* process_internal_alloc(size_t size);
 void process_malloc_free(void* task_address);
 int process_inject_arguments(struct process* process, struct command_argument* root_argument);
 struct process* get_process(int process_id);
 void init_idle_process();
+struct allocation* process_fetch_allocation(struct process* process, void* task_address);
 
 #endif

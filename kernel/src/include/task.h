@@ -105,6 +105,8 @@ int task_clone(struct task* src, struct task* dest);
 struct allocation* task_malloc(struct task* task, size_t size);
 uint8_t page_flags_by_ring(RING_LEV ring);
 void task_apply_arguments_to_registers(struct task* task);
+void task_sleep_one_until(struct task* task, int wait);
+void task_wake_up_one(struct task* task, int wait);
 
 extern void set_user_registers();
 

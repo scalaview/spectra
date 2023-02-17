@@ -35,7 +35,6 @@ int main(int argc, char** argv)
     }
     memcpy(win->buffer->canvas, background_pic->pixels, win->buffer->pixelsize);
 
-    // button_struct* gui_window_create_button(struct gui_window* parent, uint32_t width, uint32_t height, int32_t x, int32_t y, int32_t z, int id, uint16_t attributes, window_procedure procedure)
     button_struct* btn = gui_window_create_button(win, 80, 80, 48, 48, 0, 2, 0, &open_app_event_handler);
     draw_rect_in_absolute_position(win, 48, 48, 80, 80, WHITE);
 
@@ -52,6 +51,7 @@ int main(int argc, char** argv)
             if (win->state == WINDOW_CLOSE) break;
             win->need_draw = true;
         }
+
     }
     gui_window_free(win);
     return 0;

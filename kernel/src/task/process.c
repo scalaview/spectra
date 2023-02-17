@@ -78,6 +78,8 @@ static int process_load_binary_program(const char* fullpath, struct process* pro
     }
     process->program_info.ptr = code_ptr;
     process->program_info.size = stat->filesize;
+    size_t path_len = strlen(fullpath);
+    strncpy(process->program_info.filename, fullpath, (PROGRAME_MAX_FILEPATH > path_len ? path_len : PROGRAME_MAX_FILEPATH));
 
 out:
     fclose(fd);

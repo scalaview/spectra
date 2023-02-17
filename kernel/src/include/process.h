@@ -11,6 +11,7 @@
 
 #define OS_MAX_PROCESSES        16
 #define IDLE_PROCESS_ID         0
+#define PROGRAME_MAX_FILEPATH   1024
 
 typedef enum
 {
@@ -23,6 +24,7 @@ typedef enum
 struct program_info
 {
     void* ptr;
+    char filename[PROGRAME_MAX_FILEPATH];
     size_t size;
     void* virtual_base_address;
     void* virtual_end_address;

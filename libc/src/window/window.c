@@ -48,3 +48,14 @@ void gfx_puts(int x, int y, uint32_t fgcolor, uint32_t bgcolor, const char* c, s
         x += 8;
     }
 }
+
+void draw_transparent_icon(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t pixels[], struct screen_buffer* screen_buffer)
+{
+    for (int l = 0; l < h && (y + l) < screen_buffer->height; l++) {
+        for (int i = 0; i < w && (x + i) < screen_buffer->width; i++) {
+            int64_t position = l * w + i;
+            // check alpha value 
+            if (pixels[position] ^ 0xff000000) putpixel(screen_buffer->canvas, x + i, y + l, pixels[position], screen_buffer->pitch, screen_buffer->pixelwidth);
+        }
+    }
+}

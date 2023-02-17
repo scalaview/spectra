@@ -7,8 +7,10 @@
 #include "driver/mouse/mouse.h"
 #include "gui/button.h"
 #include "gui/label.h"
+#include "assets/img/tga.h"
+#include "assets/img/parser.h"
 
-struct gui_window* create_gui_window(struct gui_window* parent, uint32_t width, uint32_t height, int32_t x, int32_t y, int32_t z, int id, const char* title, uint16_t attributes);
+struct gui_window* create_gui_window(struct gui_window* parent, uint32_t width, uint32_t height, int32_t x, int32_t y, int32_t z, int id, const char* title, uint16_t attributes, pixels_producteur producteur);
 bool window_consume(struct gui_window* win, struct message* msg);
 
 static void __window_add_child(struct gui_window* parent, struct gui_window* new_win)
@@ -73,7 +75,6 @@ static bool __gui_window_default_procedure(struct gui_window* win, struct messag
         root_win->dragged = win;
         return true;
     case MESSAGE_CLOSE:
-        printf("=================close=============%d===========\n", win->id);
         win->state = WINDOW_CLOSE;
         return true;
     }
@@ -81,9 +82,9 @@ static bool __gui_window_default_procedure(struct gui_window* win, struct messag
     return false;
 }
 
-void get_absolute_position(struct gui_window* parent, int32_t x, int32_t y, int32_t* x_out, int32_t* y_out)
+void get_absolute_position(struct gui_window* win, int32_t x, int32_t y, int32_t* x_out, int32_t* y_out)
 {
-    struct gui_window* current = parent;
+    struct gui_window* current = win;
     int32_t abs_x = x;
     int32_t abs_y = y;
     while (current)
@@ -117,28 +118,67 @@ bool __close_button_default_procedure(struct gui_window* win, struct message* ms
     return false;
 }
 
-button_struct* gui_window_create_close_button(struct gui_window* win, int id)
+void draw_with_pixels(struct gui_window* win, uint32_t x, uint32_t y, uint32_t width, uint32_t height, uint32_t pixels[])
+{
+    int32_t abs_x = 0;
+    int32_t abs_y = 0;
+    get_absolute_position(win, x, y, &abs_x, &abs_y);
+    draw_transparent_icon(abs_x, abs_y, width, height, pixels, win->buffer);
+}
+
+int draw_with_file(struct gui_window* win, uint32_t x, uint32_t y, uint32_t width, uint32_t height, const char* filepath)
+{
+    struct tga_content* img = 0;
+
+    int res = img_tga_parser(filepath, (void*)(&img));
+    if (res)
+    {
+        goto out;
+    }
+
+    draw_with_pixels(win, x, y, width, height, img->pixels);
+
+out:
+    return res;
+}
+
+static int __load_close_btn_pixels(struct gui_window* win, uint32_t x, uint32_t y, uint32_t width, uint32_t height, draw_function draw_function)
+{
+    const char* filepath = "0:/data/close24.tga";
+    struct tga_content* img = 0;
+
+    int res = img_tga_parser(filepath, (void*)(&img));
+    if (res)
+    {
+        goto out;
+    }
+
+    draw_function(win, x, y, width, height, img->pixels);
+out:
+    return res;
+}
+
+button_struct* gui_window_create_close_button(struct gui_window* win, int id, pixels_producteur producteur)
 {
     int32_t x = win->width - GUI_CONTROL_PANEL_CLOSE_BTN_WIDTH - TEXT_FONT_STATIC_WIDTH;
     int32_t y = (win->height - GUI_CONTROL_PANEL_CLOSE_BTN_HEIGHT) / 2;
-    button_struct* btn = gui_window_create_button(win, GUI_CONTROL_PANEL_CLOSE_BTN_WIDTH, GUI_CONTROL_PANEL_CLOSE_BTN_HEIGHT, x, y, 0, id, POSITION_STABLE, 0);
+    button_struct* btn = gui_window_create_button(win, GUI_CONTROL_PANEL_CLOSE_BTN_WIDTH, GUI_CONTROL_PANEL_CLOSE_BTN_HEIGHT, x, y, 0, id, POSITION_STABLE, 0, producteur);
     if (!btn) return 0;
     // TODO replace with close img
     btn->default_procedure = &__close_button_default_procedure;
-    draw_rect_in_absolute_position(win, x, y, GUI_CONTROL_PANEL_CLOSE_BTN_WIDTH, GUI_CONTROL_PANEL_CLOSE_BTN_HEIGHT, RED);
     return btn;
 }
 
 label_struct* create_window_control_panel(struct gui_window* win, int id)
 {
-    label_struct* panel = create_window_label(win, win->width, GUI_CONTROL_PANEL_HEIGHT, 0, 0, 0, id, win->title, POSITION_STABLE, BLACK, WHITE, BLACK);
+    label_struct* panel = create_window_label(win, win->width, GUI_CONTROL_PANEL_HEIGHT, 0, 0, 0, id, win->title, POSITION_STABLE, BLACK, WHITE, BLACK, 0);
     if (!panel) return 0;
     panel->default_procedure = &__gui_window_control_panel_default_procedure;
-    gui_window_create_close_button(panel, GUI_CONTROL_PANEL_CLOSS_BUTTON_ID);
+    gui_window_create_close_button(panel, GUI_CONTROL_PANEL_CLOSS_BUTTON_ID, &__load_close_btn_pixels);
     return panel;
 }
 
-struct gui_window* create_gui_window(struct gui_window* parent, uint32_t width, uint32_t height, int32_t x, int32_t y, int32_t z, int id, const char* title, uint16_t attributes)
+struct gui_window* create_gui_window(struct gui_window* parent, uint32_t width, uint32_t height, int32_t x, int32_t y, int32_t z, int id, const char* title, uint16_t attributes, pixels_producteur producteur)
 {
     struct gui_window* new_win;
     if (!parent)
@@ -174,7 +214,11 @@ struct gui_window* create_gui_window(struct gui_window* parent, uint32_t width, 
     new_win->width = width;
     new_win->need_draw = false;
     new_win->default_procedure = &__gui_window_default_procedure;
-
+    if (producteur)
+    {
+        if (new_win->parent) producteur(new_win->parent, x, y, width, height, &draw_with_pixels);
+        else  producteur(new_win, x, y, width, height, &draw_with_pixels);
+    }
     return new_win;
 }
 

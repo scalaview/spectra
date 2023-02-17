@@ -12,4 +12,6 @@ target remote | qemu-system-x86_64 -hda ./bin/os.bin -S -gdb stdio -no-reboot -s
 # b idt.c:103
 # b create_window_label
 # b setup_env
-b window_consume
+b gui_window_create_close_button
+b __load_close_btn_pixels
+b draw_with_pixels

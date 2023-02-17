@@ -87,17 +87,6 @@ void draw_icon(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t pixels[]
     }
 }
 
-void draw_transparent_icon(uint32_t x, uint32_t y, uint32_t w, uint32_t h, uint32_t pixels[], struct screen_buffer* screen_buffer) {
-    for (int l = 0; l < h && (y + l) < screen_buffer->height; l++) {
-        for (int i = 0; i < w && (x + i) < screen_buffer->width; i++) {
-            int64_t position = l * w + i;
-            // check alpha value 
-            if (pixels[position] ^ 0xff000000) putpixel(screen_buffer->canvas, x + i, y + l, pixels[position], screen_buffer->pitch, screen_buffer->pixelwidth);
-        }
-    }
-}
-
-
 uint32_t calculate_pixel_len(int x, uint32_t width, uint32_t screen_width)
 {
     int32_t display_width = x + width;

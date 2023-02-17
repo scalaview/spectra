@@ -8,6 +8,7 @@
 #include "stdlib.h"
 #include "string.h"
 #include "gui/gui.h"
+#include "gui/label.h"
 #include "window/window.h"
 #include "messages.h"
 #include "assets/color.h"

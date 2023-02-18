@@ -2,7 +2,8 @@
 
 <p>A 64bit operating system kernel with graphical user interface.</p>
 
-![screenshot](./assets/screen01.png)
+<img src="assets/screen01.png" alt="screenshot" width="20%"/>
+<img src="assets/screen02.png" alt="terminal-log" width="20%"/>
 
 ## Documentation
 TODO

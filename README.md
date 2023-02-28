@@ -8,7 +8,7 @@
 ## Documentation
 TODO
 
-## How to create a app
+## How to create an user program
 Here is a demo to create a `500 x 500` gui window with a control panel, and show how to handle the user event.
 
 ```c

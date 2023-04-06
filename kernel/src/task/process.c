@@ -40,6 +40,36 @@ struct process* get_process(int process_id)
     return process_table[process_id];
 }
 
+static int _process_load_elf_program(const char* fullpath, struct process* process)
+{
+    int res = 0;
+    FILE* fd;
+    struct file_stat* stat = 0;
+    fd = fopen(fullpath, "r");
+    if(!fd->fdi)
+    {
+        res = -EIO;
+        goto out;
+    }
+    stat = kzalloc(sizeof(struct file_stat));
+    if (!stat)
+    {
+        res = -ENOMEM;
+        goto out;
+    }
+
+    res = fstat(fd->fdi, stat);
+    if(res)
+    {
+        goto out;
+    }
+
+
+out:
+    if(fd)  fclose(fd);
+    free(stat);
+}
+
 static int process_load_binary_program(const char* fullpath, struct process* process)
 {
     int res = 0;
@@ -82,7 +112,7 @@ static int process_load_binary_program(const char* fullpath, struct process* pro
     strncpy(process->program_info.filename, fullpath, (PROGRAME_MAX_FILEPATH > path_len ? path_len : PROGRAME_MAX_FILEPATH));
 
 out:
-    fclose(fd);
+    if(fd)  fclose(fd);
     kfree(stat);
     if (res < 0)
     {

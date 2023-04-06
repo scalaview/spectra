@@ -20,4 +20,7 @@
 #define EMALLOC                 1002
 /* TASK ERROR */
 
+
+#define EELFMAGIC               2000
+#define ENOEXEC                 2001
 #endif

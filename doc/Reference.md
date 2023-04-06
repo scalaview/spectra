@@ -120,3 +120,6 @@
 [PS/2_Mouse](https://wiki.osdev.org/PS/2_Mouse)
 
 [Free PS/2 mouse code](https://forum.osdev.org/viewtopic.php?f=1&t=10247)
+
+## ELF
+[Executable_and_Linkable_Format](https://en.wikipedia.org/wiki/Executable_and_Linkable_Format)

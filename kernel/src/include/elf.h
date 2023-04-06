@@ -27,6 +27,8 @@ typedef uint64_t Elf64_Off;
 #define EI_NIDENT_32BIT     1
 #define EI_NIDENT_64BIT     2
 
+#define ET_EXEC     0x02
+
 struct Elf64_Ehdr
 {
     unsigned char	e_ident[EI_NIDENT];	/* Magic number and other info */

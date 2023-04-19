@@ -10,6 +10,7 @@
 #include "assert.h"
 #include "task/none.h"
 #include "string.h"
+#include "elf_loader.h"
 
 static struct process* process_table[OS_MAX_PROCESSES];
 
@@ -40,37 +41,17 @@ struct process* get_process(int process_id)
     return process_table[process_id];
 }
 
-static int _process_load_elf_program(const char* fullpath, struct process* process)
+static int _process_load_elf_program(const char* fullpath, void* prog_buffer, struct process* process, RING_LEV ring_level)
 {
     int res = 0;
-    FILE* fd;
-    struct file_stat* stat = 0;
-    fd = fopen(fullpath, "r");
-    if(!fd->fdi)
-    {
-        res = -EIO;
-        goto out;
-    }
-    stat = kzalloc(sizeof(struct file_stat));
-    if (!stat)
-    {
-        res = -ENOMEM;
-        goto out;
-    }
-
-    res = fstat(fd->fdi, stat);
-    if(res)
-    {
-        goto out;
-    }
-
+    struct Elf64_Ehdr* elf_header;
+    res = elf64_read_header(prog_buffer, &elf_header);
 
 out:
-    if(fd)  fclose(fd);
-    free(stat);
+    return res;
 }
 
-static int process_load_binary_program(const char* fullpath, struct process* process)
+static int process_load_program(const char* fullpath, void** prog_buffer)
 {
     int res = 0;
     FILE* fd;
@@ -106,13 +87,10 @@ static int process_load_binary_program(const char* fullpath, struct process* pro
         res = -EIO;
         goto out;
     }
-    process->program_info.ptr = code_ptr;
-    process->program_info.size = stat->filesize;
-    size_t path_len = strlen(fullpath);
-    strncpy(process->program_info.filename, fullpath, (PROGRAME_MAX_FILEPATH > path_len ? path_len : PROGRAME_MAX_FILEPATH));
-
+    *prog_buffer = code_ptr;
+    res = stat->filesize;
 out:
-    if(fd)  fclose(fd);
+    if (fd)  fclose(fd);
     kfree(stat);
     if (res < 0)
     {
@@ -121,17 +99,16 @@ out:
     return res;
 }
 
-static int process_initialize_binary_program(const char* fullpath, struct process* process, RING_LEV ring_level)
+static int process_initialize_binary_program(const char* fullpath, size_t filesize, void* prog_buffer, struct process* process, RING_LEV ring_level)
 {
     int res = 0;
     if (fullpath)
     {
-        res = process_load_binary_program(fullpath, process);
-        if (res < 0)
-        {
-            goto out;
-        }
+        size_t path_len = strlen(fullpath);
+        strncpy(process->program_info.filename, fullpath, (PROGRAME_MAX_FILEPATH > path_len ? path_len : PROGRAME_MAX_FILEPATH));
     }
+    process->program_info.ptr = prog_buffer;
+    process->program_info.size = filesize;
     struct program_info* program_info = &process->program_info;
     if (ring_level == RING0) // kernel land
     {
@@ -157,7 +134,20 @@ out:
 
 static int process_initialize_program(const char* fullpath, struct process* process, RING_LEV ring_level)
 {
-    return process_initialize_binary_program(fullpath, process, ring_level);
+    int res = 0;
+    void* prog_buffer = 0;
+    res = process_load_program(fullpath, &prog_buffer);
+    if (res < 0)
+    {
+        res = -EIO;
+        goto out;
+    }
+    size_t filesize = res;
+    res = _process_load_elf_program(fullpath, prog_buffer, process, ring_level);
+    if (res == -EUELF) res = process_initialize_binary_program(fullpath, filesize, prog_buffer, process, ring_level);
+    else assert(0);
+out:
+    return res;
 }
 
 int process_initialize_task(struct process* process, struct task** out_task)

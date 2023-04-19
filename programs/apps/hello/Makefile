@@ -56,6 +56,7 @@ clean:
 	rm -rf $(BIN_DIR)
 
 install:
+	cp $(APP_ELF_FILES) $(PROJECT_BUILD_PATH)
 	cp $(APP_BIN) $(PROJECT_BUILD_PATH)
 
 .PHONY: clean

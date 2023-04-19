@@ -1,9 +1,9 @@
 #include "elf_loader.h"
 #include "string.h"
-#include "file.h"
-#include "elf.h"
 #include "heap/kheap.h"
 #include "status.h"
+#include "debug.h"
+#include "kmemory.h"
 
 const char ELFMAGIC[4] = { 0x7F, 'E', 'L', 'F' };  // "\177ELF";
 
@@ -22,40 +22,74 @@ bool elf_valid_magic(unsigned char* e_ident)
     return strncmp((char*)e_ident, ELFMAGIC, sizeof(ELFMAGIC)) == 0;
 }
 
-bool elf_executable(Elf64_Ehdr* elf64_header)
+bool elf_executable(struct Elf64_Ehdr* elf64_header)
 {
     return elf64_header->e_type == ET_EXEC;
 }
 
-int elf64_read_header(FILE* fd, Elf64_Ehdr header)
+int elf64_valid(struct Elf64_Ehdr* elf64_header)
+{
+    if (!elf_valid_magic(elf64_header->e_ident))
+    {
+        debug_printf("invalid elf file.\n");
+        return -EELFMAGIC;
+    }
+
+    if (!elf64_valid_class(elf64_header))
+    {
+        debug_printf("unsupported 64bit elf file.\n");
+        return -EELFMAGIC;
+    }
+
+    if (!elf_executable(elf64_header))
+    {
+        debug_printf("unsupported type elf file unexecutable.\n");
+        return -ENOEXEC;
+    }
+    return SUCCESS;
+}
+
+void elf64_debug_header(struct Elf64_Ehdr* header)
+{
+    debug_printf("elf64 header Type e_type: 0x%X\n", header->e_type);
+    debug_printf("elf64 header Machine e_machine: 0x%X\n", header->e_machine);
+    debug_printf("elf64 header Version e_version: 0x%X\n", header->e_version);
+    debug_printf("elf64 header Entry point address e_entry: 0x%X\n", header->e_entry);
+    debug_printf("elf64 header Start of program headers e_phoff: 0x%X\n", header->e_phoff);
+    debug_printf("elf64 header Start of section headers e_shoff: 0x%X\n", header->e_shoff);
+    debug_printf("elf64 header Flags e_flags: 0x%X\n", header->e_flags);
+    debug_printf("elf64 header Size of this header e_ehsize: %u\n", header->e_ehsize);
+    debug_printf("elf64 header Size of program headers e_phentsize: %u\n", header->e_phentsize);
+    debug_printf("elf64 header Number of program headers e_phnum: %d\n", header->e_phnum);
+    debug_printf("elf64 header Size of section headers e_shentsize: %u\n", header->e_shentsize);
+    debug_printf("elf64 header Number of section headers e_shnum: %d\n", header->e_shnum);
+    debug_printf("elf64 header Section header string table index e_shstrndx: %d\n", header->e_shstrndx);
+}
+
+int elf64_read_header(void* prog_buffer, struct Elf64_Ehdr** header)
 {
     int res = 0;
 
-    Elf64_Ehdr* elf64_header = (Elf64_Ehdr*)kzalloc(sizeof(Elf64_Ehdr));
-    if(!elf64_header)
+    struct Elf64_Ehdr* elf64_header = (struct Elf64_Ehdr*)kzalloc(sizeof(struct Elf64_Ehdr));
+    if (!elf64_header)
     {
         res = -ENOMEM;
         goto out;
     }
 
-    fread(elf64_header, sizeof(Elf64_Ehdr), 1, fd);
+    memcpy(elf64_header, prog_buffer, sizeof(struct Elf64_Ehdr));
 
-    if(!elf_valid_magic(elf64_header) || !elf64_valid_class(elf64_header))
+    res = elf64_valid(elf64_header);
+    if (res)
     {
-        res = -EELFMAGIC;
+        res = -EUELF;
         goto out;
     }
 
-    if(!elf_executable(elf64_header))
-    {
-        res = -ENOEXEC;
-        goto out;
-    }
+    elf64_debug_header(elf64_header);
+    *header = elf64_header;
 
-
-    header = *elf64_header;
-    return res;
 out:
-    free(elf64_header);
+    if (res) kfree(elf64_header);
     return res;
 }

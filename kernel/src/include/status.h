@@ -21,6 +21,7 @@
 /* TASK ERROR */
 
 
-#define EELFMAGIC               2000
-#define ENOEXEC                 2001
+#define EUELF                   2000
+#define EELFMAGIC               2001
+#define ENOEXEC                 2002
 #endif

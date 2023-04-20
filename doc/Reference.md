@@ -123,3 +123,7 @@
 
 ## ELF
 [Executable_and_Linkable_Format](https://en.wikipedia.org/wiki/Executable_and_Linkable_Format)
+[ELF Struct](https://wiki.osdev.org/ELF)
+[ELF_Tutorial](https://wiki.osdev.org/ELF_Tutorial)
+[ElfLoading Demo](https://wiki.osdev.org/User:Joeeagar/ElfLoading)
+[ELF introduction](https://www.baeldung.com/linux/executable-and-linkable-format-file)

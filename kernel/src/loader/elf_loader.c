@@ -66,6 +66,18 @@ void elf64_debug_header(struct Elf64_Ehdr* header)
     debug_printf("elf64 header Section header string table index e_shstrndx: %d\n", header->e_shstrndx);
 }
 
+void elf64_debug_prog_header(struct Elf64_Phdr* prog_header)
+{
+    debug_printf("elf64 program header p_type;: 0x%X\n", prog_header->p_type);
+    debug_printf("elf64 program header p_flags: 0x%X\n", prog_header->p_flags);
+    debug_printf("elf64 program header p_offse: 0x%X\n", prog_header->p_offset);
+    debug_printf("elf64 program header p_vaddr: 0x%X\n", prog_header->p_vaddr);
+    debug_printf("elf64 program header p_paddr: 0x%X\n", prog_header->p_paddr);
+    debug_printf("elf64 program header p_files: %d\n", prog_header->p_filesz);
+    debug_printf("elf64 program header p_memsz: %d\n", prog_header->p_memsz);
+    debug_printf("elf64 program header p_align: 0x%X\n", prog_header->p_align);
+}
+
 int elf64_read_header(void* prog_buffer, struct Elf64_Ehdr** header)
 {
     int res = 0;
@@ -92,4 +104,11 @@ int elf64_read_header(void* prog_buffer, struct Elf64_Ehdr** header)
 out:
     if (res) kfree(elf64_header);
     return res;
+}
+
+struct Elf64_Phdr* elf64_read_prog_header(void* data_buffer, struct Elf64_Ehdr* elf_header)
+{
+    struct Elf64_Phdr* elf_p_header = (struct Elf64_Phdr*)(((char*)data_buffer) + elf_header->e_phoff);
+    elf64_debug_prog_header(elf_p_header);
+    return elf_p_header;
 }

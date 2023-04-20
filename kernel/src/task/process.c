@@ -41,12 +41,16 @@ struct process* get_process(int process_id)
     return process_table[process_id];
 }
 
-static int _process_load_elf_program(const char* fullpath, void* prog_buffer, struct process* process, RING_LEV ring_level)
+static int __process_load_elf_program(const char* fullpath, void* data_buffer, struct process* process, RING_LEV ring_level)
 {
     int res = 0;
     struct Elf64_Ehdr* elf_header;
-    res = elf64_read_header(prog_buffer, &elf_header);
-
+    res = elf64_read_header(data_buffer, &elf_header);
+    if (!res)
+    {
+        struct Elf64_Phdr* prog_header = elf64_read_prog_header(data_buffer, elf_header);
+        if (prog_header);
+    }
 out:
     return res;
 }
@@ -143,7 +147,7 @@ static int process_initialize_program(const char* fullpath, struct process* proc
         goto out;
     }
     size_t filesize = res;
-    res = _process_load_elf_program(fullpath, prog_buffer, process, ring_level);
+    res = __process_load_elf_program(fullpath, prog_buffer, process, ring_level);
     if (res == -EUELF) res = process_initialize_binary_program(fullpath, filesize, prog_buffer, process, ring_level);
     else assert(0);
 out:

@@ -5,5 +5,5 @@ add-symbol-file ./programs/apps/desktop/bin/desktop.elf
 target remote | qemu-system-x86_64 -hda ./bin/os.bin -S -gdb stdio -no-reboot -show-cursor
 # break *0x200000
 # break *0x100020
-b _process_load_elf_program
+b elf64_read_prog_header
 # b elf_loader.c:82

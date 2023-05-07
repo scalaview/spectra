@@ -27,6 +27,17 @@ typedef uint64_t Elf64_Off;
 #define EI_NIDENT_32BIT     1
 #define EI_NIDENT_64BIT     2
 
+enum {
+    PT_NULL,
+    PT_LOAD,
+    PT_DYNAMIC,
+    PT_INTERP,
+    PT_NOTE,
+    PT_SHLIB,
+    PT_PHDR,
+    PT_LOPROC = 0x70000000, //reserved
+    PT_HIPROC = 0x7FFFFFFF  //reserved
+};
 #define ET_EXEC     0x02
 
 struct Elf64_Ehdr

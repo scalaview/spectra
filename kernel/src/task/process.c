@@ -41,15 +41,46 @@ struct process* get_process(int process_id)
     return process_table[process_id];
 }
 
+static int __process_init_elf(struct Elf64_Ehdr* elf_header, struct elf_content* elf_content, struct process* process, RING_LEV ring_level)
+{
+    int res = 0;
+    process->program_info.ptr = elf_content->entry;
+    process->program_info.size = elf_content->size;
+    struct program_info* program_info = &process->program_info;
+    program_info->virtual_base_address = elf_content->virtual_base_address;
+    program_info->virtual_end_address = (void*)align_up_4k(elf_content->virtual_end_address);
+    if (ring_level == RING0) // kernel land
+    {
+        program_info->code_segement = KERNEL_CODE_SEGMENT;
+        program_info->data_segement = KERNEL_DATA_SEGMENT;
+    }
+    else if (ring_level == RING3) // userland
+    {
+        program_info->code_segement = USER_CODE_SEGMENT | 3;
+        program_info->data_segement = USER_DATA_SEGMENT | 3;
+    }
+    program_info->stack_size = 4 * PAGE_SIZE_4K; //16K
+    process->end_address = (uint64_t)program_info->virtual_end_address;
+    program_info->flags = 0x202;
+    process->ring_lev = ring_level;
+out:
+    return res;
+}
+
+
 static int __process_load_elf_program(const char* fullpath, void* data_buffer, struct process* process, RING_LEV ring_level)
 {
     int res = 0;
     struct Elf64_Ehdr* elf_header;
+    struct elf_content* elf_content = 0;
     res = elf64_read_header(data_buffer, &elf_header);
     if (!res)
     {
-        struct Elf64_Phdr* prog_header = elf64_read_prog_header(data_buffer, elf_header);
-        if (prog_header);
+        res = elf64_parse_pheader(elf_header, &elf_content);
+    }
+    if (!res)
+    {
+        res = __process_init_elf(elf_header, elf_content, process, ring_level);
     }
 out:
     return res;
@@ -106,11 +137,6 @@ out:
 static int process_initialize_binary_program(const char* fullpath, size_t filesize, void* prog_buffer, struct process* process, RING_LEV ring_level)
 {
     int res = 0;
-    if (fullpath)
-    {
-        size_t path_len = strlen(fullpath);
-        strncpy(process->program_info.filename, fullpath, (PROGRAME_MAX_FILEPATH > path_len ? path_len : PROGRAME_MAX_FILEPATH));
-    }
     process->program_info.ptr = prog_buffer;
     process->program_info.size = filesize;
     struct program_info* program_info = &process->program_info;
@@ -146,10 +172,14 @@ static int process_initialize_program(const char* fullpath, struct process* proc
         res = -EIO;
         goto out;
     }
+    if (fullpath)
+    {
+        size_t path_len = strlen(fullpath);
+        strncpy(process->program_info.filename, fullpath, (PROGRAME_MAX_FILEPATH > path_len ? path_len : PROGRAME_MAX_FILEPATH));
+    }
     size_t filesize = res;
     res = __process_load_elf_program(fullpath, prog_buffer, process, ring_level);
     if (res == -EUELF) res = process_initialize_binary_program(fullpath, filesize, prog_buffer, process, ring_level);
-    else assert(0);
 out:
     return res;
 }

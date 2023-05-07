@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include "paging/paging.h"
 
 #define OS_BITMAP_BLOCK_SIZE    4096
@@ -45,5 +46,6 @@ struct bitmap_heap
 int init_bitmap_heap(struct bitmap_heap* heap, void* start, void* end, struct heap_bitmap_table* heap_table);
 void* bitmap_heap_malloc(struct bitmap_heap* heap, size_t size);
 void bitmap_heap_free(struct bitmap_heap* heap, void* ptr);
+bool validate_aligment(void* ptr);
 
 #endif

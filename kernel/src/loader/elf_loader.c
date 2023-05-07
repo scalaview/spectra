@@ -82,15 +82,7 @@ int elf64_read_header(void* prog_buffer, struct Elf64_Ehdr** header)
 {
     int res = 0;
 
-    struct Elf64_Ehdr* elf64_header = (struct Elf64_Ehdr*)kzalloc(sizeof(struct Elf64_Ehdr));
-    if (!elf64_header)
-    {
-        res = -ENOMEM;
-        goto out;
-    }
-
-    memcpy(elf64_header, prog_buffer, sizeof(struct Elf64_Ehdr));
-
+    struct Elf64_Ehdr* elf64_header = (struct Elf64_Ehdr*)prog_buffer;
     res = elf64_valid(elf64_header);
     if (res)
     {
@@ -102,13 +94,103 @@ int elf64_read_header(void* prog_buffer, struct Elf64_Ehdr** header)
     *header = elf64_header;
 
 out:
-    if (res) kfree(elf64_header);
     return res;
 }
 
-struct Elf64_Phdr* elf64_read_prog_header(void* data_buffer, struct Elf64_Ehdr* elf_header)
+static int __parse_elf64_pheader(struct Elf64_Phdr* elf_p_header, struct elf_content* elf_content)
 {
-    struct Elf64_Phdr* elf_p_header = (struct Elf64_Phdr*)(((char*)data_buffer) + elf_header->e_phoff);
-    elf64_debug_prog_header(elf_p_header);
-    return elf_p_header;
+    int res = 0;
+    if (elf_content->virtual_base_address > (void*)elf_p_header->p_vaddr || elf_content->virtual_base_address == 0x00)
+    {
+        elf_content->virtual_base_address = (void*)elf_p_header->p_vaddr;
+        if (!validate_aligment(elf_content->virtual_base_address))
+        {
+            res = -EINVARG;
+            goto out;
+        }
+        if (!elf_content->entry) elf_content->entry = (void*)(((char*)elf_content->base_address) + elf_p_header->p_offset);
+    }
+
+    uint64_t end_virtual_address = (uint64_t)elf_p_header->p_vaddr + elf_p_header->p_filesz;
+    if (elf_content->virtual_end_address < (void*)(end_virtual_address) || elf_content->virtual_end_address == 0x00)
+    {
+        elf_content->virtual_end_address = (void*)end_virtual_address;
+    }
+out:
+    return res;
+}
+
+static struct Elf64_Phdr* __elf_program_header(struct Elf64_Ehdr* elf_header, int i) {
+    return (struct Elf64_Phdr*)&(((char*)elf_header) + elf_header->e_phoff)[i];
+}
+
+// static int __init_program_content(struct Elf64_Ehdr* elf_header, struct elf_content* elf_content)
+// {
+//     int res = 0;
+//     elf_content->content = kzalloc(elf_content->size);
+//     if (!elf_content->content)
+//     {
+//         res = -ENOMEM;
+//         goto out;
+//     }
+//     int result = -EINVARG;
+//     void* physical_base_address = 0;
+//     void* physical_end_address = 0;
+//     void* base = elf_content->content;
+//     for (int i = 0; i < elf_header->e_phnum; i++)
+//     {
+//         struct Elf64_Phdr* elf_p_header = __elf_program_header(elf_header, i);
+//         switch (elf_p_header->p_type)
+//         {
+//         case PT_LOAD:
+//             physical_base_address = (void*)(((uint64_t)elf_content->base_address) + elf_p_header->p_offset);
+//             if (!validate_aligment(physical_base_address))
+//             {
+//                 res = -EINVARG;
+//                 goto out;
+//             }
+//             if (physical_end_address == 0x00) physical_end_address = physical_base_address;
+//             base += (physical_base_address - physical_end_address);
+//             memcpy(base, physical_base_address, elf_p_header->p_filesz);
+//             physical_end_address = (void*)align_up_4k((uint64_t)(physical_base_address)+elf_p_header->p_filesz);
+//             result = SUCCESS;
+//         }
+//     }
+// out:
+//     if (result)
+//     {
+//         kfree(elf_content->content);
+//         res = result;
+//     }
+//     return res;
+// }
+
+int elf64_parse_pheader(struct Elf64_Ehdr* elf_header, struct elf_content** out_elf)
+{
+    int res = 0;
+    struct elf_content* elf_content = (struct elf_content*)kzalloc(sizeof(struct elf_content));
+    if (!elf_content)
+    {
+        res = -ENOMEM;
+        goto out;
+    }
+    elf_content->base_address = (void*)elf_header;
+    for (int i = 0; i < elf_header->e_phnum; i++)
+    {
+        struct Elf64_Phdr* elf_p_header = __elf_program_header(elf_header, i);
+        elf64_debug_prog_header(elf_p_header);
+        switch (elf_p_header->p_type)
+        {
+        case PT_LOAD:
+            res = __parse_elf64_pheader(elf_p_header, elf_content);
+        }
+        if (res) break;
+    }
+    if (!res) {
+        elf_content->size = (size_t)(elf_content->virtual_end_address - elf_content->virtual_base_address);
+        // res = __init_program_content(elf_header, elf_content);
+    }
+    if (!res)    *out_elf = elf_content;
+out:
+    return res;
 }

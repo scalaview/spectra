@@ -5,22 +5,22 @@ SECTIONS
 {
     . = 0x400000;
 
-    .text : ALIGN(16)
+    .text : ALIGN(0x1000)
     {
         *(.text)
     }
 
-    .rodata : ALIGN(16)
+    .rodata : ALIGN(0x1000)
     {
         *(.rodata)
     }
 
-    .data : ALIGN(16)
+    .data : ALIGN(0x1000)
     {
         *(.data)
     }
 
-    .bss : ALIGN(16)
+    .bss : ALIGN(0x1000)
     {
         *(.bss)
     }

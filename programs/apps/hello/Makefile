@@ -37,7 +37,7 @@ lib:
 	make -C $(STD_LIB_DIR) all
 
 $(APP_BIN): $(FILES)
-	$(GCC) -g -T $(LINK_FILE) -o $(APP_ELF_FILES) -ffreestanding -O0 -nostdlib -fpic -g ${FILES}
+	$(GCC) -g -T $(LINK_FILE) -o $(APP_ELF_FILES) -ffreestanding -O0 -nostdlib -fpic -g -z max-page-size=4096 ${FILES}
 	$(OBJCOPY) -O binary $(APP_ELF_FILES) $@
 
 

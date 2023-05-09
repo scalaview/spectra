@@ -13,4 +13,4 @@ target remote | qemu-system-x86_64 -hda ./bin/os.bin -S -gdb stdio -no-reboot -s
 # b task.c:318
 # b __process_init_elf
 # b __parse_elf64_pheader
-b process_load_program
+b elf64_parse_pheader

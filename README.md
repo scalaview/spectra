@@ -90,6 +90,7 @@ int main(int argc, char** argv)
     - [✔] Support img UI element
 
 - [✔] TGA image file support
+- [✔] ELF loader
 
 Programs
 - [✔] Desktop

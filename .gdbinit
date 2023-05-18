@@ -5,4 +5,4 @@ add-symbol-file ./programs/apps/desktop/bin/desktop.elf
 target remote | qemu-system-x86_64 -hda ./bin/os.bin -S -gdb stdio -no-reboot -show-cursor
 # break *0x200000
 # break *0x100020
-b kernel.c:86
+b ext2.c:286

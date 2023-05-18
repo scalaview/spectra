@@ -65,6 +65,7 @@
 
 [Making A GRUB2 image with Ext2](./Making_a_GRUB2_image.md)
 
+<img src="../assets/Ext2-inode.svg" alt="terminal-log" width="100%"/>
 
 ## GDT
 [Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table)

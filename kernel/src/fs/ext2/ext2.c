@@ -235,24 +235,80 @@ out:
     return res;
 }
 
-int ext2_read_indirect(struct disk* idisk, struct ext2_fs_descriptor* ext2_fs_descriptor, uint32_t indirect, size_t block_num) {
+int ext2_read_indirect(struct disk* idisk, struct ext2_fs_descriptor* ext2_fs_descriptor, int32_t* num_blocks_cache, int left_size, uint32_t indirect, size_t block_num) {
     int res = 0;
     if (block_num >= (ext2_fs_descriptor->block_size / 4))
     {
         res = -EINVARG;
         goto out;
     }
-    uint32_t* indirect_array = kzalloc(ext2_fs_descriptor->block_size);
+    int32_t* indirect_array = kzalloc(ext2_fs_descriptor->block_size);
     if (!indirect_array)
     {
         res = -ENOMEM;
         goto out;
     }
     res = ext2_read_block(idisk, indirect, indirect_array);
-out:
     if (res <= 0)
-        return res;
-    return *(indirect_array + block_num);
+    {
+        goto out;
+    }
+    if (num_blocks_cache && left_size)
+    {
+        int ind_size = ext2_fs_descriptor->block_size / sizeof(int32_t);
+        memcpy(num_blocks_cache, indirect_array, (sizeof(int32_t) * (left_size > ind_size ? ind_size : left_size)));
+    }
+    res = *(indirect_array + block_num);
+out:
+    kfree(indirect_array);
+    return res;
+}
+
+static int __ext2_read_block_num(struct disk* idisk, struct ext2_fs_descriptor* ext2_fs_descriptor, struct ext2_inode* desc_inode, size_t blocks_size, int block_i, int32_t* num_blocks)
+{
+    int blocknum = *(num_blocks + block_i);
+    if (blocknum > 0)   return blocknum;
+
+    int level_0_block_range = ext2_fs_descriptor->block_size / 4;
+    int level_1_block_range = level_0_block_range * level_0_block_range;
+    int level_2_block_range = level_0_block_range * level_0_block_range * level_0_block_range;
+    if (block_i < EXT2_IND_BLOCK)
+    {
+        blocknum = desc_inode->block[block_i];
+        memcpy(num_blocks, desc_inode->block, (sizeof(int32_t) * EXT2_IND_BLOCK));
+    }
+    else if (block_i >= EXT2_IND_BLOCK && block_i < EXT2_IND_BLOCK + level_0_block_range)
+    {
+        blocknum = ext2_read_indirect(idisk, ext2_fs_descriptor, num_blocks + EXT2_IND_BLOCK, blocks_size - EXT2_IND_BLOCK, desc_inode->block[EXT2_IND_BLOCK], block_i - EXT2_IND_BLOCK);
+    }
+    else if (block_i >= EXT2_IND_BLOCK + level_0_block_range && block_i < EXT2_IND_BLOCK + level_0_block_range + level_1_block_range)
+    {
+        int j = block_i - (EXT2_IND_BLOCK + level_0_block_range);
+        int indirect_level_1 = j / level_0_block_range;
+        int indirect_level_2 = j % level_0_block_range;
+
+        int indirect = ext2_read_indirect(idisk, ext2_fs_descriptor, 0, 0, desc_inode->block[EXT2_DIND_BLOCK], indirect_level_1);
+        blocknum = ext2_read_indirect(idisk, ext2_fs_descriptor, num_blocks + (block_i - indirect_level_2), blocks_size - block_i + indirect_level_2, indirect, indirect_level_2);
+    }
+    else if (block_i >= EXT2_IND_BLOCK + level_0_block_range + level_1_block_range && block_i < EXT2_IND_BLOCK + level_0_block_range + level_1_block_range + level_2_block_range)
+    {
+        int j = block_i - (EXT2_IND_BLOCK + level_0_block_range + level_1_block_range);
+        int indirect_level_1 = j / level_1_block_range;
+        int indirect_level_2 = j % level_1_block_range;
+
+        int indirect_level_3 = indirect_level_2 / level_0_block_range;
+        int indirect_level_4 = indirect_level_2 % level_0_block_range;
+
+        int indirect_1 = ext2_read_indirect(idisk, ext2_fs_descriptor, 0, 0, desc_inode->block[EXT2_TIND_BLOCK], block_i - indirect_level_1);
+        int indirect_2 = ext2_read_indirect(idisk, ext2_fs_descriptor, 0, 0, indirect_1, indirect_level_3);
+        blocknum = ext2_read_indirect(idisk, ext2_fs_descriptor, num_blocks + (block_i - indirect_level_4), blocks_size - block_i + indirect_level_4, indirect_2, indirect_level_4);
+    }
+    else
+    {
+        blocknum = -1;
+    }
+
+    return blocknum;
 }
 
 int ext2_read(struct disk* idisk, void* fd, uint32_t size, uint32_t nmemb, char* out_ptr)
@@ -279,33 +335,17 @@ int ext2_read(struct disk* idisk, void* fd, uint32_t size, uint32_t nmemb, char*
         res = -EFNOTFOUND;
         goto out;
     }
-    int num_blocks = desc_inode->blocks / (ext2_fs_descriptor->block_size / SECTOR_SIZE);
-
+    int blocks_size = desc_inode->blocks / (ext2_fs_descriptor->block_size / SECTOR_SIZE);
+    int32_t* num_blocks = (int32_t*)kzalloc(blocks_size * sizeof(int32_t));
+    memset(num_blocks, -1, blocks_size * sizeof(int32_t));
     uint32_t read = 0;
-    int indirect = 0;
-    if (num_blocks > EXT2_I_BLOCK_DIRECT) {
-        indirect = desc_inode->block[EXT2_I_BLOCK_DIRECT];
-    }
     uint32_t skip = descriptor->position % ext2_fs_descriptor->block_size;
     uint32_t offset = descriptor->position / ext2_fs_descriptor->block_size;
-    if (offset >= EXT2_I_BLOCK_DIRECT)
-        offset++;
-
-    for (int i = offset; i < num_blocks && read < desc_inode->size && read < size; i++)
+    for (int i = offset; i < blocks_size && read < desc_inode->size && read < size; i++)
     {
         uint32_t left = size - read;
-        int blocknum = 0;
-        if (i == EXT2_I_BLOCK_DIRECT)
-            continue;
-        if (i < EXT2_I_BLOCK_DIRECT)
-        {
-            blocknum = desc_inode->block[i];
-        }
-        if (i > EXT2_I_BLOCK_DIRECT)
-        {
-            blocknum = ext2_read_indirect(idisk, ext2_fs_descriptor, indirect, i - EXT2_I_BLOCK_INDIRECT);
-        }
-        if (blocknum <= 0)
+        int blocknum = __ext2_read_block_num(idisk, ext2_fs_descriptor, desc_inode, blocks_size, i, num_blocks);
+        if (blocknum < 0)
         {
             res = -EIO;
             goto out;

@@ -37,7 +37,7 @@ lib:
 	make -C $(STD_LIB_DIR) all
 
 $(APP_BIN): $(FILES)
-	$(GCC) -g -T $(LINK_FILE) -o $(APP_ELF_FILES) -ffreestanding -O0 -nostdlib -fpic -g ${FILES}
+	$(GCC) -g -T $(LINK_FILE) -o $(APP_ELF_FILES) -ffreestanding -O0 -nostdlib -fpic -g -z max-page-size=4096 ${FILES}
 	$(OBJCOPY) -O binary $(APP_ELF_FILES) $@
 
 $(LIBC_OBJ): $(FILES)
@@ -58,6 +58,7 @@ clean:
 	rm -rf $(BIN_DIR)
 
 install:
+	cp $(APP_ELF_FILES) $(PROJECT_BUILD_PATH)
 	cp $(APP_BIN) $(PROJECT_BUILD_PATH)
 
 .PHONY: clean

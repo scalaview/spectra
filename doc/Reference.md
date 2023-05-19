@@ -65,6 +65,7 @@
 
 [Making A GRUB2 image with Ext2](./Making_a_GRUB2_image.md)
 
+<img src="../assets/Ext2-inode.svg" alt="terminal-log" width="100%"/>
 
 ## GDT
 [Global Descriptor Table](https://wiki.osdev.org/Global_Descriptor_Table)
@@ -120,3 +121,10 @@
 [PS/2_Mouse](https://wiki.osdev.org/PS/2_Mouse)
 
 [Free PS/2 mouse code](https://forum.osdev.org/viewtopic.php?f=1&t=10247)
+
+## ELF
+[Executable_and_Linkable_Format](https://en.wikipedia.org/wiki/Executable_and_Linkable_Format)
+[ELF Struct](https://wiki.osdev.org/ELF)
+[ELF_Tutorial](https://wiki.osdev.org/ELF_Tutorial)
+[ElfLoading Demo](https://wiki.osdev.org/User:Joeeagar/ElfLoading)
+[ELF introduction](https://www.baeldung.com/linux/executable-and-linkable-format-file)

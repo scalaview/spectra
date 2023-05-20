@@ -317,14 +317,15 @@ int ext2_read(struct disk* idisk, void* fd, uint32_t size, uint32_t nmemb, char*
     struct ext2_file_descriptor* descriptor = (struct ext2_file_descriptor*)fd;
     char* t_out_ptr = out_ptr;
     struct ext2_inode* desc_inode = descriptor->inode;
-
+    int32_t* num_blocks = 0;
+    char* buffer = 0;
     if (!desc_inode)
     {
         res = -EINVARG;
         goto out;
     }
     struct ext2_fs_descriptor* ext2_fs_descriptor = idisk->fd;
-    char* buffer = kzalloc(ext2_fs_descriptor->block_size);
+    buffer = kzalloc(ext2_fs_descriptor->block_size);
     if (!buffer)
     {
         res = -ENOMEM;
@@ -336,7 +337,7 @@ int ext2_read(struct disk* idisk, void* fd, uint32_t size, uint32_t nmemb, char*
         goto out;
     }
     int blocks_size = desc_inode->blocks / (ext2_fs_descriptor->block_size / SECTOR_SIZE);
-    int32_t* num_blocks = (int32_t*)kzalloc(blocks_size * sizeof(int32_t));
+    num_blocks = (int32_t*)kzalloc(blocks_size * sizeof(int32_t));
     memset(num_blocks, -1, blocks_size * sizeof(int32_t));
     uint32_t read = 0;
     uint32_t skip = descriptor->position % ext2_fs_descriptor->block_size;
@@ -362,6 +363,8 @@ int ext2_read(struct disk* idisk, void* fd, uint32_t size, uint32_t nmemb, char*
         read += read_size;
     }
 out:
+    if (buffer) kfree(buffer);
+    if (num_blocks) kfree(num_blocks);
     return res;
 }
 
